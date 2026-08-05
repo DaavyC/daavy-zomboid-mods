@@ -1,0 +1,36 @@
+version=1
+id=3778522347
+title=Random Zeds
+description=[h1]Random Zeds[/h1]
+[b]Random Zeds[/b] lets you configure different zombie types and toughness levels using custom probabilities.
+[h2]Features[/h2]
+[list]
+[*]Configure the chance of Crawlers, Shamblers, Fast Shamblers, and Sprinters.
+[*]Separate profiles for Day and Night.
+[*]Special profile for Rain, Fog, and Snow.
+[*]Set the toughness of each zombie type to Fragile, Normal, or Tough.
+[*]Adjust Sprinter speed from 0.5x to 1.5x.
+[*]Loaded zombies can be rerolled when the settings change.
+[*]Crawlers near players will not change into other speed types.
+[/list]
+[h2]How to Use[/h2]
+Enable the mod and open the Sandbox Options:
+[list]
+[*]Random Zeds - Day
+[*]Random Zeds - Night
+[*]Random Zeds - Weather
+[/list]
+Configure the probabilities based on your preferred difficulty level.
+[h2]Compatibility[/h2]
+[b]Project Zomboid Build 42.20.X or later.[/b]
+[h2]Support[/h2]
+Join the Discord server for help, feedback, and updates: [url=https://discord.gg/JU3YEgu5hk]Discord Server[/url]
+
+You can also support me on Ko-fi: [url=https://ko-fi.com/daavy]Ko-fi[/url]
+[h2]Credits[/h2]
+This mod is heavily inspired by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2818577583]Random Zombies[/url] [b](by belette)[/b] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2888099799]Random Zombies - Day and Night[/url] [b](by Crius)[/b].
+
+Workshop ID: 3778522347
+Mod ID: RandomZeds
+tags=Build 42;Balance;Multiplayer
+visibility=public

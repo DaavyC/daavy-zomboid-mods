@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode x_extends="sprint4.xml">
+	<m_Name>sprintWalk4</m_Name>
+	<m_AnimName>Zombie_Walk4</m_AnimName>
+	<m_SpeedScale>RandomZedsSprinterSpeedScale</m_SpeedScale>
+	<m_Conditions x_name="f644a678-9126-4b0b-bf83-5e87c570a971">
+		<m_Value>false</m_Value>
+	</m_Conditions>
+	<m_Events x_name="82cc6c42-9c03-4902-b346-c3e57c58232f">
+		<m_ParameterValue>walk</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="1df5a12d-63dc-40c4-a4b5-4599c77bc535">
+		<m_ParameterValue>walk</m_ParameterValue>
+	</m_Events>
+</animNode>

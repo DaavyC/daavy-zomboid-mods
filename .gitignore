@@ -1,0 +1,10 @@
+# Codex
+AGENTS.md
+
+# Ignore (mods that I don't want to commit but are in my local mod folder)
+ModTemplate
+ManageContainersPatch
+AdminCharacterRestore
+
+# Junk
+$tempDir

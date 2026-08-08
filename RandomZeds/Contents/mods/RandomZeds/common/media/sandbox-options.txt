@@ -126,6 +126,15 @@ option RandomZeds.SprinterSpeedMultiplier {
     translation = RandomZeds_SprinterSpeedMultiplier,
 }
 
+option RandomZeds.SprinterSpeedVariation {
+    type = double,
+    min = 0.0,
+    max = 0.5,
+    default = 0.0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterSpeedVariation,
+}
+
 option RandomZeds.SprinterFragileChance {
     type = integer,
     min = 0,
@@ -277,6 +286,15 @@ option RandomZedsNight.SprinterSpeedMultiplier {
     default = 1.0,
     page = RandomZedsNight,
     translation = RandomZeds_SprinterSpeedMultiplier,
+}
+
+option RandomZedsNight.SprinterSpeedVariation {
+    type = double,
+    min = 0.0,
+    max = 0.5,
+    default = 0.0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterSpeedVariation,
 }
 
 option RandomZedsNight.SprinterFragileChance {
@@ -451,6 +469,15 @@ option RandomZedsWeather.SprinterSpeedMultiplier {
     default = 1.0,
     page = RandomZedsWeather,
     translation = RandomZeds_SprinterSpeedMultiplier,
+}
+
+option RandomZedsWeather.SprinterSpeedVariation {
+    type = double,
+    min = 0.0,
+    max = 0.5,
+    default = 0.0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterSpeedVariation,
 }
 
 option RandomZedsWeather.SprinterFragileChance {

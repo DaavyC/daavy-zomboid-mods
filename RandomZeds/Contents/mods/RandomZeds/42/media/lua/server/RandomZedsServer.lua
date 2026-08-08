@@ -20,6 +20,8 @@ local PENDING_HEALTH_TAG = "RandomZedsPendingHealth"
 local PENDING_PERIOD_TAG = "RandomZedsPendingPeriod"
 local PROTECTION_RADIUS_SQUARED = 50 * 50
 local STATE_BATCH_SIZE = 16
+local MIN_SPRINTER_MULTIPLIER = 0.5
+local MAX_SPRINTER_MULTIPLIER = 1.5
 local SPEED_TYPES = { "sprinter", "fastShambler", "shambler", "crawler" }
 local HEALTH_CHANCE_ORDER = { "normal", "tough", "fragile" }
 local initialized = false
@@ -42,6 +44,12 @@ end
 local function readSprinterMultiplier(optionPrefix)
     return getSandboxOptions():getOptionByName(
         optionPrefix .. ".SprinterSpeedMultiplier"
+    ):getValue()
+end
+
+local function readSprinterVariation(optionPrefix)
+    return getSandboxOptions():getOptionByName(
+        optionPrefix .. ".SprinterSpeedVariation"
     ):getValue()
 end
 
@@ -74,6 +82,7 @@ local function readConfig(optionPrefix)
     }, SPEED_TYPES, "fastShambler")
 
     config.sprinterSpeedMultiplier = readSprinterMultiplier(optionPrefix)
+    config.sprinterSpeedVariation = readSprinterVariation(optionPrefix)
     config.health = {}
     for _, speedType in ipairs(SPEED_TYPES) do
         config.health[speedType] = readHealthChances(
@@ -100,6 +109,7 @@ local function getConfigSignature(config)
         values[#values + 1] = config[speedType]
     end
     values[#values + 1] = config.sprinterSpeedMultiplier
+    values[#values + 1] = config.sprinterSpeedVariation
 
     for _, speedType in ipairs(SPEED_TYPES) do
         local health = config.health[speedType]
@@ -184,6 +194,19 @@ local function getRandomSpeedType(config, allowCrawler)
     end
 
     return "crawler"
+end
+
+local function rollSprinterMultiplier(config, speedType)
+    local multiplier = config.sprinterSpeedMultiplier
+    local variation = config.sprinterSpeedVariation
+    if speedType ~= "sprinter" or variation <= 0 then
+        return multiplier
+    end
+
+    return ZombRandFloat(
+        math.max(MIN_SPRINTER_MULTIPLIER, multiplier - variation),
+        math.min(MAX_SPRINTER_MULTIPLIER, multiplier + variation)
+    )
 end
 
 local function clearPendingReroll(modData)
@@ -285,7 +308,8 @@ local function applyZombieType(zombie, config, period, allowCrawler)
 
     local speedType = getRandomSpeedType(config, allowCrawler)
     local health = rollZombieHealth(config.health[speedType])
-    applyZombieState(zombie, period, speedType, config.sprinterSpeedMultiplier, health)
+    local multiplier = rollSprinterMultiplier(config, speedType)
+    applyZombieState(zombie, period, speedType, multiplier, health)
 end
 
 local function queueCrawlerReroll(zombie, config, period)
@@ -294,7 +318,7 @@ local function queueCrawlerReroll(zombie, config, period)
         zombie,
         period,
         speedType,
-        config.sprinterSpeedMultiplier,
+        rollSprinterMultiplier(config, speedType),
         rollZombieHealth(config.health[speedType])
     )
 end

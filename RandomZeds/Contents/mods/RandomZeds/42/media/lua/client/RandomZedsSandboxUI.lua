@@ -7,120 +7,87 @@ local TITLE_BY_OPTION = {
     ["RandomZeds.SprinterSpeedMultiplier"] = "RandomZeds_Sprinters",
 }
 
-local function getTitle(setting)
+local function normalizeSettingName(setting)
     if not setting or not setting.name then return nil end
 
-    local normalizedName = setting.name
+    return setting.name
         :gsub("^RandomZedsNight", "RandomZeds")
         :gsub("^RandomZedsWeather", "RandomZeds")
-    return TITLE_BY_OPTION[normalizedName]
 end
 
-local function addTitles(page)
-    if not page or not page.settings then return false end
+local function getTitle(setting)
+    local normalizedName = normalizeSettingName(setting)
+    return normalizedName and TITLE_BY_OPTION[normalizedName]
+end
 
-    local changed = false
+local function getAdminName(setting)
+    local normalizedName = normalizeSettingName(setting)
+    local suffix = normalizedName and normalizedName:match("^RandomZeds%.(.+)$")
+    return suffix and "RandomZeds_Admin_" .. suffix
+end
+
+local function copyPage(page)
+    local copy = copyTable(page)
+    copy.settings = {}
+    for index, setting in ipairs(page.settings or {}) do
+        copy.settings[index] = copyTable(setting)
+    end
+    return copy
+end
+
+local adminPanelHooked = false
+
+local function createHostPage(page)
+    if not page or not page.settings then return page end
+
     for _, setting in ipairs(page.settings) do
         local title = getTitle(setting)
         if title and setting.title ~= title then
-            setting.title = title
-            changed = true
+            local hostPage = copyPage(page)
+            for _, hostSetting in ipairs(hostPage.settings) do
+                local hostTitle = getTitle(hostSetting)
+                if hostTitle then
+                    hostSetting.title = hostTitle
+                end
+            end
+            return hostPage
         end
     end
 
-    return changed
+    return page
 end
 
-local getterHooked = false
-local adminPanelHooked = false
-
-local function installGetterHook()
-    if getterHooked or not ServerSettingsScreen then return end
-
-    local original = ServerSettingsScreen.getSandboxSettingsTable
-    if not original then return end
-
-    ServerSettingsScreen.getSandboxSettingsTable = function()
-        local pages = original()
-        for _, page in ipairs(pages) do
-            addTitles(page)
-        end
-        return pages
-    end
-
-    getterHooked = true
-end
-
-local function addAdminTitles(panel, page)
-    if not panel or not page or page.customui then return end
-
-    local content = panel.contents or panel
-    local y = 11
-    local titleHeight = getTextManager():getFontFromEnum(UIFont.Large):getLineHeight() + 6
-    local titles = {}
+local function createAdminPage(page)
+    if not page or not page.settings then return page end
 
     for _, setting in ipairs(page.settings) do
-        local label = panel.labels and panel.labels[setting.name]
-        local control = panel.controls and panel.controls[setting.name]
-        if label and control then
-            local title = getTitle(setting)
-            if title then
-                local titleLabel = ISLabel:new(0, 0, titleHeight,
-                    getText("Sandbox_Title_" .. title), 1, 1, 1, 1, UIFont.Large)
-                content:addChild(titleLabel)
-                titleLabel:setX((panel:getWidth() - titleLabel:getWidth()) / 2)
-                titleLabel:setY(y + 20)
-                table.insert(titles, titleLabel)
-                y = y + titleHeight + 22
+        if getAdminName(setting) then
+            local adminPage = copyPage(page)
+            for _, adminSetting in ipairs(adminPage.settings) do
+                local adminName = getAdminName(adminSetting)
+                if adminName then
+                    adminSetting.translatedName = getText("Sandbox_" .. adminName)
+                end
             end
-
-            label:setY(y)
-            control:setY(y)
-            y = y + math.max(label:getHeight(), control:getHeight()) + 10
+            return adminPage
         end
     end
 
-    content:setScrollHeight(y + 1)
-    panel.titles = titles
+    return page
 end
 
 local function installAdminPanelHook()
-    if adminPanelHooked or not ISServerSandboxOptionsUI then return end
+    if adminPanelHooked then return end
+    if not ISServerSandboxOptionsUI then return end
 
     local original = ISServerSandboxOptionsUI.createPanel
     if not original then return end
 
     ISServerSandboxOptionsUI.createPanel = function(self, page)
-        addTitles(page)
-        local panel = original(self, page)
-        addAdminTitles(panel, page)
-        return panel
+        return original(self, createAdminPage(page))
     end
 
     adminPanelHooked = true
-end
-
-local function rebuildSandboxOptionsPage()
-    local screen = SandboxOptionsScreen and SandboxOptionsScreen.instance
-    if not screen or not screen.listbox then return end
-
-    for _, item in ipairs(screen.listbox.items) do
-        local page = item.item and item.item.page
-        if addTitles(page) then
-            local oldPanel = item.item.panel
-            local wasCurrent = screen.currentPanel == oldPanel
-            if wasCurrent then
-                screen:removeChild(oldPanel)
-            end
-
-            item.item.panel = screen:createPanel(page)
-            if wasCurrent then
-                screen:addChild(item.item.panel)
-                screen.currentPanel = item.item.panel
-                screen:onPanelChange()
-            end
-        end
-    end
 end
 
 local function rebuildHostSettingsPage()
@@ -129,18 +96,21 @@ local function rebuildHostSettingsPage()
     if not pageEdit or not pageEdit.listbox then return end
 
     for _, item in ipairs(pageEdit.listbox.items) do
-        local page = item.item and item.item.page
-        if addTitles(page) then
-            local oldPanel = item.item.panel
+        local itemData = item.item
+        local page = itemData and itemData.page
+        local hostPage = createHostPage(page)
+        if hostPage ~= page then
+            local oldPanel = itemData.panel
             local wasCurrent = pageEdit.currentPanel == oldPanel
             if wasCurrent then
                 pageEdit:removeChild(oldPanel)
             end
 
-            item.item.panel = pageEdit:createPanel({ name = "Sandbox" }, page)
+            itemData.page = hostPage
+            itemData.panel = pageEdit:createPanel({ name = "Sandbox" }, hostPage)
             if wasCurrent then
-                pageEdit:addChild(item.item.panel)
-                pageEdit.currentPanel = item.item.panel
+                pageEdit:addChild(itemData.panel)
+                pageEdit.currentPanel = itemData.panel
                 pageEdit:onPanelChange()
             end
         end
@@ -148,13 +118,10 @@ local function rebuildHostSettingsPage()
 end
 
 local function initialize()
-    installGetterHook()
     installAdminPanelHook()
-    rebuildSandboxOptionsPage()
     rebuildHostSettingsPage()
 end
 
-installGetterHook()
 installAdminPanelHook()
 Events.OnMainMenuEnter.Add(initialize)
 Events.OnGameStart.Add(installAdminPanelHook)

@@ -11,6 +11,7 @@ local STATE_COMMAND = "ZombieState"
 local PERIOD_TAG = "RandomZedsPeriod"
 local SPEED_TAG = "RandomZedsSpeedType"
 local SPRINTER_MULTIPLIER_TAG = "RandomZedsSprinterMultiplier"
+local SPRINTER_BASE_SPEED_TAG = "RandomZedsSprinterBaseSpeed"
 local HEALTH_TAG = "RandomZedsHealth"
 local REROLL_TAG = "RandomZedsReroll"
 local PENDING_SPEED_TAG = "RandomZedsPendingSpeedType"
@@ -19,83 +20,69 @@ local PENDING_HEALTH_TAG = "RandomZedsPendingHealth"
 local PENDING_PERIOD_TAG = "RandomZedsPendingPeriod"
 local PROTECTION_RADIUS_SQUARED = 50 * 50
 local STATE_BATCH_SIZE = 16
+local SPEED_TYPES = { "sprinter", "fastShambler", "shambler", "crawler" }
+local HEALTH_CHANCE_ORDER = { "normal", "tough", "fragile" }
 local initialized = false
 local lastEffectiveMode
 local lastEffectiveSignature
 local rerollRevision = 0
 local queuedServerStates = {}
+local pendingServerStates = {}
+local pendingStandUps = {}
+local pendingZombieCreates = {}
 
 local function readChance(optionPrefix, name)
-    local option = getSandboxOptions():getOptionByName(optionPrefix .. "." .. name)
-    local value = tonumber(option and option:getValue()) or 0
-    return math.max(0, math.min(100, math.floor(value)))
+    return getSandboxOptions():getOptionByName(optionPrefix .. "." .. name):getValue()
 end
 
 local function readBoolean(optionPrefix, name)
-    local option = getSandboxOptions():getOptionByName(optionPrefix .. "." .. name)
-    local value = option and option:getValue()
-    return value == true or tostring(value):lower() == "true"
+    return getSandboxOptions():getOptionByName(optionPrefix .. "." .. name):getValue()
 end
 
 local function readSprinterMultiplier(optionPrefix)
-    local option = getSandboxOptions():getOptionByName(optionPrefix .. ".SprinterSpeedMultiplier")
-    local value = tonumber(option and option:getValue()) or 1.0
-    return math.max(0.5, math.min(1.5, value))
+    return getSandboxOptions():getOptionByName(
+        optionPrefix .. ".SprinterSpeedMultiplier"
+    ):getValue()
+end
+
+local function normalizeChances(chances, order, fallback)
+    local remaining = 100
+    for _, chanceType in ipairs(order) do
+        local chance = math.min(chances[chanceType], remaining)
+        chances[chanceType] = chance
+        remaining = remaining - chance
+    end
+
+    chances[fallback] = chances[fallback] + remaining
+    return chances
 end
 
 local function readHealthChances(optionPrefix, prefix)
-    local normal = readChance(optionPrefix, prefix .. "NormalChance")
-    local tough = readChance(optionPrefix, prefix .. "ToughChance")
-    local fragile = readChance(optionPrefix, prefix .. "FragileChance")
-    local remaining = 100
-
-    normal = math.min(normal, remaining)
-    remaining = remaining - normal
-    tough = math.min(tough, remaining)
-    remaining = remaining - tough
-    fragile = math.min(fragile, remaining)
-    remaining = remaining - fragile
-
-    normal = normal + remaining
-
-    return {
-        fragile = fragile,
-        normal = normal,
-        tough = tough,
-    }
+    return normalizeChances({
+        normal = readChance(optionPrefix, prefix .. "NormalChance"),
+        tough = readChance(optionPrefix, prefix .. "ToughChance"),
+        fragile = readChance(optionPrefix, prefix .. "FragileChance"),
+    }, HEALTH_CHANCE_ORDER, "normal")
 end
 
 local function readConfig(optionPrefix)
-    local sprinter = readChance(optionPrefix, "SprinterChance")
-    local fastShambler = readChance(optionPrefix, "FastShamblerChance")
-    local shambler = readChance(optionPrefix, "ShamblerChance")
-    local crawler = readChance(optionPrefix, "CrawlerChance")
-    local remaining = 100
+    local config = normalizeChances({
+        sprinter = readChance(optionPrefix, "SprinterChance"),
+        fastShambler = readChance(optionPrefix, "FastShamblerChance"),
+        shambler = readChance(optionPrefix, "ShamblerChance"),
+        crawler = readChance(optionPrefix, "CrawlerChance"),
+    }, SPEED_TYPES, "fastShambler")
 
-    sprinter = math.min(sprinter, remaining)
-    remaining = remaining - sprinter
-    fastShambler = math.min(fastShambler, remaining)
-    remaining = remaining - fastShambler
-    shambler = math.min(shambler, remaining)
-    remaining = remaining - shambler
-    crawler = math.min(crawler, remaining)
-    remaining = remaining - crawler
+    config.sprinterSpeedMultiplier = readSprinterMultiplier(optionPrefix)
+    config.health = {}
+    for _, speedType in ipairs(SPEED_TYPES) do
+        config.health[speedType] = readHealthChances(
+            optionPrefix,
+            speedType:gsub("^%l", string.upper)
+        )
+    end
 
-    fastShambler = fastShambler + remaining
-
-    return {
-        crawler = crawler,
-        shambler = shambler,
-        fastShambler = fastShambler,
-        sprinter = sprinter,
-        sprinterSpeedMultiplier = readSprinterMultiplier(optionPrefix),
-        health = {
-            crawler = readHealthChances(optionPrefix, "Crawler"),
-            shambler = readHealthChances(optionPrefix, "Shambler"),
-            fastShambler = readHealthChances(optionPrefix, "FastShambler"),
-            sprinter = readHealthChances(optionPrefix, "Sprinter"),
-        },
-    }
+    return config
 end
 
 local function readWeatherSettings()
@@ -107,15 +94,14 @@ local function readWeatherSettings()
 end
 
 local function getConfigSignature(config)
-    local values = {
-        config.crawler,
-        config.shambler,
-        config.fastShambler,
-        config.sprinter,
-        config.sprinterSpeedMultiplier,
-    }
+    local values = {}
 
-    for _, speedType in ipairs({ "crawler", "shambler", "fastShambler", "sprinter" }) do
+    for _, speedType in ipairs(SPEED_TYPES) do
+        values[#values + 1] = config[speedType]
+    end
+    values[#values + 1] = config.sprinterSpeedMultiplier
+
+    for _, speedType in ipairs(SPEED_TYPES) do
         local health = config.health[speedType]
         values[#values + 1] = health.fragile
         values[#values + 1] = health.normal
@@ -129,21 +115,11 @@ local function isWeatherActive(settings)
     if not settings.rain and not settings.fog and not settings.snow then
         return false
     end
-    if not getClimateManager then
-        return false
-    end
-
-    local ok, active = pcall(function()
-        local climate = getClimateManager()
-        if not climate then return false end
-
-        local rain = (tonumber(climate:getPrecipitationIntensity()) or 0) > 0
-        local fog = (tonumber(climate:getFogIntensity()) or 0) > 0
-        local snow = (tonumber(climate:getSnowStrength()) or 0) > 0
-        return settings.rain and rain or settings.fog and fog or settings.snow and snow
-    end)
-
-    return ok and active == true
+    local climate = getClimateManager()
+    local rain = climate:getPrecipitationIntensity() > 0
+    local fog = climate:getFogIntensity() > 0
+    local snow = climate:getSnowStrength() > 0
+    return settings.rain and rain or settings.fog and fog or settings.snow and snow
 end
 
 local function getCurrentPeriod()
@@ -154,20 +130,27 @@ local function getOptionPrefix(period)
     return period == NIGHT_PERIOD and NIGHT_ID or DAY_ID
 end
 
+local function readProfile(period, optionPrefix, signatureSuffix)
+    local config = readConfig(optionPrefix)
+    local signature = period .. ":" .. getConfigSignature(config)
+        .. (signatureSuffix or "")
+    return period, config, signature
+end
+
 local function getEffectiveProfile()
     local weatherSettings = readWeatherSettings()
     if isWeatherActive(weatherSettings) then
-        local config = readConfig(WEATHER_ID)
-        local signature = WEATHER_PERIOD .. ":" .. getConfigSignature(config)
-            .. ":" .. tostring(weatherSettings.rain)
-            .. ":" .. tostring(weatherSettings.fog)
-            .. ":" .. tostring(weatherSettings.snow)
-        return WEATHER_PERIOD, config, signature
+        return readProfile(
+            WEATHER_PERIOD,
+            WEATHER_ID,
+            ":" .. tostring(weatherSettings.rain)
+                .. ":" .. tostring(weatherSettings.fog)
+                .. ":" .. tostring(weatherSettings.snow)
+        )
     end
 
     local period = getCurrentPeriod()
-    local config = readConfig(getOptionPrefix(period))
-    return period, config, period .. ":" .. getConfigSignature(config)
+    return readProfile(period, getOptionPrefix(period))
 end
 
 local function rollZombieHealth(chances)
@@ -187,17 +170,20 @@ end
 
 local function getRandomSpeedType(config, allowCrawler)
     local roll = ZombRand(100)
-    if roll < config.sprinter then
-        return "sprinter"
-    elseif roll < config.sprinter + config.fastShambler then
-        return "fastShambler"
-    elseif roll < config.sprinter + config.fastShambler + config.shambler then
-        return "shambler"
-    elseif allowCrawler ~= false then
-        return "crawler"
-    else
-        return "fastShambler"
+    local threshold = 0
+
+    for _, speedType in ipairs(SPEED_TYPES) do
+        if speedType == "crawler" and allowCrawler == false then
+            return "fastShambler"
+        end
+
+        threshold = threshold + config[speedType]
+        if roll < threshold then
+            return speedType
+        end
     end
+
+    return "crawler"
 end
 
 local function clearPendingReroll(modData)
@@ -207,20 +193,40 @@ local function clearPendingReroll(modData)
     modData[PENDING_PERIOD_TAG] = nil
 end
 
+local function queuePendingState(zombie, period, speedType, multiplier, health)
+    local modData = zombie:getModData()
+    modData[PENDING_SPEED_TAG] = speedType
+    modData[PENDING_SPRINTER_MULTIPLIER_TAG] = multiplier
+    modData[PENDING_HEALTH_TAG] = health
+    modData[PENDING_PERIOD_TAG] = period
+end
+
+local function queueIdentifiedServerState(zombie, state, onlineID)
+    state.id = onlineID
+    zombie:transmitModData()
+    queuedServerStates[#queuedServerStates + 1] = state
+end
+
 local function queueServerState(zombie, period, speedType, multiplier, health)
     if not isServer() then return end
 
     local onlineID = tonumber(zombie:getOnlineID())
-    if not onlineID or onlineID < 0 then return end
-
-    queuedServerStates[#queuedServerStates + 1] = {
-        id = onlineID,
+    local state = {
         period = period,
         speedType = speedType,
         multiplier = multiplier,
+        baseSpeed = tonumber(zombie:getModData()[SPRINTER_BASE_SPEED_TAG]),
         health = health,
         reroll = rerollRevision,
     }
+
+    if not onlineID or onlineID < 0 then
+        pendingServerStates[zombie] = state
+        return
+    end
+
+    pendingServerStates[zombie] = nil
+    queueIdentifiedServerState(zombie, state, onlineID)
 end
 
 local function flushServerStates()
@@ -232,9 +238,7 @@ local function flushServerStates()
         for index = first, last do
             states[#states + 1] = queuedServerStates[index]
         end
-        pcall(function()
-            sendServerCommand(COMMAND_MODULE, STATE_COMMAND, { states = states })
-        end)
+        sendServerCommand(COMMAND_MODULE, STATE_COMMAND, { states = states })
     end
 
     queuedServerStates = {}
@@ -242,27 +246,28 @@ end
 
 local function applyZombieState(zombie, period, speedType, multiplier, health)
     local modData = zombie:getModData()
-    zombie:setVariable("RandomZedsSprinterSpeedScale", 0.8)
+    local gettingUp = zombie:getCurrentActionContextStateName() == "getup"
 
-    if speedType == "sprinter" then
-        RandomZeds.setCrawlerState(zombie, false)
-        zombie:doSprinter()
-        RandomZeds.setZombieWalkType(zombie, speedType)
-        RandomZeds.applySprinterSpeed(zombie, multiplier)
-    elseif speedType == "fastShambler" then
-        RandomZeds.setCrawlerState(zombie, false)
-        zombie:doFastShambler()
-        RandomZeds.setZombieWalkType(zombie, speedType)
-    elseif speedType == "shambler" then
-        RandomZeds.setCrawlerState(zombie, false)
-        zombie:doShambler()
-        RandomZeds.setZombieWalkType(zombie, speedType)
-    else
-        RandomZeds.setCrawlerState(zombie, true)
-        zombie:doCrawlerSpeed(3)
-        RandomZeds.setZombieWalkType(zombie, speedType)
+    if gettingUp or (speedType ~= "crawler" and zombie:isCrawling()) then
+        queuePendingState(zombie, period, speedType, multiplier, health)
+        if not gettingUp then
+            RandomZeds.setCrawlerState(zombie, false)
+        end
+        pendingStandUps[zombie] = true
+        return
     end
 
+    pendingStandUps[zombie] = nil
+    zombie:setVariable("RandomZedsSprinterSpeedScale", 0.8)
+
+    if not RandomZeds.applyZombieSpeedType(zombie, speedType, multiplier) then
+        return
+    end
+    if not RandomZeds.isZombieSpeedTypeApplied(zombie, speedType) then
+        queuePendingState(zombie, period, speedType, multiplier, health)
+        pendingStandUps[zombie] = true
+        return
+    end
     zombie:setHealth(health)
     modData[PERIOD_TAG] = period
     modData[SPEED_TAG] = speedType
@@ -270,8 +275,6 @@ local function applyZombieState(zombie, period, speedType, multiplier, health)
     modData[HEALTH_TAG] = health
     modData[REROLL_TAG] = rerollRevision
     clearPendingReroll(modData)
-    zombie:update()
-    zombie:transmitModData()
     queueServerState(zombie, period, speedType, multiplier, health)
 end
 
@@ -287,26 +290,23 @@ end
 
 local function queueCrawlerReroll(zombie, config, period)
     local speedType = getRandomSpeedType(config, true)
-    local modData = zombie:getModData()
-    modData[PENDING_SPEED_TAG] = speedType
-    modData[PENDING_SPRINTER_MULTIPLIER_TAG] = config.sprinterSpeedMultiplier
-    modData[PENDING_HEALTH_TAG] = rollZombieHealth(config.health[speedType])
-    modData[PENDING_PERIOD_TAG] = period
+    queuePendingState(
+        zombie,
+        period,
+        speedType,
+        config.sprinterSpeedMultiplier,
+        rollZombieHealth(config.health[speedType])
+    )
 end
 
 local function isPlayerNear(zombie, players)
     if not players then return false end
 
-    local zombieX = zombie:getX()
-    local zombieY = zombie:getY()
     for playerIndex = 0, players:size() - 1 do
         local player = players:get(playerIndex)
-        if player then
-            local dx = player:getX() - zombieX
-            local dy = player:getY() - zombieY
-            if dx * dx + dy * dy <= PROTECTION_RADIUS_SQUARED then
-                return true
-            end
+        if player and zombie:DistToSquared(player:getX(), player:getY())
+                <= PROTECTION_RADIUS_SQUARED then
+            return true
         end
     end
 
@@ -315,14 +315,11 @@ end
 
 local function reconcileCell(cell, period, config, force, players)
     local zombies = cell:getZombieList()
-    if not zombies then return 0, 0 end
+    if not zombies then return end
 
-    local found = 0
-    local rerolled = 0
     for zombieIndex = 0, zombies:size() - 1 do
         local zombie = zombies:get(zombieIndex)
         if zombie then
-            found = found + 1
             local modData = zombie:getModData()
             if not zombie:isDead() and (force or modData[PERIOD_TAG] ~= period) then
                 local playerNear = isPlayerNear(zombie, players)
@@ -330,68 +327,39 @@ local function reconcileCell(cell, period, config, force, players)
                     queueCrawlerReroll(zombie, config, period)
                 else
                     applyZombieType(zombie, config, period, not playerNear)
-                    rerolled = rerolled + 1
                 end
             end
         end
     end
 
     flushServerStates()
-    return found, rerolled
-end
-
-local function getLoadedCells(players)
-    local cells = {}
-    local seenCells = {}
-    local function addCell(cell)
-        if cell and not seenCells[cell] then
-            seenCells[cell] = true
-            cells[#cells + 1] = cell
-        end
-    end
-
-    if players then
-        for playerIndex = 0, players:size() - 1 do
-            local player = players:get(playerIndex)
-            addCell(player and player:getCell())
-        end
-    end
-
-    addCell(getCell())
-    return cells
 end
 
 local function reconcileZombies(period, config, force)
-    local found = 0
-    local rerolled = 0
     local players = getOnlinePlayers and getOnlinePlayers() or nil
-    for _, cell in ipairs(getLoadedCells(players)) do
-        local cellFound, cellRerolled = reconcileCell(cell, period, config, force, players)
-        found = found + cellFound
-        rerolled = rerolled + cellRerolled
+    local cell = getCell()
+    if cell then
+        reconcileCell(cell, period, config, force, players)
     end
-
-    return players and players:size() or 0, found, rerolled
 end
 
 local function applyPendingRerolls()
     local players = getOnlinePlayers and getOnlinePlayers() or nil
     local pending = {}
-    for _, cell in ipairs(getLoadedCells(players)) do
-        local zombies = cell:getZombieList()
-        if zombies then
-            for zombieIndex = 0, zombies:size() - 1 do
-                local zombie = zombies:get(zombieIndex)
-                local modData = zombie and zombie:getModData()
-                if zombie and not zombie:isDead() and modData and modData[PENDING_SPEED_TAG]
-                        and not isPlayerNear(zombie, players) then
-                    pending[#pending + 1] = zombie
-                end
+    local cell = getCell()
+    local zombies = cell and cell:getZombieList()
+    if zombies then
+        for zombieIndex = 0, zombies:size() - 1 do
+            local zombie = zombies:get(zombieIndex)
+            local modData = zombie and zombie:getModData()
+            if zombie and not zombie:isDead() and modData and modData[PENDING_SPEED_TAG]
+                    and not isPlayerNear(zombie, players) then
+                pending[#pending + 1] = zombie
             end
         end
     end
 
-    if #pending == 0 then return 0 end
+    if #pending == 0 then return end
     rerollRevision = rerollRevision + 1
     for _, zombie in ipairs(pending) do
         local modData = zombie:getModData()
@@ -404,7 +372,64 @@ local function applyPendingRerolls()
         )
     end
     flushServerStates()
-    return #pending
+end
+
+local function processPendingZombieCreates()
+    for zombie in pairs(pendingZombieCreates) do
+        pendingZombieCreates[zombie] = nil
+        if not zombie:isDead() and zombie:getSquare() then
+            applyZombieType(zombie)
+        end
+    end
+end
+
+local function processPendingServerStates()
+    for zombie, state in pairs(pendingServerStates) do
+        local onlineID = tonumber(zombie:getOnlineID())
+        if zombie:isDead() or not zombie:getSquare() then
+            pendingServerStates[zombie] = nil
+        elseif onlineID and onlineID >= 0 then
+            pendingServerStates[zombie] = nil
+            queueIdentifiedServerState(zombie, state, onlineID)
+        end
+    end
+end
+
+local function processPendingStandUps()
+    local ready = {}
+    for zombie in pairs(pendingStandUps) do
+        if zombie:isDead() or not zombie:getSquare() then
+            pendingStandUps[zombie] = nil
+        elseif not zombie:isCrawling()
+                and zombie:getCurrentActionContextStateName() ~= "getup" then
+            pendingStandUps[zombie] = nil
+            ready[#ready + 1] = zombie
+        end
+    end
+
+    if #ready > 0 then
+        rerollRevision = rerollRevision + 1
+        for _, zombie in ipairs(ready) do
+            local modData = zombie:getModData()
+            local speedType = modData[PENDING_SPEED_TAG]
+            if speedType then
+                applyZombieState(
+                    zombie,
+                    modData[PENDING_PERIOD_TAG] or getCurrentPeriod(),
+                    speedType,
+                    tonumber(modData[PENDING_SPRINTER_MULTIPLIER_TAG]) or 1.0,
+                    tonumber(modData[PENDING_HEALTH_TAG]) or zombie:getHealth()
+                )
+            end
+        end
+    end
+end
+
+local function applyPendingStandUps()
+    processPendingZombieCreates()
+    processPendingServerStates()
+    processPendingStandUps()
+    flushServerStates()
 end
 
 local function applyEffectiveProfile(period, config, signature)
@@ -414,48 +439,29 @@ local function applyEffectiveProfile(period, config, signature)
     lastEffectiveSignature = signature
 end
 
-local function updateEffectiveState(force)
+local function updateEffectiveState()
     local period, config, signature = getEffectiveProfile()
-    local changed = force or period ~= lastEffectiveMode or signature ~= lastEffectiveSignature
-    if changed then
+    if period ~= lastEffectiveMode or signature ~= lastEffectiveSignature then
         applyEffectiveProfile(period, config, signature)
     end
 
     applyPendingRerolls()
-    return changed
-end
-
-local function updateSettings()
-    updateEffectiveState(false)
-end
-
-local function updatePeriod()
-    updateEffectiveState(false)
-end
-
-local function onWeatherPeriodStart()
-    updateEffectiveState(false)
-end
-
-local function onWeatherPeriodStage()
-    updateEffectiveState(false)
 end
 
 local function onWeatherPeriodComplete()
     if lastEffectiveMode ~= WEATHER_PERIOD then
-        updateEffectiveState(false)
+        updateEffectiveState()
         return
     end
 
     local period = getCurrentPeriod()
-    local config = readConfig(getOptionPrefix(period))
-    applyEffectiveProfile(period, config, period .. ":" .. getConfigSignature(config))
+    local _, config, signature = readProfile(period, getOptionPrefix(period))
+    applyEffectiveProfile(period, config, signature)
     applyPendingRerolls()
 end
 
 local function onZombieCreate(zombie)
-    applyZombieType(zombie)
-    flushServerStates()
+    pendingZombieCreates[zombie] = true
 end
 
 local function initialize()
@@ -463,12 +469,12 @@ local function initialize()
 
     initialized = true
     Events.OnZombieCreate.Add(onZombieCreate)
-    Events.OnWeatherPeriodStart.Add(onWeatherPeriodStart)
-    Events.OnWeatherPeriodStage.Add(onWeatherPeriodStage)
+    Events.OnWeatherPeriodStart.Add(updateEffectiveState)
+    Events.OnWeatherPeriodStage.Add(updateEffectiveState)
     Events.OnWeatherPeriodComplete.Add(onWeatherPeriodComplete)
-    Events.EveryOneMinute.Add(updateSettings)
-    Events.EveryTenMinutes.Add(updatePeriod)
-    updateEffectiveState(false)
+    Events.OnTick.Add(applyPendingStandUps)
+    Events.EveryOneMinute.Add(updateEffectiveState)
+    updateEffectiveState()
 end
 
 Events.OnGameStart.Add(initialize)

@@ -3,19 +3,23 @@ if not isClient() then return end
 local PERIOD_TAG = "RandomZedsPeriod"
 local SPEED_TAG = "RandomZedsSpeedType"
 local SPRINTER_MULTIPLIER_TAG = "RandomZedsSprinterMultiplier"
+local SPRINTER_BASE_SPEED_TAG = "RandomZedsSprinterBaseSpeed"
 local HEALTH_TAG = "RandomZedsHealth"
 local REROLL_TAG = "RandomZedsReroll"
 local CLIENT_PERIOD_VARIABLE = "RandomZedsClientPeriod"
 local CLIENT_REROLL_VARIABLE = "RandomZedsClientReroll"
 local COMMAND_MODULE = "RandomZeds"
 local STATE_COMMAND = "ZombieState"
+local STATE_CONFIRM_MS = 2000
 local pendingStates = {}
 local latestRevisions = {}
 
 local function applyServerState(zombie)
     if not zombie then return false end
     local onlineID = tonumber(zombie:getOnlineID())
-    if zombie:isDead() then return true end
+    if zombie:isDead() then
+        return true
+    end
 
     local modData = zombie:getModData()
     local period = modData[PERIOD_TAG]
@@ -26,42 +30,41 @@ local function applyServerState(zombie)
         return false
     end
 
-    if not period or not speedType
-            or zombie:getVariableString(CLIENT_PERIOD_VARIABLE) == period
-                and zombie:getVariableString(CLIENT_REROLL_VARIABLE) == reroll then
-        return period ~= nil and speedType ~= nil
+    local alreadyApplied = false
+    if period and speedType then
+        alreadyApplied = zombie:getVariableString(CLIENT_PERIOD_VARIABLE) == period
+            and zombie:getVariableString(CLIENT_REROLL_VARIABLE) == reroll
+    end
+    if not period or not speedType then
+        return false
     end
 
-    if speedType == "sprinter" then
+    local nativeApplied = RandomZeds.isZombieSpeedTypeApplied(zombie, speedType)
+    if alreadyApplied and nativeApplied then
+        return true
+    end
+
+    local gettingUp = zombie:getCurrentActionContextStateName() == "getup"
+    if gettingUp then return false end
+
+    if speedType ~= "crawler" and zombie:isCrawling() then
         RandomZeds.setCrawlerState(zombie, false)
-        zombie:doSprinter()
-        RandomZeds.setZombieWalkType(zombie, speedType)
-        RandomZeds.applySprinterSpeed(zombie, tonumber(modData[SPRINTER_MULTIPLIER_TAG]) or 1.0)
-    elseif speedType == "fastShambler" then
-        RandomZeds.setCrawlerState(zombie, false)
-        zombie:doFastShambler()
-        RandomZeds.setZombieWalkType(zombie, speedType)
-    elseif speedType == "shambler" then
-        RandomZeds.setCrawlerState(zombie, false)
-        zombie:doShambler()
-        RandomZeds.setZombieWalkType(zombie, speedType)
-    elseif speedType == "crawler" then
-        RandomZeds.setCrawlerState(zombie, true)
-        zombie:doCrawlerSpeed(3)
-        RandomZeds.setZombieWalkType(zombie, speedType)
-    else
+        return false
+    end
+
+    local multiplier = tonumber(modData[SPRINTER_MULTIPLIER_TAG]) or 1.0
+    if not RandomZeds.applyZombieSpeedType(zombie, speedType, multiplier) then
         return false
     end
 
     local health = tonumber(modData[HEALTH_TAG])
-    if health then
+    if health and not alreadyApplied then
         zombie:setHealth(health)
     end
 
     zombie:setVariable(CLIENT_PERIOD_VARIABLE, period)
     zombie:setVariable(CLIENT_REROLL_VARIABLE, reroll)
-    zombie:update()
-    return true
+    return RandomZeds.isZombieSpeedTypeApplied(zombie, speedType)
 end
 
 local function applyCommandState(zombie, state)
@@ -69,21 +72,22 @@ local function applyCommandState(zombie, state)
     modData[PERIOD_TAG] = state.period
     modData[SPEED_TAG] = state.speedType
     modData[SPRINTER_MULTIPLIER_TAG] = state.multiplier
+    local baseSpeed = tonumber(state.baseSpeed)
+    if baseSpeed and baseSpeed > 0 then
+        modData[SPRINTER_BASE_SPEED_TAG] = baseSpeed
+    end
     modData[HEALTH_TAG] = state.health
     modData[REROLL_TAG] = state.reroll
     return applyServerState(zombie)
 end
 
-local function findZombie(onlineID)
+local function forEachLoadedZombie(callback)
     local cell = getCell()
     local zombies = cell and cell:getZombieList()
-    if not zombies then return nil end
+    if not zombies then return end
 
     for zombieIndex = 0, zombies:size() - 1 do
-        local zombie = zombies:get(zombieIndex)
-        if zombie and tonumber(zombie:getOnlineID()) == onlineID then
-            return zombie
-        end
+        callback(zombies:get(zombieIndex))
     end
 end
 
@@ -91,26 +95,54 @@ local function applyPendingState(zombie)
     local onlineID = zombie and tonumber(zombie:getOnlineID())
     local state = onlineID and pendingStates[onlineID]
     if not state then return false end
+    if zombie:isDead() then
+        pendingStates[onlineID] = nil
+        return true
+    end
 
-    if not applyCommandState(zombie, state) then return false end
+    local nativeApplied = RandomZeds.isZombieSpeedTypeApplied(zombie, state.speedType)
+    if not applyCommandState(zombie, state) then
+        return false
+    end
+
+    local now = getTimestampMs()
+    if not nativeApplied then
+        state.confirmAfter = now + STATE_CONFIRM_MS
+        return false
+    end
+    if not state.confirmAfter then
+        state.confirmAfter = now + STATE_CONFIRM_MS
+        return false
+    end
+    if now < state.confirmAfter then return false end
+
     pendingStates[onlineID] = nil
     return true
 end
 
+local function refreshPendingStates()
+    if table.isempty(pendingStates) then return end
+    forEachLoadedZombie(applyPendingState)
+end
+
 local function receiveServerState(state)
-    if not state then return end
+    if not state then
+        return
+    end
 
     local onlineID = tonumber(state.id)
     local revision = tonumber(state.reroll)
-    if not onlineID or onlineID < 0 or not revision
-            or latestRevisions[onlineID] and revision < latestRevisions[onlineID] then
+    if not onlineID or onlineID < 0 or not revision then
+        return
+    end
+
+    local latestRevision = latestRevisions[onlineID]
+    if latestRevision and revision < latestRevision then
         return
     end
 
     latestRevisions[onlineID] = revision
     pendingStates[onlineID] = state
-    local zombie = findZombie(onlineID)
-    if zombie then applyPendingState(zombie) end
 end
 
 local function onServerCommand(module, command, packet)
@@ -118,33 +150,22 @@ local function onServerCommand(module, command, packet)
     if not packet then return end
 
     if packet.states then
-        pcall(function()
-            for _, state in pairs(packet.states) do
-                receiveServerState(state)
-            end
-        end)
+        for _, state in pairs(packet.states) do
+            receiveServerState(state)
+        end
     else
         receiveServerState(packet)
     end
 end
 
+local function refreshZombie(zombie)
+    return applyPendingState(zombie) or applyServerState(zombie)
+end
+
 local function refreshLoadedZombies()
-    local cell = getCell()
-    local zombies = cell and cell:getZombieList()
-    if not zombies then return end
-
-    for zombieIndex = 0, zombies:size() - 1 do
-        local zombie = zombies:get(zombieIndex)
-        applyPendingState(zombie)
-        applyServerState(zombie)
-    end
+    forEachLoadedZombie(refreshZombie)
 end
 
-local function onZombieCreate(zombie)
-    applyPendingState(zombie)
-    applyServerState(zombie)
-end
-
-Events.OnZombieCreate.Add(onZombieCreate)
+Events.OnTick.Add(refreshPendingStates)
 Events.EveryOneMinute.Add(refreshLoadedZombies)
 Events.OnServerCommand.Add(onServerCommand)

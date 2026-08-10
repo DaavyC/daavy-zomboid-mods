@@ -1,9 +1,0 @@
-name=Random Zeds
-id=RandomZeds
-author=Daavy
-icon=poster.png
-poster=poster.png
-description=Configurable day/night chances for zombie speed and toughness, plus individual sprinter speeds. Sandbox changes reroll loaded zombies immediately while crawlers near players remain crawlers.
-modversion=1.1.0
-pzversion=42
-versionMin=42.20

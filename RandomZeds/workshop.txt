@@ -16,6 +16,7 @@ description=[/list]
 description=[h2]How to Use[/h2]
 description=Enable the mod and open the Sandbox Options:
 description=[list]
+description=[*]Random Zeds - Main
 description=[*]Random Zeds - Day
 description=[*]Random Zeds - Night
 description=[*]Random Zeds - Weather

@@ -3,9 +3,11 @@ if isClient() then return end
 local DAY_ID = "RandomZeds"
 local NIGHT_ID = "RandomZedsNight"
 local WEATHER_ID = "RandomZedsWeather"
+local MAIN_ID = "RandomZedsMain"
 local DAY_PERIOD = "Day"
 local NIGHT_PERIOD = "Night"
 local WEATHER_PERIOD = "Weather"
+local DISABLED_PERIOD = "Disabled"
 local COMMAND_MODULE = "RandomZeds"
 local STATE_COMMAND = "ZombieState"
 local PERIOD_TAG = "RandomZedsPeriod"
@@ -24,6 +26,19 @@ local MIN_SPRINTER_MULTIPLIER = 0.5
 local MAX_SPRINTER_MULTIPLIER = 1.5
 local SPEED_TYPES = { "sprinter", "fastShambler", "shambler", "crawler" }
 local HEALTH_CHANCE_ORDER = { "normal", "tough", "fragile" }
+local SEASON_OPTION_NAMES = {
+    [1] = "Spring",
+    [2] = "Summer",
+    [3] = "Summer",
+    [4] = "Autumn",
+    [5] = "Winter",
+}
+local SEASON_DEFAULTS = {
+    Spring = { dayStart = 7, nightStart = 19 },
+    Summer = { dayStart = 6, nightStart = 20 },
+    Autumn = { dayStart = 7, nightStart = 19 },
+    Winter = { dayStart = 8, nightStart = 17 },
+}
 local initialized = false
 local lastEffectiveMode
 local lastEffectiveSignature
@@ -133,7 +148,32 @@ local function isWeatherActive(settings)
 end
 
 local function getCurrentPeriod()
-    return getGameTime():isNight() and NIGHT_PERIOD or DAY_PERIOD
+    local climate = getClimateManager()
+    local season = climate and climate:getSeason()
+    local seasonName = season and SEASON_OPTION_NAMES[season:getSeason()] or "Spring"
+    local defaults = SEASON_DEFAULTS[seasonName] or SEASON_DEFAULTS.Spring
+    local options = getSandboxOptions()
+    local dayStart = tonumber(options:getOptionByName(
+        MAIN_ID .. "." .. seasonName .. "DayStart"
+    ):getValue()) or defaults.dayStart
+    local nightStart = tonumber(options:getOptionByName(
+        MAIN_ID .. "." .. seasonName .. "NightStart"
+    ):getValue()) or defaults.nightStart
+    local dayEnabled = dayStart >= 0
+    local nightEnabled = nightStart >= 0
+    if not dayEnabled then dayStart = defaults.dayStart end
+    if not nightEnabled then nightStart = defaults.nightStart end
+    if dayStart >= nightStart then
+        dayStart = defaults.dayStart
+        nightStart = defaults.nightStart
+    end
+
+    local timeOfDay = getGameTime():getTimeOfDay()
+    local isDay = timeOfDay >= dayStart and timeOfDay < nightStart
+    if (isDay and not dayEnabled) or (not isDay and not nightEnabled) then
+        return DISABLED_PERIOD
+    end
+    return isDay and DAY_PERIOD or NIGHT_PERIOD
 end
 
 local function getOptionPrefix(period)
@@ -160,11 +200,14 @@ local function getEffectiveProfile()
     end
 
     local period = getCurrentPeriod()
+    if period == DISABLED_PERIOD then
+        return period, nil, period
+    end
     return readProfile(period, getOptionPrefix(period))
 end
 
 local function rollZombieHealth(chances)
-    local roll = ZombRand(100)
+    local roll = ZombRandFloat(0, 100)
     local health
 
     if roll < chances.normal then
@@ -179,7 +222,7 @@ local function rollZombieHealth(chances)
 end
 
 local function getRandomSpeedType(config, allowCrawler)
-    local roll = ZombRand(100)
+    local roll = ZombRandFloat(0, 100)
     local threshold = 0
 
     for _, speedType in ipairs(SPEED_TYPES) do
@@ -214,6 +257,19 @@ local function clearPendingReroll(modData)
     modData[PENDING_SPRINTER_MULTIPLIER_TAG] = nil
     modData[PENDING_HEALTH_TAG] = nil
     modData[PENDING_PERIOD_TAG] = nil
+end
+
+local function discardPendingRerolls()
+    pendingStandUps = {}
+    pendingZombieCreates = {}
+    local cell = getCell()
+    local zombies = cell and cell:getZombieList()
+    if zombies then
+        for zombieIndex = 0, zombies:size() - 1 do
+            local zombie = zombies:get(zombieIndex)
+            if zombie then clearPendingReroll(zombie:getModData()) end
+        end
+    end
 end
 
 local function queuePendingState(zombie, period, speedType, multiplier, health)
@@ -304,6 +360,7 @@ end
 local function applyZombieType(zombie, config, period, allowCrawler)
     if not config then
         period, config = getEffectiveProfile()
+        if not config then return end
     end
 
     local speedType = getRandomSpeedType(config, allowCrawler)
@@ -368,6 +425,11 @@ local function reconcileZombies(period, config, force)
 end
 
 local function applyPendingRerolls()
+    if lastEffectiveMode == DISABLED_PERIOD then
+        discardPendingRerolls()
+        return
+    end
+
     local players = getOnlinePlayers and getOnlinePlayers() or nil
     local pending = {}
     local cell = getCell()
@@ -452,11 +514,23 @@ end
 local function applyPendingStandUps()
     processPendingZombieCreates()
     processPendingServerStates()
+    if lastEffectiveMode == DISABLED_PERIOD then
+        discardPendingRerolls()
+        flushServerStates()
+        return
+    end
     processPendingStandUps()
     flushServerStates()
 end
 
 local function applyEffectiveProfile(period, config, signature)
+    if not config then
+        discardPendingRerolls()
+        lastEffectiveMode = period
+        lastEffectiveSignature = signature
+        return
+    end
+
     rerollRevision = rerollRevision + 1
     reconcileZombies(period, config, true)
     lastEffectiveMode = period
@@ -479,6 +553,10 @@ local function onWeatherPeriodComplete()
     end
 
     local period = getCurrentPeriod()
+    if period == DISABLED_PERIOD then
+        applyEffectiveProfile(period, nil, period)
+        return
+    end
     local _, config, signature = readProfile(period, getOptionPrefix(period))
     applyEffectiveProfile(period, config, signature)
     applyPendingRerolls()

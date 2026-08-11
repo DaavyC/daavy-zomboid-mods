@@ -1,7 +1,100 @@
 VERSION = 1,
 
-option RandomZeds.CrawlerChance {
+option RandomZedsWeather.Rain {
+    type = boolean,
+    default = false,
+    page = RandomZedsMain,
+    translation = RandomZedsWeather_Rain,
+}
+
+option RandomZedsWeather.Fog {
+    type = boolean,
+    default = false,
+    page = RandomZedsMain,
+    translation = RandomZedsWeather_Fog,
+}
+
+option RandomZedsWeather.Snow {
+    type = boolean,
+    default = false,
+    page = RandomZedsMain,
+    translation = RandomZedsWeather_Snow,
+}
+
+option RandomZedsMain.SpringDayStart {
     type = integer,
+    min = -1,
+    max = 23,
+    default = 7,
+    page = RandomZedsMain,
+    translation = RandomZeds_SpringDayStart,
+}
+
+option RandomZedsMain.SpringNightStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 19,
+    page = RandomZedsMain,
+    translation = RandomZeds_SpringNightStart,
+}
+
+option RandomZedsMain.SummerDayStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 6,
+    page = RandomZedsMain,
+    translation = RandomZeds_SummerDayStart,
+}
+
+option RandomZedsMain.SummerNightStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 20,
+    page = RandomZedsMain,
+    translation = RandomZeds_SummerNightStart,
+}
+
+option RandomZedsMain.AutumnDayStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 7,
+    page = RandomZedsMain,
+    translation = RandomZeds_AutumnDayStart,
+}
+
+option RandomZedsMain.AutumnNightStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 19,
+    page = RandomZedsMain,
+    translation = RandomZeds_AutumnNightStart,
+}
+
+option RandomZedsMain.WinterDayStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 8,
+    page = RandomZedsMain,
+    translation = RandomZeds_WinterDayStart,
+}
+
+option RandomZedsMain.WinterNightStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 17,
+    page = RandomZedsMain,
+    translation = RandomZeds_WinterNightStart,
+}
+
+option RandomZeds.CrawlerChance {
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -10,7 +103,7 @@ option RandomZeds.CrawlerChance {
 }
 
 option RandomZeds.ShamblerChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -19,7 +112,7 @@ option RandomZeds.ShamblerChance {
 }
 
 option RandomZeds.FastShamblerChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -28,7 +121,7 @@ option RandomZeds.FastShamblerChance {
 }
 
 option RandomZeds.SprinterChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -37,7 +130,7 @@ option RandomZeds.SprinterChance {
 }
 
 option RandomZeds.CrawlerFragileChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -46,7 +139,7 @@ option RandomZeds.CrawlerFragileChance {
 }
 
 option RandomZeds.CrawlerNormalChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -55,7 +148,7 @@ option RandomZeds.CrawlerNormalChance {
 }
 
 option RandomZeds.CrawlerToughChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -64,7 +157,7 @@ option RandomZeds.CrawlerToughChance {
 }
 
 option RandomZeds.ShamblerFragileChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -73,7 +166,7 @@ option RandomZeds.ShamblerFragileChance {
 }
 
 option RandomZeds.ShamblerNormalChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -82,7 +175,7 @@ option RandomZeds.ShamblerNormalChance {
 }
 
 option RandomZeds.ShamblerToughChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -91,7 +184,7 @@ option RandomZeds.ShamblerToughChance {
 }
 
 option RandomZeds.FastShamblerFragileChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -100,7 +193,7 @@ option RandomZeds.FastShamblerFragileChance {
 }
 
 option RandomZeds.FastShamblerNormalChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -109,7 +202,7 @@ option RandomZeds.FastShamblerNormalChance {
 }
 
 option RandomZeds.FastShamblerToughChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -136,7 +229,7 @@ option RandomZeds.SprinterSpeedVariation {
 }
 
 option RandomZeds.SprinterFragileChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -145,7 +238,7 @@ option RandomZeds.SprinterFragileChance {
 }
 
 option RandomZeds.SprinterNormalChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -154,7 +247,7 @@ option RandomZeds.SprinterNormalChance {
 }
 
 option RandomZeds.SprinterToughChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -163,7 +256,7 @@ option RandomZeds.SprinterToughChance {
 }
 
 option RandomZedsNight.CrawlerChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -172,7 +265,7 @@ option RandomZedsNight.CrawlerChance {
 }
 
 option RandomZedsNight.ShamblerChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -181,7 +274,7 @@ option RandomZedsNight.ShamblerChance {
 }
 
 option RandomZedsNight.FastShamblerChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -190,7 +283,7 @@ option RandomZedsNight.FastShamblerChance {
 }
 
 option RandomZedsNight.SprinterChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -199,7 +292,7 @@ option RandomZedsNight.SprinterChance {
 }
 
 option RandomZedsNight.CrawlerFragileChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -208,7 +301,7 @@ option RandomZedsNight.CrawlerFragileChance {
 }
 
 option RandomZedsNight.CrawlerNormalChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -217,7 +310,7 @@ option RandomZedsNight.CrawlerNormalChance {
 }
 
 option RandomZedsNight.CrawlerToughChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -226,7 +319,7 @@ option RandomZedsNight.CrawlerToughChance {
 }
 
 option RandomZedsNight.ShamblerFragileChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -235,7 +328,7 @@ option RandomZedsNight.ShamblerFragileChance {
 }
 
 option RandomZedsNight.ShamblerNormalChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -244,7 +337,7 @@ option RandomZedsNight.ShamblerNormalChance {
 }
 
 option RandomZedsNight.ShamblerToughChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -253,7 +346,7 @@ option RandomZedsNight.ShamblerToughChance {
 }
 
 option RandomZedsNight.FastShamblerFragileChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -262,7 +355,7 @@ option RandomZedsNight.FastShamblerFragileChance {
 }
 
 option RandomZedsNight.FastShamblerNormalChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -271,7 +364,7 @@ option RandomZedsNight.FastShamblerNormalChance {
 }
 
 option RandomZedsNight.FastShamblerToughChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -298,7 +391,7 @@ option RandomZedsNight.SprinterSpeedVariation {
 }
 
 option RandomZedsNight.SprinterFragileChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -307,7 +400,7 @@ option RandomZedsNight.SprinterFragileChance {
 }
 
 option RandomZedsNight.SprinterNormalChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -316,7 +409,7 @@ option RandomZedsNight.SprinterNormalChance {
 }
 
 option RandomZedsNight.SprinterToughChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -324,29 +417,8 @@ option RandomZedsNight.SprinterToughChance {
     translation = RandomZeds_SprinterToughChance,
 }
 
-option RandomZedsWeather.Rain {
-    type = boolean,
-    default = false,
-    page = RandomZedsWeather,
-    translation = RandomZedsWeather_Rain,
-}
-
-option RandomZedsWeather.Fog {
-    type = boolean,
-    default = false,
-    page = RandomZedsWeather,
-    translation = RandomZedsWeather_Fog,
-}
-
-option RandomZedsWeather.Snow {
-    type = boolean,
-    default = false,
-    page = RandomZedsWeather,
-    translation = RandomZedsWeather_Snow,
-}
-
 option RandomZedsWeather.CrawlerChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -355,7 +427,7 @@ option RandomZedsWeather.CrawlerChance {
 }
 
 option RandomZedsWeather.ShamblerChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -364,7 +436,7 @@ option RandomZedsWeather.ShamblerChance {
 }
 
 option RandomZedsWeather.FastShamblerChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -373,7 +445,7 @@ option RandomZedsWeather.FastShamblerChance {
 }
 
 option RandomZedsWeather.SprinterChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -382,7 +454,7 @@ option RandomZedsWeather.SprinterChance {
 }
 
 option RandomZedsWeather.CrawlerFragileChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -391,7 +463,7 @@ option RandomZedsWeather.CrawlerFragileChance {
 }
 
 option RandomZedsWeather.CrawlerNormalChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -400,7 +472,7 @@ option RandomZedsWeather.CrawlerNormalChance {
 }
 
 option RandomZedsWeather.CrawlerToughChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -409,7 +481,7 @@ option RandomZedsWeather.CrawlerToughChance {
 }
 
 option RandomZedsWeather.ShamblerFragileChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -418,7 +490,7 @@ option RandomZedsWeather.ShamblerFragileChance {
 }
 
 option RandomZedsWeather.ShamblerNormalChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -427,7 +499,7 @@ option RandomZedsWeather.ShamblerNormalChance {
 }
 
 option RandomZedsWeather.ShamblerToughChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -436,7 +508,7 @@ option RandomZedsWeather.ShamblerToughChance {
 }
 
 option RandomZedsWeather.FastShamblerFragileChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -445,7 +517,7 @@ option RandomZedsWeather.FastShamblerFragileChance {
 }
 
 option RandomZedsWeather.FastShamblerNormalChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -454,7 +526,7 @@ option RandomZedsWeather.FastShamblerNormalChance {
 }
 
 option RandomZedsWeather.FastShamblerToughChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -481,7 +553,7 @@ option RandomZedsWeather.SprinterSpeedVariation {
 }
 
 option RandomZedsWeather.SprinterFragileChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,
@@ -490,7 +562,7 @@ option RandomZedsWeather.SprinterFragileChance {
 }
 
 option RandomZedsWeather.SprinterNormalChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 100,
@@ -499,7 +571,7 @@ option RandomZedsWeather.SprinterNormalChance {
 }
 
 option RandomZedsWeather.SprinterToughChance {
-    type = integer,
+    type = double,
     min = 0,
     max = 100,
     default = 0,

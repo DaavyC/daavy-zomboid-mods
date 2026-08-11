@@ -5,6 +5,10 @@ local TITLE_BY_OPTION = {
     ["RandomZeds.ShamblerFragileChance"] = "RandomZeds_Shamblers",
     ["RandomZeds.FastShamblerFragileChance"] = "RandomZeds_FastShamblers",
     ["RandomZeds.SprinterSpeedMultiplier"] = "RandomZeds_Sprinters",
+    ["RandomZeds.SpringDayStart"] = "RandomZeds_Spring",
+    ["RandomZeds.SummerDayStart"] = "RandomZeds_Summer",
+    ["RandomZeds.AutumnDayStart"] = "RandomZeds_Autumn",
+    ["RandomZeds.WinterDayStart"] = "RandomZeds_Winter",
 }
 
 local function normalizeSettingName(setting)
@@ -13,6 +17,7 @@ local function normalizeSettingName(setting)
     return setting.name
         :gsub("^RandomZedsNight", "RandomZeds")
         :gsub("^RandomZedsWeather", "RandomZeds")
+        :gsub("^RandomZedsMain", "RandomZeds")
 end
 
 local function getTitle(setting)

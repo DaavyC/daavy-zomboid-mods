@@ -1,34 +1,32 @@
 version=1
 id=3778522347
 title=Random Zeds
-description=[h1]Random Zeds[/h1]
-description=[b]Random Zeds[/b] lets you configure different zombie types and toughness levels using custom probabilities.
+description=[h1]Random Zeds [B42.20][/h1]
+description=Customize zombie speed, toughness, sight, and hearing with independent probability settings.
+description=
 description=[h2]Features[/h2]
 description=[list]
-description=[*]Configure the chance of Crawlers, Shamblers, Fast Shamblers, and Sprinters.
-description=[*]Separate profiles for Day and Night.
-description=[*]Special profile for Rain, Fog, and Snow.
-description=[*]Set the toughness of each zombie type to Fragile, Normal, or Tough.
-description=[*]Set Sprinter base speed from 0.5x to 1.5x and add individual speed variation.
-description=[*]Loaded zombies can be rerolled when the settings change.
-description=[*]Crawlers near players will not change into other speed types.
+description=[*]Set probabilities for Crawlers, Shamblers, Fast Shamblers, and Sprinters.
+description=[*]Use separate Day, Night, and Weather profiles.
+description=[*]Set seasonal Day and Night schedules.
+description=[*]Configure toughness, sight, and hearing for each speed type.
+description=[*]Set Sprinter base speed and variation.
+description=[*]Reroll loaded zombies when settings change.
+description=[*]Protect nearby Crawlers from speed-type changes.
 description=[/list]
-description=[h2]How to Use[/h2]
-description=Enable the mod and open the Sandbox Options:
-description=[list]
-description=[*]Random Zeds - Main
-description=[*]Random Zeds - Day
-description=[*]Random Zeds - Night
-description=[*]Random Zeds - Weather
-description=[/list]
-description=Configure the probabilities based on your preferred difficulty level.
-description=[h2]Compatibility[/h2]
-description=[b]Build 42.20.X or later.[/b]
-description=[h2]Support[/h2]
-description=Join the Discord server for help, feedback, and updates: [url=https://discord.gg/JU3YEgu5hk]Discord Server[/url]
 description=
-description=You can also support me on Ko-fi: [url=https://ko-fi.com/daavy]Ko-fi[/url]
+description=[h2]Setup[/h2]
+description=Open the Sandbox Options and configure the Random Zeds Main, Day, Night, and Weather pages.
+description=
+description=[h2]For Mod Developers[/h2]
+description=Set [b]zombie:getModData().RandomZedsExcluded = true[/b] to exclude a zombie from all Random Zeds changes and synchronization.
+description=
+description=[h2]Support[/h2]
+description=[url=https://discord.gg/JU3YEgu5hk]Discord Server[/url] for help, feedback, and updates.
+description=
+description=[url=https://ko-fi.com/C1I7209LY1][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
+description=
 description=[h2]Credits[/h2]
-description=This mod is heavily inspired by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2818577583]Random Zombies[/url] [b](by belette)[/b] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2888099799]Random Zombies - Day and Night[/url] [b](by Crius)[/b].
+description=Inspired by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2818577583]Random Zombies[/url] by [b]belette[/b] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2888099799]Random Zombies - Day and Night[/url] by [b]Crius[/b].
 tags=Build 42;Balance;Multiplayer
 visibility=public

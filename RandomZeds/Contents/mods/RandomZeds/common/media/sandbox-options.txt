@@ -418,13 +418,22 @@ option RandomZeds.SprinterSpeedMultiplier {
     translation = RandomZeds_SprinterSpeedMultiplier,
 }
 
-option RandomZeds.SprinterSpeedVariation {
+option RandomZeds.SprinterSpeedVariationDecrease {
     type = double,
     min = 0.0,
     max = 0.5,
     default = 0.0,
     page = RandomZeds,
-    translation = RandomZeds_SprinterSpeedVariation,
+    translation = RandomZeds_SprinterSpeedVariationDecrease,
+}
+
+option RandomZeds.SprinterSpeedVariationIncrease {
+    type = double,
+    min = 0.0,
+    max = 0.5,
+    default = 0.0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterSpeedVariationIncrease,
 }
 
 option RandomZeds.SprinterFragileChance {
@@ -836,13 +845,22 @@ option RandomZedsNight.SprinterSpeedMultiplier {
     translation = RandomZeds_SprinterSpeedMultiplier,
 }
 
-option RandomZedsNight.SprinterSpeedVariation {
+option RandomZedsNight.SprinterSpeedVariationDecrease {
     type = double,
     min = 0.0,
     max = 0.5,
     default = 0.0,
     page = RandomZedsNight,
-    translation = RandomZeds_SprinterSpeedVariation,
+    translation = RandomZeds_SprinterSpeedVariationDecrease,
+}
+
+option RandomZedsNight.SprinterSpeedVariationIncrease {
+    type = double,
+    min = 0.0,
+    max = 0.5,
+    default = 0.0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterSpeedVariationIncrease,
 }
 
 option RandomZedsNight.SprinterFragileChance {
@@ -1254,13 +1272,22 @@ option RandomZedsWeather.SprinterSpeedMultiplier {
     translation = RandomZeds_SprinterSpeedMultiplier,
 }
 
-option RandomZedsWeather.SprinterSpeedVariation {
+option RandomZedsWeather.SprinterSpeedVariationDecrease {
     type = double,
     min = 0.0,
     max = 0.5,
     default = 0.0,
     page = RandomZedsWeather,
-    translation = RandomZeds_SprinterSpeedVariation,
+    translation = RandomZeds_SprinterSpeedVariationDecrease,
+}
+
+option RandomZedsWeather.SprinterSpeedVariationIncrease {
+    type = double,
+    min = 0.0,
+    max = 0.5,
+    default = 0.0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterSpeedVariationIncrease,
 }
 
 option RandomZedsWeather.SprinterFragileChance {

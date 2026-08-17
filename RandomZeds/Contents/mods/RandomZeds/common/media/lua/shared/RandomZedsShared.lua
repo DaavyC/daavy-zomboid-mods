@@ -6,7 +6,10 @@ local SPEED_TYPE_IDS = {
     shambler = 3,
     crawler = 3,
 }
+local SPEED_TAG = "RandomZedsSpeedType"
+local SPRINTER_MULTIPLIER_TAG = "RandomZedsSprinterMultiplier"
 local SPRINTER_BASE_SPEED_TAG = "RandomZedsSprinterBaseSpeed"
+local SPRINTER_SPEED_TOLERANCE = 0.005
 local EXCLUDED_TAG = "RandomZedsExcluded"
 local NATIVE_OPTION_NAMES = { "Sight", "Hearing" }
 local DEBUG_OPTION_NAME = "RandomZedsMain.Debug"
@@ -88,18 +91,67 @@ function RandomZeds.forEachLoadedZombie(callback)
     end
 end
 
+function RandomZeds.forEachLoadedZombieIncremental(cursorState, batchSize, callback)
+    local cell = getCell()
+    local zombies = cell and cell:getZombieList()
+    if not zombies then
+        cursorState.index = 0
+        return 0
+    end
+
+    local count = zombies:size()
+    if count <= 0 then
+        cursorState.index = 0
+        return 0
+    end
+
+    local limit = math.min(tonumber(batchSize) or count, count)
+    local index = tonumber(cursorState.index) or 0
+    if index < 0 or index >= count then index = 0 end
+
+    for _ = 1, limit do
+        callback(zombies:get(index))
+        index = index + 1
+        if index >= count then index = 0 end
+    end
+
+    cursorState.index = index
+    return limit
+end
+
 function RandomZeds.isZombieSpeedTypeApplied(zombie, speedType)
     local speedTypeId = SPEED_TYPE_IDS[speedType]
-    local applied
-    if speedType == "crawler" then
+    local applied = zombie ~= nil
+        and speedTypeId ~= nil
+        and not zombie:isDead()
+        and zombie:getSquare() ~= nil
+
+    local modData = applied and zombie:getModData() or nil
+    if applied and speedType == "sprinter"
+            and (not modData or modData[SPEED_TAG] ~= "sprinter") then
+        applied = false
+    end
+
+    if applied and speedType == "crawler" then
         applied = zombie:isCrawling()
             and not zombie:isCanWalk()
             and zombie:getSpeedType() == speedTypeId
-    else
-        applied = speedTypeId ~= nil
-            and not zombie:isCrawling()
+    elseif applied then
+        applied = not zombie:isCrawling()
             and zombie:isCanWalk()
             and zombie:getSpeedType() == speedTypeId
+    end
+
+    if applied and speedType == "sprinter" then
+        local baseSpeed = tonumber(modData[SPRINTER_BASE_SPEED_TAG])
+        local multiplier = tonumber(modData[SPRINTER_MULTIPLIER_TAG])
+        local speedMod = tonumber(zombie:getSpeedMod())
+        local expectedSpeed = baseSpeed and multiplier
+            and baseSpeed * multiplier
+        applied = baseSpeed ~= nil
+            and multiplier ~= nil
+            and speedMod ~= nil
+            and math.abs(speedMod - expectedSpeed) <= SPRINTER_SPEED_TOLERANCE
     end
 
     RandomZeds.debug("Speed type check " .. tostring(speedType)
@@ -117,6 +169,8 @@ function RandomZeds.applySprinterSpeed(zombie, multiplier)
         baseSpeed = tonumber(zombie:getSpeedMod()) or 1.0
         if baseSpeed <= 0 then baseSpeed = 1.0 end
     end
+    modData[SPEED_TAG] = "sprinter"
+    modData[SPRINTER_MULTIPLIER_TAG] = multiplier
     modData[SPRINTER_BASE_SPEED_TAG] = baseSpeed
     zombie:setSpeedMod(baseSpeed * multiplier)
     zombie:setVariable("RandomZedsSprinterSpeedScale", 0.8 * multiplier)

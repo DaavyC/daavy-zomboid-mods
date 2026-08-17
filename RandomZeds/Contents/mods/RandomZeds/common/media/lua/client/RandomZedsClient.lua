@@ -15,8 +15,14 @@ local STATE_COMMAND = "ZombieState"
 local STATE_CONFIRM_MS = 2000
 local STATE_RETRY_MS = 250
 local STATE_PENDING_TIMEOUT_MS = 60000
+local SPRINTER_CHECK_INTERVAL_MS = 250
+local SPRINTER_CHECK_BATCH_SIZE = 16
+local SPRINTER_CHECK_COOLDOWN_MS = 1000
 local pendingStates = {}
 local latestRevisions = {}
+local sprinterCheckCursor = { index = 0 }
+local sprinterCheckCooldowns = setmetatable({}, { __mode = "k" })
+local nextSprinterCheckAt = 0
 
 local function applyServerState(zombie)
     if not zombie then return false end
@@ -30,6 +36,10 @@ local function applyServerState(zombie)
     if zombie:isDead() then
         RandomZeds.debug("Synchronized state skipped: zombie is dead")
         return true
+    end
+    if not zombie:getSquare() then
+        RandomZeds.debug("Synchronized state deferred: zombie is not loaded")
+        return false
     end
 
     local modData = zombie:getModData()
@@ -49,13 +59,28 @@ local function applyServerState(zombie)
     local alreadyApplied = zombie:getVariableString(CLIENT_PERIOD_VARIABLE) == period
         and zombie:getVariableString(CLIENT_REROLL_VARIABLE) == reroll
 
+    local multiplier = tonumber(modData[SPRINTER_MULTIPLIER_TAG]) or 1.0
+    if speedType == "sprinter" then
+        modData[SPRINTER_MULTIPLIER_TAG] = multiplier
+    end
     local nativeApplied = RandomZeds.isZombieSpeedTypeApplied(zombie, speedType)
+    local gettingUp = zombie:getCurrentActionContextStateName() == "getup"
     if alreadyApplied and nativeApplied then
         RandomZeds.debug("Synchronized state already applied")
         return true
     end
 
-    local gettingUp = zombie:getCurrentActionContextStateName() == "getup"
+    if alreadyApplied and speedType == "sprinter" and not nativeApplied
+            and not gettingUp then
+        if not RandomZeds.applyZombieSpeedType(zombie, speedType, multiplier) then
+            RandomZeds.debug("Sprinter correction failed: speed application failed")
+            return false
+        end
+        local corrected = RandomZeds.isZombieSpeedTypeApplied(zombie, speedType)
+        RandomZeds.debug("Sprinter correction result=" .. tostring(corrected))
+        return corrected
+    end
+
     if gettingUp then
         RandomZeds.debug("Synchronized state deferred: zombie is getting up")
         return false
@@ -67,7 +92,6 @@ local function applyServerState(zombie)
         return false
     end
 
-    local multiplier = tonumber(modData[SPRINTER_MULTIPLIER_TAG]) or 1.0
     local sight = tonumber(modData[SIGHT_TAG])
     local hearing = tonumber(modData[HEARING_TAG])
     if not RandomZeds.applyZombieNativeStats(zombie, sight, hearing) then
@@ -163,11 +187,57 @@ local function applyPendingState(zombie)
     return true
 end
 
+local function refreshLoadedZombieState(zombie, now)
+    if applyPendingState(zombie) then return end
+
+    local onlineID = tonumber(zombie and zombie:getOnlineID())
+    if onlineID and pendingStates[onlineID] then return end
+    if not zombie or RandomZeds.isExcluded(zombie)
+            or zombie:isDead() or not zombie:getSquare() then
+        return
+    end
+
+    local modData = zombie:getModData()
+    if not modData or not modData[PERIOD_TAG] or not modData[SPEED_TAG] then
+        return
+    end
+
+    if modData[SPEED_TAG] ~= "sprinter" then
+        local revision = tostring(tonumber(modData[REROLL_TAG]) or 0)
+        local stateApplied = zombie:getVariableString(CLIENT_PERIOD_VARIABLE)
+                == modData[PERIOD_TAG]
+            and zombie:getVariableString(CLIENT_REROLL_VARIABLE) == revision
+        if not stateApplied then
+            applyServerState(zombie)
+        end
+        return
+    end
+
+    if zombie:isCrawling()
+            or zombie:getCurrentActionContextStateName() == "getup" then
+        return
+    end
+
+    local cooldownAt = sprinterCheckCooldowns[zombie] or 0
+    if now < cooldownAt then return end
+    sprinterCheckCooldowns[zombie] = now + SPRINTER_CHECK_COOLDOWN_MS
+
+    if not RandomZeds.isZombieSpeedTypeApplied(zombie, "sprinter") then
+        applyServerState(zombie)
+    end
+end
+
 local function refreshPendingStates()
-    if table.isempty(pendingStates) then return end
-    RandomZeds.debug("Refreshing pending synchronized states")
-    RandomZeds.forEachLoadedZombie(applyPendingState)
     local now = getTimestampMs()
+    if now >= nextSprinterCheckAt then
+        nextSprinterCheckAt = now + SPRINTER_CHECK_INTERVAL_MS
+        RandomZeds.forEachLoadedZombieIncremental(
+            sprinterCheckCursor,
+            SPRINTER_CHECK_BATCH_SIZE,
+            function(zombie) refreshLoadedZombieState(zombie, now) end
+        )
+    end
+
     for onlineID, state in pairs(pendingStates) do
         if state.expiresAt and now >= state.expiresAt then
             pendingStates[onlineID] = nil
@@ -216,18 +286,8 @@ local function onServerCommand(module, command, packet)
     end
 end
 
-local function refreshZombie(zombie)
-    return applyPendingState(zombie) or applyServerState(zombie)
-end
-
-local function refreshLoadedZombies()
-    RandomZeds.debug("Refreshing loaded zombies")
-    RandomZeds.forEachLoadedZombie(refreshZombie)
-end
-
 RandomZeds.debug("Registering Random Zeds client events")
 Events.OnTick.Add(refreshPendingStates)
-Events.EveryOneMinute.Add(refreshLoadedZombies)
 Events.OnServerCommand.Add(onServerCommand)
 Events.OnConnected.Add(RandomZeds.forceVanillaPerceptionDefaults)
 Events.OnGameStart.Add(RandomZeds.forceVanillaPerceptionDefaults)

@@ -10,7 +10,7 @@ description=[*]Set probabilities for Crawlers, Shamblers, Fast Shamblers, and Sp
 description=[*]Use separate Day, Night, and Weather profiles.
 description=[*]Set seasonal Day and Night schedules.
 description=[*]Configure toughness, sight, and hearing for each speed type.
-description=[*]Set Sprinter base speed and variation.
+description=[*]Set a Sprinter base speed with separate decrease and increase limits.
 description=[*]Reroll loaded zombies when settings change.
 description=[*]Protect nearby Crawlers from speed-type changes.
 description=[/list]
@@ -18,7 +18,7 @@ description=
 description=[h2]Setup[/h2]
 description=Open the Sandbox Options and configure the Random Zeds Main, Day, Night, and Weather pages.
 description=
-description=[h2]For Mod Developers[/h2]
+description=[h2]For mod developers[/h2]
 description=Set [b]zombie:getModData().RandomZedsExcluded = true[/b] to exclude a zombie from all Random Zeds changes and synchronization.
 description=
 description=[h2]Support[/h2]

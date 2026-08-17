@@ -24,8 +24,11 @@ local PENDING_HEALTH_TAG = "RandomZedsPendingHealth"
 local PENDING_SIGHT_TAG = "RandomZedsPendingSight"
 local PENDING_HEARING_TAG = "RandomZedsPendingHearing"
 local PENDING_PERIOD_TAG = "RandomZedsPendingPeriod"
-local PROTECTION_RADIUS_SQUARED = 50 * 50
+local PROTECTED_CHUNK_RADIUS = 1
 local STATE_BATCH_SIZE = 16
+local SPRINTER_CHECK_INTERVAL_MS = 250
+local SPRINTER_CHECK_BATCH_SIZE = 16
+local SPRINTER_CHECK_COOLDOWN_MS = 1000
 local PENDING_STATE_TIMEOUT_MS = 60000
 local PENDING_STAND_UP_TIMEOUT_MS = 30000
 local MIN_SPRINTER_MULTIPLIER = 0.5
@@ -57,6 +60,12 @@ local queuedServerStates = {}
 local pendingServerStates = {}
 local pendingStandUps = {}
 local pendingZombieCreates = {}
+local protectedChunks = {}
+local protectedChunkCounts = {}
+local playerProtectedChunks = {}
+local sprinterCheckCursor = { index = 0 }
+local sprinterCheckCooldowns = setmetatable({}, { __mode = "k" })
+local nextSprinterCheckAt = 0
 
 local function readOption(optionPrefix, name)
     local fullName = optionPrefix .. "." .. name
@@ -116,7 +125,8 @@ local function readConfig(optionPrefix)
     }, SPEED_TYPES, "fastShambler")
 
     config.sprinterSpeedMultiplier = readOption(optionPrefix, "SprinterSpeedMultiplier")
-    config.sprinterSpeedVariation = readOption(optionPrefix, "SprinterSpeedVariation")
+    config.sprinterSpeedVariationDecrease = readOption(optionPrefix, "SprinterSpeedVariationDecrease")
+    config.sprinterSpeedVariationIncrease = readOption(optionPrefix, "SprinterSpeedVariationIncrease")
     config.health = {}
     config.sight = {}
     config.hearing = {}
@@ -149,7 +159,8 @@ local function getConfigSignature(config)
         values[#values + 1] = config[speedType]
     end
     values[#values + 1] = config.sprinterSpeedMultiplier
-    values[#values + 1] = config.sprinterSpeedVariation
+    values[#values + 1] = config.sprinterSpeedVariationDecrease
+    values[#values + 1] = config.sprinterSpeedVariationIncrease
 
     for _, speedType in ipairs(SPEED_TYPES) do
         local health = config.health[speedType]
@@ -313,14 +324,15 @@ end
 
 local function rollSprinterMultiplier(config, speedType)
     local multiplier = config.sprinterSpeedMultiplier
-    local variation = config.sprinterSpeedVariation
-    if speedType ~= "sprinter" or variation <= 0 then
+    local decrease = config.sprinterSpeedVariationDecrease
+    local increase = config.sprinterSpeedVariationIncrease
+    if speedType ~= "sprinter" or (decrease <= 0 and increase <= 0) then
         return multiplier
     end
 
     return ZombRandFloat(
-        math.max(MIN_SPRINTER_MULTIPLIER, multiplier - variation),
-        math.min(MAX_SPRINTER_MULTIPLIER, multiplier + variation)
+        math.max(MIN_SPRINTER_MULTIPLIER, multiplier - decrease),
+        math.min(MAX_SPRINTER_MULTIPLIER, multiplier + increase)
     )
 end
 
@@ -377,7 +389,7 @@ local function queueIdentifiedServerState(zombie, state, onlineID)
 end
 
 local function queueServerState(
-        zombie, period, speedType, multiplier, health, sight, hearing)
+        zombie, period, speedType, multiplier, health, sight, hearing, revision)
     if RandomZeds.isExcluded(zombie) then return end
 
     if not isServer() then
@@ -394,7 +406,7 @@ local function queueServerState(
         health = health,
         sight = sight,
         hearing = hearing,
-        reroll = rerollRevision,
+        reroll = tonumber(revision) or rerollRevision,
     }
 
     if not onlineID or onlineID < 0 then
@@ -456,16 +468,36 @@ local function applyZombieState(
     end
 
     pendingStandUps[zombie] = nil
+    multiplier = tonumber(multiplier) or 1.0
     local sameState = modData[PERIOD_TAG] == period
         and modData[SPEED_TAG] == speedType
         and tonumber(modData[SPRINTER_MULTIPLIER_TAG]) == tonumber(multiplier)
         and tonumber(modData[HEALTH_TAG]) == tonumber(health)
         and tonumber(modData[SIGHT_TAG]) == tonumber(sight)
         and tonumber(modData[HEARING_TAG]) == tonumber(hearing)
-    if sameState and RandomZeds.isZombieSpeedTypeApplied(zombie, speedType) then
-        zombie:setHealth(health)
-        clearPendingReroll(modData)
-        return
+    if sameState then
+        if RandomZeds.isZombieSpeedTypeApplied(zombie, speedType) then
+            zombie:setHealth(health)
+            clearPendingReroll(modData)
+            return
+        end
+        if speedType == "sprinter"
+                and RandomZeds.applyZombieSpeedType(zombie, speedType, multiplier)
+                and RandomZeds.isZombieSpeedTypeApplied(zombie, speedType) then
+            clearPendingReroll(modData)
+            queueServerState(
+                zombie,
+                period,
+                speedType,
+                multiplier,
+                health,
+                sight,
+                hearing,
+                modData[REROLL_TAG]
+            )
+            RandomZeds.debug("Corrected same-state sprinter speed")
+            return
+        end
     end
     if not RandomZeds.applyZombieNativeStats(zombie, sight, hearing) then
         RandomZeds.debug("Native stats application failed; continuing with speed and health")
@@ -582,21 +614,202 @@ local function applyPendingZombieState(zombie, modData)
     )
 end
 
-local function isPlayerNear(zombie, players)
-    if not players then return false end
+local function isSprinterReadyForCheck(zombie)
+    if not zombie or RandomZeds.isExcluded(zombie)
+            or zombie:isDead() or not zombie:getSquare()
+            or zombie:isCrawling()
+            or zombie:getCurrentActionContextStateName() == "getup" then
+        return false
+    end
 
-    for playerIndex = 0, players:size() - 1 do
-        local player = players:get(playerIndex)
-        if player and zombie:DistToSquared(player:getX(), player:getY())
-                <= PROTECTION_RADIUS_SQUARED then
-            return true
+    local modData = zombie:getModData()
+    return modData and modData[SPEED_TAG] == "sprinter"
+        and not modData[PENDING_SPEED_TAG]
+end
+
+local function correctSprinterState(zombie)
+    local modData = zombie:getModData()
+    local multiplier = tonumber(modData[SPRINTER_MULTIPLIER_TAG]) or 1.0
+    local period = modData[PERIOD_TAG] or lastEffectiveMode
+    if not period or period == DISABLED_PERIOD then return false end
+
+    if RandomZeds.isZombieSpeedTypeApplied(zombie, "sprinter") then
+        return false
+    end
+    modData[SPRINTER_MULTIPLIER_TAG] = multiplier
+    if not RandomZeds.applyZombieSpeedType(zombie, "sprinter", multiplier) then
+        return false
+    end
+    if not RandomZeds.isZombieSpeedTypeApplied(zombie, "sprinter") then
+        return false
+    end
+
+    queueServerState(
+        zombie,
+        period,
+        "sprinter",
+        multiplier,
+        tonumber(modData[HEALTH_TAG]) or zombie:getHealth(),
+        tonumber(modData[SIGHT_TAG]) or 2,
+        tonumber(modData[HEARING_TAG]) or 2,
+        modData[REROLL_TAG]
+    )
+    RandomZeds.debug("Corrected sprinter speed and queued synchronized state")
+    return true
+end
+
+local function verifyLoadedSprinter(zombie, now)
+    if not isSprinterReadyForCheck(zombie) then return false end
+
+    local cooldownAt = sprinterCheckCooldowns[zombie] or 0
+    if now < cooldownAt then return false end
+    sprinterCheckCooldowns[zombie] = now + SPRINTER_CHECK_COOLDOWN_MS
+
+    return not RandomZeds.isZombieSpeedTypeApplied(zombie, "sprinter")
+        and correctSprinterState(zombie)
+end
+
+local function verifySprinterStates()
+    if lastEffectiveMode == DISABLED_PERIOD then return end
+
+    local now = getTimestampMs()
+    if now < nextSprinterCheckAt then return end
+    nextSprinterCheckAt = now + SPRINTER_CHECK_INTERVAL_MS
+
+    local corrected = 0
+    RandomZeds.forEachLoadedZombieIncremental(
+        sprinterCheckCursor,
+        SPRINTER_CHECK_BATCH_SIZE,
+        function(zombie)
+            if verifyLoadedSprinter(zombie, now) then
+                corrected = corrected + 1
+            end
+        end
+    )
+
+    if corrected > 0 then
+        RandomZeds.debug("Incrementally corrected sprinter states count="
+            .. tostring(corrected))
+        flushServerStates()
+    end
+end
+
+local function getChunkCoordinates(square)
+    if not square then return nil, nil end
+
+    local chunk = square:getChunk()
+    local chunkX = chunk and tonumber(chunk.wx)
+    local chunkY = chunk and tonumber(chunk.wy)
+    if chunkX and chunkY then return chunkX, chunkY end
+
+    local chunkSize = getChunkSizeInSquares and tonumber(getChunkSizeInSquares()) or 8
+    if not chunkSize or chunkSize <= 0 then return nil, nil end
+    local squareX = tonumber(square:getX())
+    local squareY = tonumber(square:getY())
+    if not squareX or not squareY then return nil, nil end
+    return math.floor(squareX / chunkSize), math.floor(squareY / chunkSize)
+end
+
+local function makeChunkKey(chunkX, chunkY)
+    if not chunkX or not chunkY then return nil end
+    return tostring(chunkX) .. ":" .. tostring(chunkY)
+end
+
+local function getChunkKeyFromSquare(square)
+    local chunkX, chunkY = getChunkCoordinates(square)
+    return makeChunkKey(chunkX, chunkY)
+end
+
+local function changeProtectedChunkCount(chunkKey, delta)
+    if not chunkKey then return end
+
+    local count = (protectedChunkCounts[chunkKey] or 0) + delta
+    if count > 0 then
+        protectedChunkCounts[chunkKey] = count
+        protectedChunks[chunkKey] = true
+    else
+        protectedChunkCounts[chunkKey] = nil
+        protectedChunks[chunkKey] = nil
+    end
+end
+
+local function removePlayerProtectedChunks(player)
+    local coverage = playerProtectedChunks[player]
+    if not coverage then return end
+
+    for chunkKey in pairs(coverage.chunks) do
+        changeProtectedChunkCount(chunkKey, -1)
+    end
+    playerProtectedChunks[player] = nil
+end
+
+local function updatePlayerProtectedChunks(player)
+    if not player then return end
+
+    local square = player:getSquare()
+    local chunkX, chunkY = getChunkCoordinates(square)
+    local chunkKey = makeChunkKey(chunkX, chunkY)
+    local previous = playerProtectedChunks[player]
+    if previous and previous.centerKey == chunkKey then
+        return
+    end
+
+    removePlayerProtectedChunks(player)
+    if not chunkKey then return end
+
+    local coverage = { centerKey = chunkKey, chunks = {} }
+    for offsetX = -PROTECTED_CHUNK_RADIUS, PROTECTED_CHUNK_RADIUS do
+        for offsetY = -PROTECTED_CHUNK_RADIUS, PROTECTED_CHUNK_RADIUS do
+            local protectedKey = makeChunkKey(
+                chunkX + offsetX,
+                chunkY + offsetY
+            )
+            coverage.chunks[protectedKey] = true
+            changeProtectedChunkCount(protectedKey, 1)
+        end
+    end
+    playerProtectedChunks[player] = coverage
+end
+
+local function refreshProtectedChunks()
+    local players = getOnlinePlayers and getOnlinePlayers() or nil
+    local seenPlayers = {}
+    if players then
+        for playerIndex = 0, players:size() - 1 do
+            local player = players:get(playerIndex)
+            if player then
+                seenPlayers[player] = true
+                updatePlayerProtectedChunks(player)
+            end
         end
     end
 
-    return false
+    for player in pairs(playerProtectedChunks) do
+        if not seenPlayers[player] then
+            removePlayerProtectedChunks(player)
+        end
+    end
 end
 
-local function reconcileCell(cell, period, config, force, players)
+local function isCrawlerProtected(zombie)
+    local square = zombie and zombie:getSquare()
+    local chunkKey = getChunkKeyFromSquare(square)
+    return chunkKey ~= nil and protectedChunks[chunkKey] == true
+end
+
+local function onPlayerCreated(playerIndex, player)
+    local playerObject = player
+    if not playerObject and type(playerIndex) ~= "number" then
+        playerObject = playerIndex
+    end
+    updatePlayerProtectedChunks(playerObject)
+end
+
+local function onPlayerMove(player)
+    updatePlayerProtectedChunks(player)
+end
+
+local function reconcileCell(cell, period, config, force)
     local zombies = cell:getZombieList()
     if not zombies then
         RandomZeds.debug("Reconcile skipped: cell has no zombie list")
@@ -611,13 +824,14 @@ local function reconcileCell(cell, period, config, force, players)
         if zombie and not RandomZeds.isExcluded(zombie) then
             local modData = zombie:getModData()
             if not zombie:isDead() and (force or modData[PERIOD_TAG] ~= period) then
-                local playerNear = isPlayerNear(zombie, players)
-                if playerNear and (zombie:isCrawling() or modData[SPEED_TAG] == "crawler") then
+                local crawlerProtected = isCrawlerProtected(zombie)
+                if crawlerProtected and (zombie:isCrawling() or modData[SPEED_TAG] == "crawler") then
                     RandomZeds.debug("Protected crawler queued for reroll")
                     queueCrawlerReroll(zombie, config, period)
                 else
-                    RandomZeds.debug("Applying profile to zombie playerNear=" .. tostring(playerNear))
-                    applyZombieType(zombie, config, period, not playerNear)
+                    RandomZeds.debug("Applying profile to zombie crawlerProtected="
+                        .. tostring(crawlerProtected))
+                    applyZombieType(zombie, config, period, not crawlerProtected)
                 end
             end
         end
@@ -629,10 +843,9 @@ end
 local function reconcileZombies(period, config, force)
     RandomZeds.debug("Reconciling loaded zombies period=" .. tostring(period)
         .. " force=" .. tostring(force))
-    local players = getOnlinePlayers and getOnlinePlayers() or nil
     local cell = getCell()
     if cell then
-        reconcileCell(cell, period, config, force, players)
+        reconcileCell(cell, period, config, force)
     end
 end
 
@@ -642,19 +855,18 @@ local function applyPendingRerolls()
         return
     end
 
-    local players = getOnlinePlayers and getOnlinePlayers() or nil
     local pending = {}
     RandomZeds.forEachLoadedZombie(function(zombie)
         local modData = zombie and zombie:getModData()
         if zombie and not RandomZeds.isExcluded(zombie)
                 and not zombie:isDead() and modData and modData[PENDING_SPEED_TAG] then
             if modData[PENDING_PERIOD_TAG] ~= lastEffectiveMode then
-                if not isPlayerNear(zombie, players) then
+                if not isCrawlerProtected(zombie) then
                     clearPendingReroll(modData)
                     applyZombieType(zombie)
                     flushServerStates()
                 end
-            elseif not isPlayerNear(zombie, players) then
+            elseif not isCrawlerProtected(zombie) then
                 pending[#pending + 1] = zombie
             end
         end
@@ -735,11 +947,13 @@ local function processPendingStandUps()
 end
 
 local function applyPendingStandUps()
-    if lastEffectiveMode == DISABLED_PERIOD then return end
-
-    processPendingZombieCreates()
-    processPendingServerStates()
-    processPendingStandUps()
+    refreshProtectedChunks()
+    if lastEffectiveMode ~= DISABLED_PERIOD then
+        processPendingZombieCreates()
+        processPendingServerStates()
+        processPendingStandUps()
+    end
+    verifySprinterStates()
     flushServerStates()
 end
 
@@ -802,11 +1016,14 @@ local function initialize()
     RandomZeds.debug("Initializing Random Zeds server")
     initialized = true
     Events.OnZombieCreate.Add(onZombieCreate)
+    Events.OnCreatePlayer.Add(onPlayerCreated)
+    Events.OnPlayerMove.Add(onPlayerMove)
     Events.OnWeatherPeriodStart.Add(updateEffectiveState)
     Events.OnWeatherPeriodStage.Add(updateEffectiveState)
     Events.OnWeatherPeriodComplete.Add(onWeatherPeriodComplete)
     Events.OnTick.Add(applyPendingStandUps)
     Events.EveryOneMinute.Add(updateEffectiveState)
+    refreshProtectedChunks()
     updateEffectiveState()
     RandomZeds.debug("Random Zeds server initialized")
 end

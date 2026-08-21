@@ -24,10 +24,11 @@ local PENDING_HEALTH_TAG = "RandomZedsPendingHealth"
 local PENDING_SIGHT_TAG = "RandomZedsPendingSight"
 local PENDING_HEARING_TAG = "RandomZedsPendingHearing"
 local PENDING_PERIOD_TAG = "RandomZedsPendingPeriod"
-local PROTECTED_CHUNK_RADIUS = 1
+local PROTECTION_RADIUS = 50
+local PROTECTION_RADIUS_SQUARED = PROTECTION_RADIUS * PROTECTION_RADIUS
+local PROTECTED_CHUNK_RADIUS = math.ceil(PROTECTION_RADIUS / 8)
 local STATE_BATCH_SIZE = 16
-local SPRINTER_CHECK_INTERVAL_MS = 250
-local SPRINTER_CHECK_BATCH_SIZE = 16
+local SPRINTER_RECONCILE_BUDGET_MS = 4
 local SPRINTER_CHECK_COOLDOWN_MS = 1000
 local PENDING_STATE_TIMEOUT_MS = 60000
 local PENDING_STAND_UP_TIMEOUT_MS = 30000
@@ -58,6 +59,7 @@ local lastEffectiveSignature
 local rerollRevision = 0
 local queuedServerStates = {}
 local pendingServerStates = {}
+local pendingStateConfirmations = {}
 local pendingStandUps = {}
 local pendingZombieCreates = {}
 local protectedChunks = {}
@@ -65,7 +67,7 @@ local protectedChunkCounts = {}
 local playerProtectedChunks = {}
 local sprinterCheckCursor = { index = 0 }
 local sprinterCheckCooldowns = setmetatable({}, { __mode = "k" })
-local nextSprinterCheckAt = 0
+local serverTick = 0
 
 local function readOption(optionPrefix, name)
     local fullName = optionPrefix .. "." .. name
@@ -352,7 +354,9 @@ local function discardPendingRerolls()
     pendingStandUps = {}
     pendingZombieCreates = {}
     pendingServerStates = {}
+    pendingStateConfirmations = {}
     queuedServerStates = {}
+    serverTick = 0
     local discarded = 0
     RandomZeds.forEachLoadedZombie(function(zombie)
         if zombie and not RandomZeds.isExcluded(zombie)
@@ -409,7 +413,7 @@ local function queueServerState(
         reroll = tonumber(revision) or rerollRevision,
     }
 
-    if not onlineID or onlineID < 0 then
+    if not RandomZeds.isValidOnlineID(onlineID) then
         RandomZeds.debug("Deferring synchronized state without online id")
         state.expiresAt = getTimestampMs() + PENDING_STATE_TIMEOUT_MS
         pendingServerStates[zombie] = state
@@ -435,6 +439,62 @@ local function flushServerStates()
     end
 
     queuedServerStates = {}
+end
+
+local function deferStateConfirmation(
+        zombie, period, speedType, multiplier, health, sight, hearing, revision)
+    pendingStateConfirmations[zombie] = {
+        period = period,
+        speedType = speedType,
+        multiplier = multiplier,
+        health = health,
+        sight = sight,
+        hearing = hearing,
+        revision = revision,
+        readyTick = serverTick + 1,
+        expiresAt = getTimestampMs() + PENDING_STATE_TIMEOUT_MS,
+    }
+end
+
+local function processPendingStateConfirmations()
+    local now = getTimestampMs()
+    for zombie, state in pairs(pendingStateConfirmations) do
+        if RandomZeds.isExcluded(zombie) or zombie:isDead()
+                or state.expiresAt and now >= state.expiresAt then
+            pendingStateConfirmations[zombie] = nil
+        elseif serverTick >= state.readyTick and zombie:getSquare()
+                and zombie:getCurrentActionContextStateName() ~= "getup"
+                and not zombie:isCrawling() then
+            if RandomZeds.isZombieSpeedTypeApplied(
+                    zombie, state.speedType, false) then
+                if state.speedType == "sprinter" then
+                    RandomZeds.reconcileSprinterMotion(zombie)
+                end
+                pendingStateConfirmations[zombie] = nil
+                queueServerState(
+                    zombie,
+                    state.period,
+                    state.speedType,
+                    state.multiplier,
+                    state.health,
+                    state.sight,
+                    state.hearing,
+                    state.revision
+                )
+            end
+        end
+    end
+end
+
+local function applyNativeStateSequence(zombie, callback)
+    RandomZeds.beginStateApplication(zombie)
+    local ok, result = pcall(callback)
+    RandomZeds.finishStateApplication(zombie)
+    if not ok then
+        RandomZeds.debug("Native state sequence failed: " .. tostring(result))
+        return false
+    end
+    return result ~= false
 end
 
 local function applyZombieState(
@@ -476,16 +536,28 @@ local function applyZombieState(
         and tonumber(modData[SIGHT_TAG]) == tonumber(sight)
         and tonumber(modData[HEARING_TAG]) == tonumber(hearing)
     if sameState then
-        if RandomZeds.isZombieSpeedTypeApplied(zombie, speedType) then
+        local typeApplied = RandomZeds.isZombieSpeedTypeApplied(
+            zombie, speedType, false)
+        if typeApplied then
+            if speedType == "sprinter" then
+                RandomZeds.reconcileSprinterMotion(zombie)
+            end
             zombie:setHealth(health)
             clearPendingReroll(modData)
             return
         end
-        if speedType == "sprinter"
-                and RandomZeds.applyZombieSpeedType(zombie, speedType, multiplier)
-                and RandomZeds.isZombieSpeedTypeApplied(zombie, speedType) then
+        if speedType == "sprinter" then
+            local corrected = applyNativeStateSequence(zombie, function()
+                return RandomZeds.applyZombieSpeedType(zombie, speedType, multiplier)
+            end)
+            if not corrected
+                    or not RandomZeds.isZombieSpeedTypeApplied(
+                        zombie, speedType, false) then
+                return
+            end
+            RandomZeds.reconcileSprinterMotion(zombie)
             clearPendingReroll(modData)
-            queueServerState(
+            deferStateConfirmation(
                 zombie,
                 period,
                 speedType,
@@ -499,19 +571,32 @@ local function applyZombieState(
             return
         end
     end
-    if not RandomZeds.applyZombieNativeStats(zombie, sight, hearing) then
-        RandomZeds.debug("Native stats application failed; continuing with speed and health")
-    end
-
-    zombie:setVariable("RandomZedsSprinterSpeedScale", 0.8)
     sight = tonumber(sight) or 2
     hearing = tonumber(hearing) or 2
-
-    if not RandomZeds.applyZombieSpeedType(zombie, speedType, multiplier) then
+    local applied = applyNativeStateSequence(zombie, function()
+        if not RandomZeds.applyZombieNativeStats(zombie, sight, hearing) then
+            RandomZeds.debug("Native stats application failed; continuing with speed and health")
+        end
+        zombie:setVariable("RandomZedsSprinterSpeedScale", 0.8)
+        if not RandomZeds.applyZombieSpeedType(zombie, speedType, multiplier) then
+            return false
+        end
+        zombie:setHealth(health)
+        modData[PERIOD_TAG] = period
+        modData[SPEED_TAG] = speedType
+        modData[SPRINTER_MULTIPLIER_TAG] = multiplier
+        modData[HEALTH_TAG] = health
+        modData[SIGHT_TAG] = sight
+        modData[HEARING_TAG] = hearing
+        modData[REROLL_TAG] = rerollRevision
+        clearPendingReroll(modData)
+        return true
+    end)
+    if not applied then
         RandomZeds.debug("Zombie state failed: speed application failed")
         return
     end
-    if not RandomZeds.isZombieSpeedTypeApplied(zombie, speedType) then
+    if not RandomZeds.isZombieSpeedTypeApplied(zombie, speedType, false) then
         queuePendingState(
             zombie,
             period,
@@ -526,16 +611,7 @@ local function applyZombieState(
         RandomZeds.debug("Zombie state deferred: speed type not yet applied")
         return
     end
-    zombie:setHealth(health)
-    modData[PERIOD_TAG] = period
-    modData[SPEED_TAG] = speedType
-    modData[SPRINTER_MULTIPLIER_TAG] = multiplier
-    modData[HEALTH_TAG] = health
-    modData[SIGHT_TAG] = sight
-    modData[HEARING_TAG] = hearing
-    modData[REROLL_TAG] = rerollRevision
-    clearPendingReroll(modData)
-    queueServerState(
+    deferStateConfirmation(
         zombie,
         period,
         speedType,
@@ -616,6 +692,7 @@ end
 
 local function isSprinterReadyForCheck(zombie)
     if not zombie or RandomZeds.isExcluded(zombie)
+            or RandomZeds.isStateApplicationInProgress(zombie)
             or zombie:isDead() or not zombie:getSquare()
             or zombie:isCrawling()
             or zombie:getCurrentActionContextStateName() == "getup" then
@@ -633,18 +710,25 @@ local function correctSprinterState(zombie)
     local period = modData[PERIOD_TAG] or lastEffectiveMode
     if not period or period == DISABLED_PERIOD then return false end
 
-    if RandomZeds.isZombieSpeedTypeApplied(zombie, "sprinter") then
+    local typeApplied = RandomZeds.isZombieSpeedTypeApplied(
+        zombie, "sprinter", false)
+    if typeApplied then
+        RandomZeds.reconcileSprinterMotion(zombie)
         return false
     end
     modData[SPRINTER_MULTIPLIER_TAG] = multiplier
-    if not RandomZeds.applyZombieSpeedType(zombie, "sprinter", multiplier) then
+    local applied = applyNativeStateSequence(zombie, function()
+        return RandomZeds.applyZombieSpeedType(zombie, "sprinter", multiplier)
+    end)
+    if not applied then
         return false
     end
-    if not RandomZeds.isZombieSpeedTypeApplied(zombie, "sprinter") then
+    RandomZeds.reconcileSprinterMotion(zombie)
+    if not RandomZeds.isZombieSpeedTypeApplied(zombie, "sprinter", false) then
         return false
     end
 
-    queueServerState(
+    deferStateConfirmation(
         zombie,
         period,
         "sprinter",
@@ -665,21 +749,18 @@ local function verifyLoadedSprinter(zombie, now)
     if now < cooldownAt then return false end
     sprinterCheckCooldowns[zombie] = now + SPRINTER_CHECK_COOLDOWN_MS
 
-    return not RandomZeds.isZombieSpeedTypeApplied(zombie, "sprinter")
-        and correctSprinterState(zombie)
+    return correctSprinterState(zombie)
 end
 
 local function verifySprinterStates()
     if lastEffectiveMode == DISABLED_PERIOD then return end
 
     local now = getTimestampMs()
-    if now < nextSprinterCheckAt then return end
-    nextSprinterCheckAt = now + SPRINTER_CHECK_INTERVAL_MS
 
     local corrected = 0
-    RandomZeds.forEachLoadedZombieIncremental(
+    RandomZeds.forEachLoadedZombieWithinBudget(
         sprinterCheckCursor,
-        SPRINTER_CHECK_BATCH_SIZE,
+        SPRINTER_RECONCILE_BUDGET_MS,
         function(zombie)
             if verifyLoadedSprinter(zombie, now) then
                 corrected = corrected + 1
@@ -794,7 +875,18 @@ end
 local function isCrawlerProtected(zombie)
     local square = zombie and zombie:getSquare()
     local chunkKey = getChunkKeyFromSquare(square)
-    return chunkKey ~= nil and protectedChunks[chunkKey] == true
+    if chunkKey == nil or protectedChunks[chunkKey] ~= true then
+        return false
+    end
+
+    for player in pairs(playerProtectedChunks) do
+        if zombie:DistToSquared(player:getX(), player:getY())
+                <= PROTECTION_RADIUS_SQUARED then
+            return true
+        end
+    end
+
+    return false
 end
 
 local function onPlayerCreated(playerIndex, player)
@@ -908,7 +1000,7 @@ local function processPendingServerStates()
         if RandomZeds.isExcluded(zombie)
                 or zombie:isDead() or state.expiresAt and now >= state.expiresAt then
             pendingServerStates[zombie] = nil
-        elseif onlineID and onlineID >= 0 then
+        elseif RandomZeds.isValidOnlineID(onlineID) then
             pendingServerStates[zombie] = nil
             queueIdentifiedServerState(zombie, state, onlineID)
             processed = processed + 1
@@ -947,8 +1039,10 @@ local function processPendingStandUps()
 end
 
 local function applyPendingStandUps()
+    serverTick = serverTick + 1
     refreshProtectedChunks()
     if lastEffectiveMode ~= DISABLED_PERIOD then
+        processPendingStateConfirmations()
         processPendingZombieCreates()
         processPendingServerStates()
         processPendingStandUps()

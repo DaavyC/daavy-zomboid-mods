@@ -2,27 +2,27 @@ version=1
 id=3778522347
 title=Random Zeds
 description=[h1]Random Zeds [B42.20][/h1]
-description=Customize zombie speed, toughness, sight, and hearing with independent probability settings.
+description=Set the chance of each zombie speed type and customize speed, toughness, sight, and hearing for day, night, and weather.
 description=
 description=[h2]Features[/h2]
 description=[list]
-description=[*]Set probabilities for Crawlers, Shamblers, Fast Shamblers, and Sprinters.
+description=[*]Set chances for Crawlers, Shamblers, Fast Shamblers, and Sprinters.
 description=[*]Use separate Day, Night, and Weather profiles.
 description=[*]Set seasonal Day and Night schedules.
 description=[*]Configure toughness, sight, and hearing for each speed type.
 description=[*]Set a Sprinter base speed with separate decrease and increase limits.
 description=[*]Reroll loaded zombies when settings change.
-description=[*]Protect nearby Crawlers from speed-type changes.
+description=[*]Protect Crawlers within 50 squares of players from speed-type changes.
 description=[/list]
 description=
 description=[h2]Setup[/h2]
-description=Open the Sandbox Options and configure the Random Zeds Main, Day, Night, and Weather pages.
+description=Configure the Random Zeds Main, Day, Night, and Weather pages in Sandbox Options.
 description=
 description=[h2]For mod developers[/h2]
-description=Set [b]zombie:getModData().RandomZedsExcluded = true[/b] to exclude a zombie from all Random Zeds changes and synchronization.
+description=Set [b]zombie:getModData().RandomZedsExcluded = true[/b] to exclude a zombie from Random Zeds changes and synchronization.
 description=
 description=[h2]Support[/h2]
-description=[url=https://discord.gg/JU3YEgu5hk]Discord Server[/url] for help, feedback, and updates.
+description=Get help and share feedback on the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url].
 description=
 description=[url=https://ko-fi.com/C1I7209LY1][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
 description=

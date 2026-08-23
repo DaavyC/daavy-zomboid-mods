@@ -1,9 +1,0 @@
-name=Random Zeds
-id=RandomZeds
-author=Daavy
-icon=poster.png
-poster=poster.png
-description=Set the chance of each zombie speed type and customize speed, toughness, sight, and hearing for day, night, and weather. Set the Sprinter base speed with separate decrease and increase limits. The mod rerolls loaded zombies when settings change, protects Crawlers within 50 squares of players, and synchronizes multiplayer state.
-modversion=1.2.1
-pzversion=42
-versionMin=42.20

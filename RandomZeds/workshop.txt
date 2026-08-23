@@ -19,7 +19,7 @@ description=[h2]Setup[/h2]
 description=Configure the Random Zeds Main, Day, Night, and Weather pages in Sandbox Options.
 description=
 description=[h2]For mod developers[/h2]
-description=Set [b]zombie:getModData().RandomZedsExcluded = true[/b] to exclude a zombie from Random Zeds changes and synchronization.
+description=Set [b]zombie:getModData().RandomZedsExcluded = true[/b] to exclude a zombie from Random Zeds changes.
 description=
 description=[h2]Support[/h2]
 description=Get help and share feedback on the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url].
@@ -28,5 +28,5 @@ description=[url=https://ko-fi.com/C1I7209LY1][img]https://storage.ko-fi.com/cdn
 description=
 description=[h2]Credits[/h2]
 description=Inspired by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2818577583]Random Zombies[/url] by [b]belette[/b] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2888099799]Random Zombies - Day and Night[/url] by [b]Crius[/b].
-tags=Build 42;Balance;Multiplayer
+tags=Build 42;Balance;Multiplayer;Singleplayer
 visibility=public

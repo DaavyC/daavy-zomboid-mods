@@ -1,0 +1,1382 @@
+VERSION = 1,
+
+option RandomZedsWeather.Rain {
+    type = boolean,
+    default = false,
+    page = RandomZedsMain,
+    translation = RandomZedsWeather_Rain,
+}
+
+option RandomZedsWeather.Fog {
+    type = boolean,
+    default = false,
+    page = RandomZedsMain,
+    translation = RandomZedsWeather_Fog,
+}
+
+option RandomZedsWeather.Snow {
+    type = boolean,
+    default = false,
+    page = RandomZedsMain,
+    translation = RandomZedsWeather_Snow,
+}
+
+option RandomZedsMain.SpringDayStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 7,
+    page = RandomZedsMain,
+    translation = RandomZeds_SpringDayStart,
+}
+
+option RandomZedsMain.SpringNightStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 19,
+    page = RandomZedsMain,
+    translation = RandomZeds_SpringNightStart,
+}
+
+option RandomZedsMain.SummerDayStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 6,
+    page = RandomZedsMain,
+    translation = RandomZeds_SummerDayStart,
+}
+
+option RandomZedsMain.SummerNightStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 20,
+    page = RandomZedsMain,
+    translation = RandomZeds_SummerNightStart,
+}
+
+option RandomZedsMain.AutumnDayStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 7,
+    page = RandomZedsMain,
+    translation = RandomZeds_AutumnDayStart,
+}
+
+option RandomZedsMain.AutumnNightStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 19,
+    page = RandomZedsMain,
+    translation = RandomZeds_AutumnNightStart,
+}
+
+option RandomZedsMain.WinterDayStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 8,
+    page = RandomZedsMain,
+    translation = RandomZeds_WinterDayStart,
+}
+
+option RandomZedsMain.WinterNightStart {
+    type = integer,
+    min = -1,
+    max = 23,
+    default = 17,
+    page = RandomZedsMain,
+    translation = RandomZeds_WinterNightStart,
+}
+
+option RandomZedsMain.Debug {
+    type = boolean,
+    default = false,
+    page = RandomZedsMain,
+    translation = RandomZeds_Debug,
+}
+
+option RandomZeds.CrawlerChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerChance,
+}
+
+option RandomZeds.ShamblerChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerChance,
+}
+
+option RandomZeds.FastShamblerChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerChance,
+}
+
+option RandomZeds.SprinterChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterChance,
+}
+
+option RandomZeds.CrawlerFragileChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerFragileChance,
+}
+
+option RandomZeds.CrawlerNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerNormalChance,
+}
+
+option RandomZeds.CrawlerToughChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerToughChance,
+}
+
+
+
+
+
+
+
+
+
+
+
+option RandomZeds.CrawlerSightEagleChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerSightEagleChance,
+}
+
+option RandomZeds.CrawlerSightNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerSightNormalChance,
+}
+
+option RandomZeds.CrawlerSightPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerSightPoorChance,
+}
+
+option RandomZeds.CrawlerHearingPinpointChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerHearingPinpointChance,
+}
+
+option RandomZeds.CrawlerHearingNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerHearingNormalChance,
+}
+
+option RandomZeds.CrawlerHearingPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerHearingPoorChance,
+}
+
+option RandomZeds.ShamblerFragileChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerFragileChance,
+}
+
+option RandomZeds.ShamblerNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerNormalChance,
+}
+
+option RandomZeds.ShamblerToughChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerToughChance,
+}
+
+
+
+
+
+
+
+
+
+
+
+option RandomZeds.ShamblerSightEagleChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerSightEagleChance,
+}
+
+option RandomZeds.ShamblerSightNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerSightNormalChance,
+}
+
+option RandomZeds.ShamblerSightPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerSightPoorChance,
+}
+
+option RandomZeds.ShamblerHearingPinpointChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerHearingPinpointChance,
+}
+
+option RandomZeds.ShamblerHearingNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerHearingNormalChance,
+}
+
+option RandomZeds.ShamblerHearingPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerHearingPoorChance,
+}
+
+option RandomZeds.FastShamblerFragileChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerFragileChance,
+}
+
+option RandomZeds.FastShamblerNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerNormalChance,
+}
+
+option RandomZeds.FastShamblerToughChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerToughChance,
+}
+
+
+
+
+
+
+
+
+
+
+
+option RandomZeds.FastShamblerSightEagleChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerSightEagleChance,
+}
+
+option RandomZeds.FastShamblerSightNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerSightNormalChance,
+}
+
+option RandomZeds.FastShamblerSightPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerSightPoorChance,
+}
+
+option RandomZeds.FastShamblerHearingPinpointChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerHearingPinpointChance,
+}
+
+option RandomZeds.FastShamblerHearingNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerHearingNormalChance,
+}
+
+option RandomZeds.FastShamblerHearingPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerHearingPoorChance,
+}
+
+option RandomZeds.SprinterSpeedMultiplier {
+    type = double,
+    min = 0.5,
+    max = 1.5,
+    default = 1.0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterSpeedMultiplier,
+}
+
+option RandomZeds.SprinterSpeedVariationDecrease {
+    type = double,
+    min = 0.0,
+    max = 0.5,
+    default = 0.0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterSpeedVariationDecrease,
+}
+
+option RandomZeds.SprinterSpeedVariationIncrease {
+    type = double,
+    min = 0.0,
+    max = 0.5,
+    default = 0.0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterSpeedVariationIncrease,
+}
+
+option RandomZeds.SprinterFragileChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterFragileChance,
+}
+
+option RandomZeds.SprinterNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterNormalChance,
+}
+
+option RandomZeds.SprinterToughChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterToughChance,
+}
+
+
+
+
+
+
+
+
+
+
+
+option RandomZeds.SprinterSightEagleChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterSightEagleChance,
+}
+
+option RandomZeds.SprinterSightNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterSightNormalChance,
+}
+
+option RandomZeds.SprinterSightPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterSightPoorChance,
+}
+
+option RandomZeds.SprinterHearingPinpointChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterHearingPinpointChance,
+}
+
+option RandomZeds.SprinterHearingNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterHearingNormalChance,
+}
+
+option RandomZeds.SprinterHearingPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterHearingPoorChance,
+}
+
+option RandomZedsNight.CrawlerChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerChance,
+}
+
+option RandomZedsNight.ShamblerChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerChance,
+}
+
+option RandomZedsNight.FastShamblerChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerChance,
+}
+
+option RandomZedsNight.SprinterChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterChance,
+}
+
+option RandomZedsNight.CrawlerFragileChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerFragileChance,
+}
+
+option RandomZedsNight.CrawlerNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerNormalChance,
+}
+
+option RandomZedsNight.CrawlerToughChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerToughChance,
+}
+
+
+
+
+
+
+
+
+
+
+
+option RandomZedsNight.CrawlerSightEagleChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerSightEagleChance,
+}
+
+option RandomZedsNight.CrawlerSightNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerSightNormalChance,
+}
+
+option RandomZedsNight.CrawlerSightPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerSightPoorChance,
+}
+
+option RandomZedsNight.CrawlerHearingPinpointChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerHearingPinpointChance,
+}
+
+option RandomZedsNight.CrawlerHearingNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerHearingNormalChance,
+}
+
+option RandomZedsNight.CrawlerHearingPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerHearingPoorChance,
+}
+
+option RandomZedsNight.ShamblerFragileChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerFragileChance,
+}
+
+option RandomZedsNight.ShamblerNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerNormalChance,
+}
+
+option RandomZedsNight.ShamblerToughChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerToughChance,
+}
+
+
+
+
+
+
+
+
+
+
+
+option RandomZedsNight.ShamblerSightEagleChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerSightEagleChance,
+}
+
+option RandomZedsNight.ShamblerSightNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerSightNormalChance,
+}
+
+option RandomZedsNight.ShamblerSightPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerSightPoorChance,
+}
+
+option RandomZedsNight.ShamblerHearingPinpointChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerHearingPinpointChance,
+}
+
+option RandomZedsNight.ShamblerHearingNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerHearingNormalChance,
+}
+
+option RandomZedsNight.ShamblerHearingPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerHearingPoorChance,
+}
+
+option RandomZedsNight.FastShamblerFragileChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerFragileChance,
+}
+
+option RandomZedsNight.FastShamblerNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerNormalChance,
+}
+
+option RandomZedsNight.FastShamblerToughChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerToughChance,
+}
+
+
+
+
+
+
+
+
+
+
+
+option RandomZedsNight.FastShamblerSightEagleChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerSightEagleChance,
+}
+
+option RandomZedsNight.FastShamblerSightNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerSightNormalChance,
+}
+
+option RandomZedsNight.FastShamblerSightPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerSightPoorChance,
+}
+
+option RandomZedsNight.FastShamblerHearingPinpointChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerHearingPinpointChance,
+}
+
+option RandomZedsNight.FastShamblerHearingNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerHearingNormalChance,
+}
+
+option RandomZedsNight.FastShamblerHearingPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerHearingPoorChance,
+}
+
+option RandomZedsNight.SprinterSpeedMultiplier {
+    type = double,
+    min = 0.5,
+    max = 1.5,
+    default = 1.0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterSpeedMultiplier,
+}
+
+option RandomZedsNight.SprinterSpeedVariationDecrease {
+    type = double,
+    min = 0.0,
+    max = 0.5,
+    default = 0.0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterSpeedVariationDecrease,
+}
+
+option RandomZedsNight.SprinterSpeedVariationIncrease {
+    type = double,
+    min = 0.0,
+    max = 0.5,
+    default = 0.0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterSpeedVariationIncrease,
+}
+
+option RandomZedsNight.SprinterFragileChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterFragileChance,
+}
+
+option RandomZedsNight.SprinterNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterNormalChance,
+}
+
+option RandomZedsNight.SprinterToughChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterToughChance,
+}
+
+
+
+
+
+
+
+
+
+
+
+option RandomZedsNight.SprinterSightEagleChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterSightEagleChance,
+}
+
+option RandomZedsNight.SprinterSightNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterSightNormalChance,
+}
+
+option RandomZedsNight.SprinterSightPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterSightPoorChance,
+}
+
+option RandomZedsNight.SprinterHearingPinpointChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterHearingPinpointChance,
+}
+
+option RandomZedsNight.SprinterHearingNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterHearingNormalChance,
+}
+
+option RandomZedsNight.SprinterHearingPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterHearingPoorChance,
+}
+
+option RandomZedsWeather.CrawlerChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerChance,
+}
+
+option RandomZedsWeather.ShamblerChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerChance,
+}
+
+option RandomZedsWeather.FastShamblerChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerChance,
+}
+
+option RandomZedsWeather.SprinterChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterChance,
+}
+
+option RandomZedsWeather.CrawlerFragileChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerFragileChance,
+}
+
+option RandomZedsWeather.CrawlerNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerNormalChance,
+}
+
+option RandomZedsWeather.CrawlerToughChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerToughChance,
+}
+
+
+
+
+
+
+
+
+
+
+
+option RandomZedsWeather.CrawlerSightEagleChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerSightEagleChance,
+}
+
+option RandomZedsWeather.CrawlerSightNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerSightNormalChance,
+}
+
+option RandomZedsWeather.CrawlerSightPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerSightPoorChance,
+}
+
+option RandomZedsWeather.CrawlerHearingPinpointChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerHearingPinpointChance,
+}
+
+option RandomZedsWeather.CrawlerHearingNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerHearingNormalChance,
+}
+
+option RandomZedsWeather.CrawlerHearingPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerHearingPoorChance,
+}
+
+option RandomZedsWeather.ShamblerFragileChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerFragileChance,
+}
+
+option RandomZedsWeather.ShamblerNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerNormalChance,
+}
+
+option RandomZedsWeather.ShamblerToughChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerToughChance,
+}
+
+
+
+
+
+
+
+
+
+
+
+option RandomZedsWeather.ShamblerSightEagleChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerSightEagleChance,
+}
+
+option RandomZedsWeather.ShamblerSightNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerSightNormalChance,
+}
+
+option RandomZedsWeather.ShamblerSightPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerSightPoorChance,
+}
+
+option RandomZedsWeather.ShamblerHearingPinpointChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerHearingPinpointChance,
+}
+
+option RandomZedsWeather.ShamblerHearingNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerHearingNormalChance,
+}
+
+option RandomZedsWeather.ShamblerHearingPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerHearingPoorChance,
+}
+
+option RandomZedsWeather.FastShamblerFragileChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerFragileChance,
+}
+
+option RandomZedsWeather.FastShamblerNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerNormalChance,
+}
+
+option RandomZedsWeather.FastShamblerToughChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerToughChance,
+}
+
+
+
+
+
+
+
+
+
+
+
+option RandomZedsWeather.FastShamblerSightEagleChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerSightEagleChance,
+}
+
+option RandomZedsWeather.FastShamblerSightNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerSightNormalChance,
+}
+
+option RandomZedsWeather.FastShamblerSightPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerSightPoorChance,
+}
+
+option RandomZedsWeather.FastShamblerHearingPinpointChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerHearingPinpointChance,
+}
+
+option RandomZedsWeather.FastShamblerHearingNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerHearingNormalChance,
+}
+
+option RandomZedsWeather.FastShamblerHearingPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerHearingPoorChance,
+}
+
+option RandomZedsWeather.SprinterSpeedMultiplier {
+    type = double,
+    min = 0.5,
+    max = 1.5,
+    default = 1.0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterSpeedMultiplier,
+}
+
+option RandomZedsWeather.SprinterSpeedVariationDecrease {
+    type = double,
+    min = 0.0,
+    max = 0.5,
+    default = 0.0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterSpeedVariationDecrease,
+}
+
+option RandomZedsWeather.SprinterSpeedVariationIncrease {
+    type = double,
+    min = 0.0,
+    max = 0.5,
+    default = 0.0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterSpeedVariationIncrease,
+}
+
+option RandomZedsWeather.SprinterFragileChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterFragileChance,
+}
+
+option RandomZedsWeather.SprinterNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterNormalChance,
+}
+
+option RandomZedsWeather.SprinterToughChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterToughChance,
+}
+
+
+
+
+
+
+
+
+
+
+
+option RandomZedsWeather.SprinterSightEagleChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterSightEagleChance,
+}
+
+option RandomZedsWeather.SprinterSightNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterSightNormalChance,
+}
+
+option RandomZedsWeather.SprinterSightPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterSightPoorChance,
+}
+
+option RandomZedsWeather.SprinterHearingPinpointChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterHearingPinpointChance,
+}
+
+option RandomZedsWeather.SprinterHearingNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterHearingNormalChance,
+}
+
+option RandomZedsWeather.SprinterHearingPoorChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterHearingPoorChance,
+}

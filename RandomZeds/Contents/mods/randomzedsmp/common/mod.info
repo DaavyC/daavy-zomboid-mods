@@ -1,0 +1,10 @@
+name=Random Zeds [MP]
+id=RandomZedsMP
+incompatible=RandomZedsSolo
+author=Daavy
+icon=poster.png
+poster=poster.png
+description=Adds more variety to zombies by randomizing how they move and behave in multiplayer.
+modversion=1.2.2
+pzversion=42
+versionMin=42.20

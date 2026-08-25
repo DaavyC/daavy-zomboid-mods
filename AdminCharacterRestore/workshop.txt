@@ -1,0 +1,23 @@
+version=1
+id=3749890315
+title=Admin Character Restore
+description=[h1]Admin Character Restore [B42.20][/h1]
+description=Save progress from living multiplayer characters. After a death, an admin can apply the latest snapshot to a new living character. The mod never revives characters.
+description=
+description=[h2]Features[/h2]
+description=[list]
+description=[*]Capture hidden snapshots while a character is alive.
+description=[*]Create a restore entry from the latest snapshot after death.
+description=[*]Store up to five restore entries per player by default.
+description=[*]Restore skills, XP, traits, profession, zombie kills, survival time, and weight.
+description=[*]Add recipes, reading progress, books, and media without removing existing knowledge.
+description=[*]Leave inventory, clothing, position, and health unchanged.
+description=[*]Apply a restore only to an online, living character.
+description=[/list]
+description=
+description=[h2]Support[/h2]
+description=Get help and share feedback on the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url].
+description=
+description=[url=https://ko-fi.com/C1I7209LY][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
+tags=Build 42;Multiplayer
+visibility=public

@@ -1,0 +1,11 @@
+{
+    "Sandbox_AdminCharacterRestore": "Admin Character Restore",
+    "Sandbox_AdminCharacterRestore_SnapshotIntervalHours": "Snapshot interval (hours)",
+    "Sandbox_AdminCharacterRestore_SnapshotIntervalHours_tooltip": "How often the server captures a snapshot. Measured in in-game hours (1-24).",
+    "Sandbox_AdminCharacterRestore_MaxSnapshotsPerPlayer": "Maximum snapshots per player",
+    "Sandbox_AdminCharacterRestore_MaxSnapshotsPerPlayer_tooltip": "Maximum number of released snapshots stored for each player (1-5).",
+    "Sandbox_AdminCharacterRestore_Debug": "Debug",
+    "Sandbox_AdminCharacterRestore_Debug_tooltip": "Not recommended. Enables detailed Admin Character Restore logs.",
+    "Sandbox_Title_AdminCharacterRestore_Snapshots": "Snapshots",
+    "Sandbox_Title_AdminCharacterRestore_Advanced": "Advanced"
+}

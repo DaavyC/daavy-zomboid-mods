@@ -1,0 +1,26 @@
+VERSION = 1,
+
+option AdminCharacterRestore.SnapshotIntervalHours {
+    type = integer,
+    min = 1,
+    max = 24,
+    default = 2,
+    page = AdminCharacterRestore,
+    translation = AdminCharacterRestore_SnapshotIntervalHours,
+}
+
+option AdminCharacterRestore.MaxSnapshotsPerPlayer {
+    type = integer,
+    min = 1,
+    max = 5,
+    default = 5,
+    page = AdminCharacterRestore,
+    translation = AdminCharacterRestore_MaxSnapshotsPerPlayer,
+}
+
+option AdminCharacterRestore.Debug {
+    type = boolean,
+    default = false,
+    page = AdminCharacterRestore,
+    translation = AdminCharacterRestore_Debug,
+}

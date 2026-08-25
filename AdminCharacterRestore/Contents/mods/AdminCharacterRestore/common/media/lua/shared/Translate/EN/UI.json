@@ -1,0 +1,8 @@
+{
+    "UI_AdminCharacterRestore_Title": "Admin Character Restore",
+    "UI_AdminCharacterRestore_User": "User",
+    "UI_AdminCharacterRestore_Restore": "Restore the selected snapshot for this user",
+    "UI_AdminCharacterRestore_Close": "Close",
+    "UI_AdminCharacterRestore_Snapshot": "Day %1 | %2",
+    "UI_AdminCharacterRestore_AdminButton": "Admin Character Restore"
+}

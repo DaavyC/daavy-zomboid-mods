@@ -1,0 +1,9 @@
+name=Character Creation Customizer
+id=CharacterCreationCustomizer
+author=Daavy
+icon=poster.png
+poster=poster.png
+description=Customize character creation traits, professions, starting skill levels, profession rewards, and profession point displays through Sandbox Options.
+modversion=1.0.0
+pzversion=42
+versionMin=42.20

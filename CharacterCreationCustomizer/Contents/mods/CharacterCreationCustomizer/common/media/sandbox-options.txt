@@ -1,0 +1,2448 @@
+VERSION = 1,
+
+option CharacterCreationCustomizer.QOL_ShowSkillLevels_Enabled {
+    type = boolean,
+    default = true,
+    page = CharacterCreationCustomizer_QOL,
+    translation = CharacterCreationCustomizer_QOL_ShowSkillLevels,
+}
+
+option CharacterCreationCustomizer.QOL_ShowXPMultiplier_Enabled {
+    type = boolean,
+    default = true,
+    page = CharacterCreationCustomizer_QOL,
+    translation = CharacterCreationCustomizer_QOL_ShowXPMultiplier,
+}
+
+option CharacterCreationCustomizer.QOL_ShowProfessionPoints_Enabled {
+    type = boolean,
+    default = true,
+    page = CharacterCreationCustomizer_QOL,
+    translation = CharacterCreationCustomizer_QOL_ShowProfessionPoints,
+}
+
+option CharacterCreationCustomizer.Debug {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_QOL,
+    translation = CharacterCreationCustomizer_Debug,
+}
+
+option CharacterCreationCustomizer.NonBuyableTraits_axeman_Buyable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Buyable,
+}
+
+option CharacterCreationCustomizer.NonBuyableTraits_axeman_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 10,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.NonBuyableTraits_burglar_Buyable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Buyable,
+}
+
+option CharacterCreationCustomizer.NonBuyableTraits_burglar_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.NonBuyableTraits_desensitized_Buyable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Buyable,
+}
+
+option CharacterCreationCustomizer.NonBuyableTraits_desensitized_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 12,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.NonBuyableTraits_nightowl_Buyable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Buyable,
+}
+
+option CharacterCreationCustomizer.NonBuyableTraits_nightowl_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Standard_Aiming_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Axe_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Blacksmith_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Blunt_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Butchering_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Carving_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Cooking_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Doctor_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Electricity_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Farming_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Fishing_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Fitness_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_FlintKnapping_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Glassmaking_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Husbandry_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Lightfoot_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_LongBlade_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Maintenance_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Masonry_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Mechanics_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_MetalWelding_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Nimble_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_PlantScavenging_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Pottery_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Reloading_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_SmallBlade_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_SmallBlunt_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Sneak_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Spear_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Sprinting_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Strength_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Tailoring_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Tracking_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Trapping_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Standard_Woodwork_InitialLevel {
+    type = integer,
+    min = -10,
+    max = 10,
+    default = 0,
+    page = CharacterCreationCustomizer_Standard,
+    translation = CharacterCreationCustomizer_InitialLevel,
+}
+
+option CharacterCreationCustomizer.Traits_adrenalinejunkie_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_adrenalinejunkie_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_agoraphobic_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_agoraphobic_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_allthumbs_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_allthumbs_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_artisan_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_artisan_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_asthmatic_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_asthmatic_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -5,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_athletic_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_athletic_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 10,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_baseballplayer_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_baseballplayer_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_blacksmith_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_blacksmith_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_brave_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_brave_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_brawler_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_brawler_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_claustrophobic_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_claustrophobic_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_clumsy_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_clumsy_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_conspicuous_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_conspicuous_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_cook_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_cook_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 3,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_cowardly_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_cowardly_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_crafty_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_crafty_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 3,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_deaf_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_deaf_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -12,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_dextrous_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_dextrous_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_disorganized_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_disorganized_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_eagleeyed_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_eagleeyed_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_fasthealer_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_fasthealer_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_fastlearner_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_fastlearner_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_fastreader_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_fastreader_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_feeble_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_feeble_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_firstaid_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_firstaid_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_fishing_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_fishing_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_fit_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_fit_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_gardener_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_gardener_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_graceful_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_graceful_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_gymnast_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_gymnast_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 5,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_handy_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_handy_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 8,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_hardofhearing_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_hardofhearing_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_heartyappetite_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_heartyappetite_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_hemophobic_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_hemophobic_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -5,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_herbalist_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_herbalist_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_hiker_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_hiker_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 5,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_highthirst_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_highthirst_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_hunter_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_hunter_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 8,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_tinkerer_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_tinkerer_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_target_shooter_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_target_shooter_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 5,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_illiterate_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_illiterate_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -10,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_inconspicuous_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_inconspicuous_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_inventive_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_inventive_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_irongut_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_irongut_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_insomniac_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_insomniac_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_jogger_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_jogger_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_keenhearing_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_keenhearing_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_lighteater_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_lighteater_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_lowthirst_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_lowthirst_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_mason_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_mason_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_mechanics_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_mechanics_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 3,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_needslesssleep_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_needslesssleep_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 3,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_needsmoresleep_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_needsmoresleep_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_nightvision_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_nightvision_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 3,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_nutritionist_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_nutritionist_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_organized_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_organized_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_outdoorsman_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_outdoorsman_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_pacifist_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_pacifist_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -5,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_pronetoillness_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_pronetoillness_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_resilient_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_resilient_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_formerscout_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_formerscout_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_shortsighted_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_shortsighted_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_slowhealer_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_slowhealer_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -3,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_slowreader_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_slowreader_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_slowlearner_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_slowlearner_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_smoker_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_smoker_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -3,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_speeddemon_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_speeddemon_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 1,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_stout_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_stout_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_strong_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_strong_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 10,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_sundaydriver_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_sundaydriver_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -1,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_tailor_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_tailor_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 4,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_thickskinned_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_thickskinned_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 8,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_thinskinned_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_thinskinned_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -8,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_unfit_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_unfit_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -10,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_weak_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_weak_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -10,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_weakstomach_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_weakstomach_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_weightgain_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_weightgain_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_weightloss_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_weightloss_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_whittler_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_whittler_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_wildernessknowledge_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_wildernessknowledge_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 8,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Traits_outofshape_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Traits_outofshape_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -6,
+    page = CharacterCreationCustomizer_Traits,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_burglar_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_burglar_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -6,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_burglar_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_burglar_GrantedTraits {
+    type = string,
+    default = Burglar,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_burgerflipper_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_burgerflipper_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_burgerflipper_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_burgerflipper_GrantedTraits {
+    type = string,
+    default = Keen Cook,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_carpenter_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_carpenter_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_carpenter_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_carpenter_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_chef_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_chef_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_chef_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_chef_GrantedTraits {
+    type = string,
+    default = Keen Cook,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_constructionworker_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_constructionworker_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_constructionworker_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_constructionworker_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_doctor_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_doctor_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 0,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_doctor_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_doctor_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_electrician_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_electrician_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_electrician_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_electrician_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_engineer_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_engineer_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -4,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_engineer_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_engineer_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_farmer_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_farmer_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 0,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_farmer_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_farmer_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_fireofficer_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_fireofficer_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 0,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_fireofficer_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_fireofficer_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_fisherman_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_fisherman_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_fisherman_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_fisherman_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_fitnessinstructor_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_fitnessinstructor_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -6,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_fitnessinstructor_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_fitnessinstructor_GrantedTraits {
+    type = string,
+    default = Nutritionist,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_lumberjack_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_lumberjack_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 0,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_lumberjack_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_lumberjack_GrantedTraits {
+    type = string,
+    default = Ax-pert,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_mechanics_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_mechanics_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -4,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_mechanics_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_mechanics_GrantedTraits {
+    type = string,
+    default = Vehicle Knowledge,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_metalworker_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_metalworker_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -4,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_metalworker_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_metalworker_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_nurse_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_nurse_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 0,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_nurse_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_nurse_GrantedTraits {
+    type = string,
+    default = Night Owl,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_parkranger_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_parkranger_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -4,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_parkranger_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_parkranger_GrantedTraits {
+    type = string,
+    default = Herbalist,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_policeofficer_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_policeofficer_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -4,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_policeofficer_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_policeofficer_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_rancher_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_rancher_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 0,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_rancher_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_rancher_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_repairman_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_repairman_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_repairman_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_repairman_GrantedTraits {
+    type = string,
+    default = Inventive,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_securityguard_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_securityguard_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -2,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_securityguard_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_securityguard_GrantedTraits {
+    type = string,
+    default = Night Owl,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_smither_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_smither_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -6,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_smither_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_smither_GrantedTraits {
+    type = string,
+    default = Blacksmith Knowledge,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_tailor_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_tailor_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 2,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_tailor_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_tailor_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_unemployed_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = 8,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_unemployed_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_unemployed_GrantedTraits {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+
+option CharacterCreationCustomizer.Professions_veteran_Disable {
+    type = boolean,
+    default = false,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Disable,
+}
+
+option CharacterCreationCustomizer.Professions_veteran_Cost {
+    type = integer,
+    min = -100,
+    max = 100,
+    default = -8,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_Cost,
+}
+
+option CharacterCreationCustomizer.Professions_veteran_GrantedItems {
+    type = string,
+    default = ,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedItems,
+}
+
+option CharacterCreationCustomizer.Professions_veteran_GrantedTraits {
+    type = string,
+    default = Desensitized,
+    page = CharacterCreationCustomizer_Professions,
+    translation = CharacterCreationCustomizer_GrantedTraits,
+}
+

@@ -2,31 +2,26 @@ version=1
 id=3778522347
 title=Random Zeds
 description=[h1]Random Zeds [B42.20][/h1]
-description=Set the chance of each zombie speed type and customize speed, toughness, sight, and hearing for day, night, and weather.
+description=Randomize zombie speed types, toughness, sight, and hearing with separate settings for day, night, and weather.
 description=
 description=[h2]Features[/h2]
 description=[list]
-description=[*]Set chances for Crawlers, Shamblers, Fast Shamblers, and Sprinters.
-description=[*]Use separate Day, Night, and Weather profiles.
-description=[*]Set seasonal Day and Night schedules.
-description=[*]Configure toughness, sight, and hearing for each speed type.
-description=[*]Set a Sprinter base speed with separate decrease and increase limits.
-description=[*]Reroll loaded zombies when settings change.
-description=[*]Protect Crawlers within 50 squares of players from speed-type changes.
+description=[*]Choose how often Crawlers, Shamblers, Fast Shamblers, and Sprinters appear.
+description=[*]Use different settings for day, night, and weather.
+description=[*]Choose when day and night start in each season.
+description=[*]Set separate chances for the toughness, sight, and hearing of each speed type.
+description=[*]Set the base speed for Sprinters and how much it can vary.
+description=[*]Crawlers within 50 squares of players keep their current speed type.
 description=[/list]
 description=
-description=[h2]Setup[/h2]
-description=Configure the Random Zeds Main, Day, Night, and Weather pages in Sandbox Options.
-description=
-description=[h2]For mod developers[/h2]
-description=Set [b]zombie:getModData().RandomZedsExcluded = true[/b] to exclude a zombie from Random Zeds changes.
+description=[h2]Mod developers[/h2]
+description=Set [b]zombie:getModData().RandomZedsExcluded = true[/b] to keep a zombie unchanged by Random Zeds.
 description=
 description=[h2]Support[/h2]
-description=Get help and share feedback on the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url].
-description=
+description=Join the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url] for help and feedback.
 description=[url=https://ko-fi.com/C1I7209LY1][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
 description=
 description=[h2]Credits[/h2]
-description=Inspired by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2818577583]Random Zombies[/url] by [b]belette[/b] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2888099799]Random Zombies - Day and Night[/url] by [b]Crius[/b].
-tags=Build 42;Balance;Multiplayer;Singleplayer
+description=This mod was inspired by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2818577583]Random Zombies[/url] by [b]belette[/b] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2888099799]Random Zombies - Day and Night[/url] by [b]Crius[/b].
+tags=Build 42;Balance;Multiplayer
 visibility=public

@@ -2,26 +2,22 @@ version=1
 id=3791185259
 title=Character Creation Customizer
 description=[h1]Character Creation Customizer [B42.20][/h1]
-description=Customize character creation traits, professions, starting skill levels, and profession rewards through Sandbox Options.
+description=Change traits, professions, starting skill levels, and profession rewards in Sandbox Options.
 description=
 description=[h2]Features[/h2]
 description=[list]
-description=[*]Disable traits and professions from character creation.
-description=[*]Change trait and profession costs.
+description=[*]Enable or disable traits and professions during character creation.
+description=[*]Change the point cost of traits and professions.
 description=[*]Make profession-only traits available for purchase.
-description=[*]Replace the traits granted by professions.
+description=[*]Choose which traits each profession grants.
 description=[*]Add starting items to professions.
-description=[*]Add or remove starting levels for major skills.
-description=[*]Show profession point values next to each profession.
+description=[*]Adjust starting levels for major skills.
+description=[*]Show each profession's point value during character creation.
 description=[*]Show final skill levels and effective XP multipliers during character creation.
 description=[/list]
 description=
-description=[h2]Setup[/h2]
-description=Configure the Character Creation Customizer pages in Sandbox Options.
-description=
 description=[h2]Support[/h2]
-description=Get help and share feedback on the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url].
-description=
+description=Join the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url] for help and feedback.
 description=[url=https://ko-fi.com/C1I7209LY][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
 tags=Build 42;Balance;Multiplayer;Skills;Traits
 visibility=public

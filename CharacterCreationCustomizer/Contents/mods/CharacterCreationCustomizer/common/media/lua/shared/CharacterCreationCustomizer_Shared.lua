@@ -161,6 +161,8 @@ function M.optionValue(section, key)
             return option:getValue()
         end
     end
+
+    return nil
 end
 
 function M.rememberTraits()
@@ -219,8 +221,8 @@ end
 
 function M.traitEnabled(definition)
     if M.originalTrait(definition):isFree() then return true end
-    local value = M.traitValue(definition, "Disable")
-    return not isDisabled(value)
+    local disabledValue = M.traitValue(definition, "Disable")
+    return not isDisabled(disabledValue)
 end
 
 function M.traitBuyable(definition)
@@ -230,8 +232,8 @@ function M.traitBuyable(definition)
 end
 
 function M.traitCost(definition)
-    local value = M.traitValue(definition, "Cost")
-    return tonumber(value) or M.originalTrait(definition):getCost()
+    local configuredCost = M.traitValue(definition, "Cost")
+    return tonumber(configuredCost) or M.originalTrait(definition):getCost()
 end
 
 local function copyGrantedTraits(source, target)
@@ -239,6 +241,10 @@ local function copyGrantedTraits(source, target)
     for i = 0, grantedTraits:size() - 1 do
         target:addGrantedTrait(grantedTraits:get(i))
     end
+end
+
+local function preserveTranslatedText(translatedText)
+    return (tostring(translatedText):gsub("%%", "%%%%"))
 end
 
 local function copyGrantedRecipes(source, target)
@@ -269,21 +275,21 @@ local function copyTexture(source, target)
 end
 
 local function replaceTraitDefinition(definition, cost, isFree)
-    local replacement = CharacterTraitDefinition.new(
+    local replacement = CharacterTraitDefinition.addCharacterTraitDefinition(
         definition:getType(),
-        definition:getUIName(),
+        preserveTranslatedText(definition:getUIName()),
         cost,
-        definition:getDescription(),
+        nil,
         isFree,
         definition:isDisabledInMultiplayer()
     )
+    replacement:setDescription(definition:getDescription())
 
     copyGrantedTraits(definition, replacement)
     copyGrantedRecipes(definition, replacement)
     copyTraitRestrictions(definition, replacement)
     copyXpBoosts(definition, replacement)
     copyTexture(definition, replacement)
-    CharacterTraitDefinition.characterTraitDefinitions:put(definition:getType(), replacement)
 end
 
 function M.applyTraitCosts()
@@ -294,9 +300,9 @@ function M.applyTraitCosts()
             local current = CharacterTraitDefinition.getCharacterTraitDefinition(definition:getType())
             local isFree = definition:isFree() and not M.traitBuyable(definition)
             if current and (current:getCost() ~= cost or current:isFree() ~= isFree) then
-                local ok, message = pcall(replaceTraitDefinition, definition, cost, isFree)
-                if not ok then
-                    print("[Character Creation Customizer] " .. tostring(message))
+                local replacementSucceeded, replacementError = pcall(replaceTraitDefinition, definition, cost, isFree)
+                if not replacementSucceeded then
+                    print("[Character Creation Customizer] " .. tostring(replacementError))
                 end
             end
         end
@@ -425,13 +431,13 @@ function M.professionEnabled(profession)
     if profession and profession:getType() == CharacterProfession.UNEMPLOYED then
         return true
     end
-    local value = M.professionValue(profession, "Disable")
-    return not isDisabled(value)
+    local disabledValue = M.professionValue(profession, "Disable")
+    return not isDisabled(disabledValue)
 end
 
 function M.professionCost(profession)
-    local value = M.professionValue(profession, "Cost")
-    return tonumber(value) or profession:getCost()
+    local configuredCost = M.professionValue(profession, "Cost")
+    return tonumber(configuredCost) or profession:getCost()
 end
 
 function M.applyProfessionTraits()
@@ -443,11 +449,12 @@ function M.applyProfessionTraits()
         local texture = profession:getTexture()
         local replacement = CharacterProfessionDefinition.addCharacterProfessionDefinition(
             profession:getType(),
-            profession:getUIName(),
+            preserveTranslatedText(profession:getUIName()),
             profession:getCost(),
-            profession:getDescription(),
+            nil,
             texture and texture:getName()
         )
+        replacement:setDescription(profession:getDescription())
         for _, grant in ipairs(grants) do
             replacement:addGrantedTrait(grant)
         end
@@ -477,8 +484,8 @@ function M.getStandardPerks()
 end
 
 function M.standardValue(entry)
-    local value = tonumber(M.optionValue("Standard", entry.key .. "_InitialLevel")) or 0
-    return math.max(-10, math.min(10, value))
+    local initialLevel = tonumber(M.optionValue("Standard", entry.key .. "_InitialLevel")) or 0
+    return math.max(-10, math.min(10, initialLevel))
 end
 
 function M.fallbackProfession()
@@ -528,14 +535,14 @@ function M.apply()
     if signature == M.appliedSignature then return end
 
     M.debug("Applying configuration")
-    local ok, message = pcall(function()
+    local applicationSucceeded, applicationError = pcall(function()
         M.applyTraitCosts()
         M.applyProfessionTraits()
     end)
-    if ok then
+    if applicationSucceeded then
         M.appliedSignature = signature
         M.debug("Configuration applied")
     else
-        print("[Character Creation Customizer] " .. tostring(message))
+        print("[Character Creation Customizer] " .. tostring(applicationError))
     end
 end

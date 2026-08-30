@@ -93,9 +93,9 @@ local function composeTooltip(setting, description)
 end
 
 local function qolEnabled(key)
-    local value = M.optionValue("QOL", key)
-    if value == nil then return true end
-    return value == true or value == 1 or value == "true"
+    local qolValue = M.optionValue("QOL", key)
+    if qolValue == nil then return true end
+    return qolValue == true or qolValue == 1 or qolValue == "true"
 end
 
 local standardGroupRanks
@@ -255,8 +255,8 @@ CharacterCreationProfession.addTrait = function(self, trait)
     local key = traitKey(trait)
     if selectedTrait(self, key) then return end
 
-    local item = self.listboxTraitSelected:addItem(trait:getLabel(), trait, trait:getDescription())
-    item.manualTrait = true
+    local selectedItem = self.listboxTraitSelected:addItem(trait:getLabel(), trait, trait:getDescription())
+    selectedItem.manualTrait = true
     if not isFreeTrait(self, trait) then self.pointToSpend = self.pointToSpend - trait:getCost() end
     removeTraitFromList(self.listboxTrait, trait)
     removeTraitFromList(self.listboxBadTrait, trait)
@@ -282,13 +282,13 @@ CharacterCreationProfession.onSelectChosenTrait = function(self, item)
 end
 
 CharacterCreationProfession.removeTrait = function(self, index)
-    local item = self.listboxTraitSelected:getItem(index)
-    if not item or isFreeTrait(self, item.item) then return end
+    local selectedItem = self.listboxTraitSelected:getItem(index)
+    if not selectedItem or isFreeTrait(self, selectedItem.item) then return end
 
-    local trait = item.item
+    local trait = selectedItem.item
     local key = traitKey(trait)
     removeTraitFromList(self.listboxTraitSelected, trait)
-    if item.manualTrait ~= false then self.pointToSpend = self.pointToSpend + trait:getCost() end
+    if selectedItem.manualTrait ~= false then self.pointToSpend = self.pointToSpend + trait:getCost() end
 
     local source = "trait:" .. key
     for i = 0, trait:getGrantedTraits():size() - 1 do
@@ -332,9 +332,9 @@ CharacterCreationProfession.drawTraitMap = function(self, y, item, alt)
         getLabel = function() return original:getLabel() end,
         getRightLabel = function() return "" end,
     }
-    local result = nativeDrawTraitMap(self, y, item, alt)
+    local drawHeight = nativeDrawTraitMap(self, y, item, alt)
     item.item = original
-    return result
+    return drawHeight
 end
 
 local function professionPointDisplay(profession)
@@ -378,8 +378,8 @@ local function removeGrantedProfessionTraits(self, traitTypes, professionKey)
     for _, trait in ipairs(grantedTraitDefinitions(traitTypes)) do
         local key = traitKey(trait)
         setFreeSource(self, trait, source, false)
-        local _, item = selectedTrait(self, key)
-        if item and not isFreeTrait(self, trait) and item.manualTrait ~= true then
+        local _, selectedItem = selectedTrait(self, key)
+        if selectedItem and not isFreeTrait(self, trait) and selectedItem.manualTrait ~= true then
             removeTraitFromList(self.listboxTraitSelected, trait)
             self:doTestForMutuallyExclusiveTraits(trait, true)
         end
@@ -398,12 +398,12 @@ local function addGrantedProfessionTraits(self, profession, traitTypes)
 end
 
 local function refreshSelectedTraitDefinitions(self)
-    for _, item in ipairs(self.listboxTraitSelected.items or {}) do
-        local definition = CharacterTraitDefinition.getCharacterTraitDefinition(item.item:getType())
+    for _, selectedItem in ipairs(self.listboxTraitSelected.items or {}) do
+        local definition = CharacterTraitDefinition.getCharacterTraitDefinition(selectedItem.item:getType())
         if definition then
-            item.item = definition
-            item.text = definition:getLabel()
-            item.tooltip = definition:getDescription()
+            selectedItem.item = definition
+            selectedItem.text = definition:getLabel()
+            selectedItem.tooltip = definition:getDescription()
         end
     end
     refreshFreeTraitFlags(self)
@@ -411,9 +411,9 @@ end
 
 local function removeDisabledSelectedTraits(self)
     for index = #(self.listboxTraitSelected.items or {}), 1, -1 do
-        local item = self.listboxTraitSelected.items[index]
-        if not isFreeTrait(self, item.item)
-            and not M.traitEnabled(M.originalTrait(item.item)) then
+        local selectedItem = self.listboxTraitSelected.items[index]
+        if not isFreeTrait(self, selectedItem.item)
+            and not M.traitEnabled(M.originalTrait(selectedItem.item)) then
             self:removeTrait(index)
         end
     end
@@ -421,9 +421,9 @@ end
 
 local function removeUnbuyableSelectedTraits(self)
     for index = #(self.listboxTraitSelected.items or {}), 1, -1 do
-        local item = self.listboxTraitSelected.items[index]
-        local original = M.originalTrait(item.item)
-        if item.manualTrait and not isFreeTrait(self, item.item)
+        local selectedItem = self.listboxTraitSelected.items[index]
+        local original = M.originalTrait(selectedItem.item)
+        if selectedItem.manualTrait and not isFreeTrait(self, selectedItem.item)
             and original:isFree() and not M.traitBuyable(original) then
             self:removeTrait(index)
         end
@@ -590,16 +590,16 @@ end
 
 local function vanillaMultiplierValue(key, default)
     local values = SandboxVars and SandboxVars.MultiplierConfig
-    local value = values and values[key]
-    if value == nil and SandboxVars then
-        value = SandboxVars["MultiplierConfig." .. key]
+    local multiplierValue = values and values[key]
+    if multiplierValue == nil and SandboxVars then
+        multiplierValue = SandboxVars["MultiplierConfig." .. key]
     end
-    if value == nil and getSandboxOptions then
+    if multiplierValue == nil and getSandboxOptions then
         local options = getSandboxOptions()
         local option = options and options:getOptionByName("MultiplierConfig." .. key)
-        value = option and option:getValue()
+        multiplierValue = option and option:getValue()
     end
-    return value == nil and default or value
+    return multiplierValue == nil and default or multiplierValue
 end
 
 local function configXpMultiplier(perk)
@@ -667,10 +667,10 @@ local function traitColorFlags(perk, group, flags)
     }
 end
 
-local function itemXpMultiplier(item)
-    return pointXpMultiplier(item.perk, item.level)
-        * (item.additionalMultiplier or 1)
-        * configXpMultiplier(item.perk)
+local function itemXpMultiplier(skillData)
+    return pointXpMultiplier(skillData.perk, skillData.level)
+        * (skillData.additionalMultiplier or 1)
+        * configXpMultiplier(skillData.perk)
 end
 
 local function effectiveMultiplierColor(baseMultiplier, multiplier)
@@ -692,29 +692,29 @@ local function mixColor(color, tint, amount)
 end
 
 local function traitTintedColor(color, flags)
-    local result = color
+    local tintedColor = color
     local good = getCore():getGoodHighlitedColor()
     local bad = getCore():getBadHighlitedColor()
     if flags and flags.fastLearner then
-        result = mixColor(result, { r = good:getR(), g = good:getG(), b = good:getB() }, 0.2)
+        tintedColor = mixColor(tintedColor, { r = good:getR(), g = good:getG(), b = good:getB() }, 0.2)
     end
     if flags and flags.slowLearner then
-        result = mixColor(result, { r = bad:getR(), g = bad:getG(), b = bad:getB() }, 0.2)
+        tintedColor = mixColor(tintedColor, { r = bad:getR(), g = bad:getG(), b = bad:getB() }, 0.2)
     end
     if flags and flags.crafty then
-        result = mixColor(result, { r = good:getR(), g = good:getG(), b = good:getB() }, 0.2)
+        tintedColor = mixColor(tintedColor, { r = good:getR(), g = good:getG(), b = good:getB() }, 0.2)
     end
     if flags and flags.reluctantFighter then
-        result = mixColor(result, { r = bad:getR(), g = bad:getG(), b = bad:getB() }, 0.2)
+        tintedColor = mixColor(tintedColor, { r = bad:getR(), g = bad:getG(), b = bad:getB() }, 0.2)
     end
-    return result
+    return tintedColor
 end
 
-local function otherSkillsMultiplierColor(item)
-    local baseMultiplier = pointXpMultiplier(item.perk, item.level)
+local function otherSkillsMultiplierColor(skillData)
+    local baseMultiplier = pointXpMultiplier(skillData.perk, skillData.level)
     return traitTintedColor(
-        effectiveMultiplierColor(baseMultiplier, itemXpMultiplier(item)),
-        item.traitColorFlags)
+        effectiveMultiplierColor(baseMultiplier, itemXpMultiplier(skillData)),
+        skillData.traitColorFlags)
 end
 
 local function skillPercentage(level)
@@ -725,59 +725,60 @@ local function skillPercentage(level)
     return "+ 125%"
 end
 
-local function skillItem(perk, level, group, flags, extraLevel, reducedLevel, displayName)
-    local skillName = displayName or PerkFactory.getPerkName(perk)
-    local data = {
-        perk = perk,
-        level = level,
+local function skillItem(skillSpec)
+    local displayName = skillSpec.displayName
+    local skillName = displayName or PerkFactory.getPerkName(skillSpec.perk)
+    local skillData = {
+        perk = skillSpec.perk,
+        level = skillSpec.level,
         skillName = skillName,
-        skillLevel = clampXpLevel(level + (extraLevel or 0) - (reducedLevel or 0)),
+        skillLevel = clampXpLevel(skillSpec.level + (skillSpec.extraLevel or 0) - (skillSpec.reducedLevel or 0)),
         showSkillLevel = displayName == nil,
         otherSkills = displayName ~= nil,
-        additionalMultiplier = additionalXpMultiplier(perk, group, flags),
-        traitColorFlags = traitColorFlags(perk, group, flags),
-        percentage = skillPercentage(level),
-        extraLevel = extraLevel,
-        reducedLevel = reducedLevel,
+        additionalMultiplier = additionalXpMultiplier(skillSpec.perk, skillSpec.group, skillSpec.flags),
+        traitColorFlags = traitColorFlags(skillSpec.perk, skillSpec.group, skillSpec.flags),
+        percentage = skillPercentage(skillSpec.level),
+        extraLevel = skillSpec.extraLevel,
+        reducedLevel = skillSpec.reducedLevel,
     }
-    return skillName, data
+    return skillName, skillData
 end
 
-local function drawSkillLabel(self, y, item, dy, hc)
-    local data = item.item
-    if qolEnabled("ShowSkillLevels_Enabled") and data.showSkillLevel ~= false and data.skillName and data.skillLevel ~= nil then
-        self:drawText(data.skillName, UI_BORDER_SPACING, y + dy, hc:getR(), hc:getG(), hc:getB(), 1, UIFont.Small)
-        local x = UI_BORDER_SPACING + getTextManager():MeasureStringX(UIFont.Small, data.skillName)
+local function drawSkillLabel(self, y, skillEntry, dy, hc)
+    local skillData = skillEntry.item
+    if qolEnabled("ShowSkillLevels_Enabled") and skillData.showSkillLevel ~= false and skillData.skillName and skillData.skillLevel ~= nil then
+        self:drawText(skillData.skillName, UI_BORDER_SPACING, y + dy, hc:getR(), hc:getG(), hc:getB(), 1, UIFont.Small)
+        local x = UI_BORDER_SPACING + getTextManager():MeasureStringX(UIFont.Small, skillData.skillName)
         local separator = " - "
         x = x - 2
         self:drawText(separator, x, y + dy, SKILL_LEVEL_SEPARATOR_COLOR.r, SKILL_LEVEL_SEPARATOR_COLOR.g, SKILL_LEVEL_SEPARATOR_COLOR.b, 1, UIFont.Small)
         x = x + getTextManager():MeasureStringX(UIFont.Small, separator)
-        self:drawText(tostring(data.skillLevel), x, y + dy, SKILL_LEVEL_COLOR.r, SKILL_LEVEL_COLOR.g, SKILL_LEVEL_COLOR.b, 1, UIFont.Small)
+        self:drawText(tostring(skillData.skillLevel), x, y + dy, SKILL_LEVEL_COLOR.r, SKILL_LEVEL_COLOR.g, SKILL_LEVEL_COLOR.b, 1, UIFont.Small)
         return
     end
-    if data.otherSkillsVariant then
-        local color = data.otherSkillsVariant == "Weapons"
+    if skillData.otherSkillsVariant then
+        local color = skillData.otherSkillsVariant == "Weapons"
             and getCore():getBadHighlitedColor()
             or getCore():getGoodHighlitedColor()
-        self:drawText(item.text, UI_BORDER_SPACING, y + dy,
+        self:drawText(skillEntry.text, UI_BORDER_SPACING, y + dy,
             color:getR(), color:getG(), color:getB(), 1, UIFont.Small)
         return
     end
-    self:drawText(item.text, UI_BORDER_SPACING, y + dy, hc:getR(), hc:getG(), hc:getB(), 1, UIFont.Small)
+    self:drawText(skillEntry.text, UI_BORDER_SPACING, y + dy, hc:getR(), hc:getG(), hc:getB(), 1, UIFont.Small)
 end
 
 local nativeDrawXpBoostMap = CharacterCreationProfession.drawXpBoostMap
-CharacterCreationProfession.drawXpBoostMap = function(self, y, item, alt)
-    local data = item.item
-    local extraLevel = data and data.extraLevel
+CharacterCreationProfession.drawXpBoostMap = function(self, y, skillEntry, alt)
+    local skillData = skillEntry.item
+    local extraLevel = skillData and skillData.extraLevel
     local showMultiplier = qolEnabled("ShowXPMultiplier_Enabled")
     local showLevels = qolEnabled("ShowSkillLevels_Enabled")
-    if data == nil then
-        return nativeDrawXpBoostMap(self, y, item, alt)
+    if skillData == nil then
+        return nativeDrawXpBoostMap(self, y, skillEntry, alt)
     end
 
     if showMultiplier or showLevels then
-        local vanillaLevel = data.level or 0
+        local vanillaLevel = skillData.level or 0
         local dy = (self.itemheight - self.fontHgt) / 2
         local hc = getCore():getGoodHighlitedColor()
         local blitH = getTextManager():getFontHeight(UIFont.Small)
@@ -787,21 +788,21 @@ CharacterCreationProfession.drawXpBoostMap = function(self, y, item, alt)
         local blitXOffset = getTextManager():MeasureStringX(UIFont.Small, blitText) + SCROLL_BAR_WIDTH
         local greenBlitsX = self.width - (blitXOffset + 12 * (blitW + blitGap))
 
-        drawSkillLabel(self, y, item, dy, hc)
+        drawSkillLabel(self, y, skillEntry, dy, hc)
         for i = 1, vanillaLevel do
             self:drawTextureScaled(CharacterCreationProfession.instance.whiteBar,
                 greenBlitsX + (i * (blitW + blitGap)), y + dy, blitW, blitH, 1,
                 hc:getR(), hc:getG(), hc:getB())
         end
-        drawExtraBars(self, y, vanillaLevel, extraLevel or 0, data.reducedLevel or 0)
-        if showMultiplier or not isPhysicalPerk(data.perk) then
-            local text = data.percentage
+        drawExtraBars(self, y, vanillaLevel, extraLevel or 0, skillData.reducedLevel or 0)
+        if showMultiplier or not isPhysicalPerk(skillData.perk) then
+            local text = skillData.percentage
             local textR, textG, textB = hc:getR(), hc:getG(), hc:getB()
             if showMultiplier then
-                text = string.format("x%.2f", itemXpMultiplier(data))
-                local textColor = data.otherSkills
-                    and otherSkillsMultiplierColor(data)
-                    or traitTintedColor(xpMultiplierColor(data.level), data.traitColorFlags)
+                text = string.format("x%.2f", itemXpMultiplier(skillData))
+                local textColor = skillData.otherSkills
+                    and otherSkillsMultiplierColor(skillData)
+                    or traitTintedColor(xpMultiplierColor(skillData.level), skillData.traitColorFlags)
                 textR, textG, textB = textColor.r, textColor.g, textColor.b
             end
             local right = self.width - UI_BORDER_SPACING - SCROLL_BAR_WIDTH
@@ -813,20 +814,20 @@ CharacterCreationProfession.drawXpBoostMap = function(self, y, item, alt)
     end
 
     if extraLevel == nil then
-        return nativeDrawXpBoostMap(self, y, item, alt)
+        return nativeDrawXpBoostMap(self, y, skillEntry, alt)
     end
 
-    local vanillaLevel = data.level or 0
+    local vanillaLevel = skillData.level or 0
     if vanillaLevel > 0 then
-        local result = nativeDrawXpBoostMap(self, y, item, alt)
-        drawExtraBars(self, y, vanillaLevel, extraLevel, data.reducedLevel)
-        return result
+        local drawHeight = nativeDrawXpBoostMap(self, y, skillEntry, alt)
+        drawExtraBars(self, y, vanillaLevel, extraLevel, skillData.reducedLevel)
+        return drawHeight
     end
 
     local dy = (self.itemheight - self.fontHgt) / 2
     local hc = getCore():getGoodHighlitedColor()
-    drawSkillLabel(self, y, item, dy, hc)
-    drawExtraBars(self, y, 0, extraLevel, data.reducedLevel)
+    drawSkillLabel(self, y, skillEntry, dy, hc)
+    drawExtraBars(self, y, 0, extraLevel, skillData.reducedLevel)
     local yy = y + self.itemheight
     self:drawRectBorder(0, y, self:getWidth(), yy - y, 0.5, self.borderColor.r, self.borderColor.g, self.borderColor.b)
     return yy
@@ -859,8 +860,14 @@ local function configuredSkill(state, entry)
     local reducedLevel = math.max(0, math.min(-levelChange, level))
     if extraLevel == 0 and reducedLevel == 0 then return end
 
-    local label, skill = skillItem(
-        entry.perk, level, entry.group, state.traitFlags, extraLevel, reducedLevel)
+    local label, skill = skillItem({
+        perk = entry.perk,
+        level = level,
+        group = entry.group,
+        flags = state.traitFlags,
+        extraLevel = extraLevel,
+        reducedLevel = reducedLevel,
+    })
     if skill.skillLevel > 0 or (skill.skillLevel == 0 and qolEnabled("ShowSkillLevels_Enabled")) then
         return "added", label, skill
     end
@@ -887,7 +894,12 @@ local function addBaseSkills(state)
         if not state.addedPerks[entry.perk] then
             local level = clampXpLevel(state.xpLevels[entry.perk] or 0)
             if level > 0 then
-                local label, skill = skillItem(entry.perk, level, entry.group, state.traitFlags)
+                local label, skill = skillItem({
+                    perk = entry.perk,
+                    level = level,
+                    group = entry.group,
+                    flags = state.traitFlags,
+                })
                 state.listbox:addItem(label, skill)
             else
                 markOtherSkill(state.skillGroups, entry)
@@ -898,8 +910,13 @@ end
 
 local function addOtherSkillsGroup(state, entry, groupConfig)
     if not entry then return end
-    local label, skill = skillItem(
-        entry.perk, 0, groupConfig.group, groupConfig.flags, nil, nil, getText(groupConfig.textKey))
+    local label, skill = skillItem({
+        perk = entry.perk,
+        level = 0,
+        group = groupConfig.group,
+        flags = groupConfig.flags,
+        displayName = getText(groupConfig.textKey),
+    })
     skill.otherSkillsOrder = groupConfig.order
     skill.otherSkillsVariant = groupConfig.variant
     state.listbox:addItem(label, skill)
@@ -981,11 +998,11 @@ end
 local nativeCreate = CharacterCreationProfession.create
 CharacterCreationProfession.create = function(self)
     M.apply()
-    local result = nativeCreate(self)
+    local creationResult = nativeCreate(self)
     if self.listboxXpBoost then
         self:checkXPBoost()
     end
-    return result
+    return creationResult
 end
 
 local nativeSetVisible = CharacterCreationProfession.setVisible
@@ -1074,17 +1091,17 @@ CharacterCreationProfession.setVisible = function(self, visible, joypadData)
         end
         self.characterCreationCustomizerConfigSignature = customizerConfigSignature()
     end
-    local result = nativeSetVisible(self, visible, joypadData)
+    local visibilityResult = nativeSetVisible(self, visible, joypadData)
     if visible and self.listboxXpBoost then
         self:checkXPBoost()
     end
-    return result
+    return visibilityResult
 end
 
 local nativeUpdate = CharacterCreationProfession.update
 
 CharacterCreationProfession.update = function(self)
-    local result = nativeUpdate(self)
+    local updateResult = nativeUpdate(self)
     if self.listboxTrait and self.listboxBadTrait and self.listboxTraitSelected then
         local signature = customizerConfigSignature()
         if signature ~= self.characterCreationCustomizerConfigSignature then
@@ -1093,7 +1110,7 @@ CharacterCreationProfession.update = function(self)
             reconcileLiveConfiguration(self)
         end
     end
-    return result
+    return updateResult
 end
 
 local function settingParts(setting)
@@ -1517,12 +1534,12 @@ local function withValidCustomizerIntegers(owner, category, options, callback)
         end
     end
 
-    local ok, result = pcall(callback)
+    local callbackSucceeded, callbackResult = pcall(callback)
     for _, state in ipairs(restored) do
         state.control:setText(state.text)
     end
-    if not ok then error(result) end
-    return result
+    if not callbackSucceeded then error(callbackResult) end
+    return callbackResult
 end
 
 local function decorateSandboxPanel(panel, page)

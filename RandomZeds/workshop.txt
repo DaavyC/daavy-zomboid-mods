@@ -10,6 +10,7 @@ description=[*]Choose how often Crawlers, Shamblers, Fast Shamblers, and Sprinte
 description=[*]Use different settings for day, night, and weather.
 description=[*]Choose when day and night start in each season.
 description=[*]Set separate chances for the toughness, sight, and hearing of each speed type.
+description=[*]Use the optional [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3793697487]Synapse API[/url] to apply Cognition, Strength, and Memory profiles to zombies.
 description=[*]Set the base speed for Sprinters and how much it can vary.
 description=[*]Crawlers within 50 squares of players keep their current speed type.
 description=[/list]

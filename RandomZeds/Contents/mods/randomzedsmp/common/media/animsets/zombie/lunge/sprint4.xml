@@ -8,6 +8,11 @@
 		<m_Type>STRING</m_Type>
 		<m_Value>sprint4</m_Value>
 	</m_Conditions>
+	<m_Conditions x_name="6e64e7b3-a8dc-4b93-9f1e-bf21e2d3dd61">
+		<m_Name>RandomZedsSprinterSpeedRefresh</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>false</m_Value>
+	</m_Conditions>
 	<m_Events x_name="21e67587-3873-45ef-b1c9-23061e487580">
 		<m_EventName>Footstep</m_EventName>
 		<m_TimePc>0.15</m_TimePc>

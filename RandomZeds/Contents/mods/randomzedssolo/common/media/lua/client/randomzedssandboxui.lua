@@ -1,3 +1,5 @@
+local RandomZeds = require "randomzedsshared"
+
 local TITLE_BY_OPTION = {
     ["RandomZeds.Debug"] = "RandomZeds_Advanced",
     ["RandomZeds.Rain"] = "RandomZeds_Weather",
@@ -26,10 +28,24 @@ local SUBTITLE_BY_OPTION = {
     ["RandomZeds.SprinterSightEagleChance"] = "RandomZeds_Sight",
     ["RandomZeds.SprinterHearingPinpointChance"] = "RandomZeds_Hearing",
     ["RandomZeds.SprinterSpeedMultiplier"] = "RandomZeds_Speed",
+    ["RandomZeds.CrawlerCognitionNavigateDoorsChance"] = "RandomZeds_Cognition",
+    ["RandomZeds.CrawlerStrengthSuperhumanChance"] = "RandomZeds_Strength",
+    ["RandomZeds.CrawlerMemoryLongChance"] = "RandomZeds_Memory",
+    ["RandomZeds.ShamblerCognitionNavigateDoorsChance"] = "RandomZeds_Cognition",
+    ["RandomZeds.ShamblerStrengthSuperhumanChance"] = "RandomZeds_Strength",
+    ["RandomZeds.ShamblerMemoryLongChance"] = "RandomZeds_Memory",
+    ["RandomZeds.FastShamblerCognitionNavigateDoorsChance"] = "RandomZeds_Cognition",
+    ["RandomZeds.FastShamblerStrengthSuperhumanChance"] = "RandomZeds_Strength",
+    ["RandomZeds.FastShamblerMemoryLongChance"] = "RandomZeds_Memory",
+    ["RandomZeds.SprinterCognitionNavigateDoorsChance"] = "RandomZeds_Cognition",
+    ["RandomZeds.SprinterStrengthSuperhumanChance"] = "RandomZeds_Strength",
+    ["RandomZeds.SprinterMemoryLongChance"] = "RandomZeds_Memory",
 }
 
 local function normalizeSettingName(setting)
-    if not setting or not setting.name then return nil end
+    if not setting or not setting.name then
+        error("Sandbox setting name is required")
+    end
 
     return setting.name
         :gsub("^RandomZedsNight", "RandomZeds")
@@ -37,26 +53,36 @@ local function normalizeSettingName(setting)
         :gsub("^RandomZedsMain", "RandomZeds")
 end
 
+local function isSynapseFeatureOption(setting)
+    local normalizedName = normalizeSettingName(setting)
+    return normalizedName:match("^RandomZeds%.[^%.]+Cognition") ~= nil
+        or normalizedName:match("^RandomZeds%.[^%.]+Strength") ~= nil
+        or normalizedName:match("^RandomZeds%.[^%.]+Memory") ~= nil
+end
+
 local function getTitle(setting)
     local normalizedName = normalizeSettingName(setting)
-    return normalizedName and TITLE_BY_OPTION[normalizedName]
+    return TITLE_BY_OPTION[normalizedName]
 end
 
 local function getSubtitle(setting)
     local normalizedName = normalizeSettingName(setting)
-    return normalizedName and SUBTITLE_BY_OPTION[normalizedName]
+    return SUBTITLE_BY_OPTION[normalizedName]
 end
 
 local function getSoloName(setting)
     local normalizedName = normalizeSettingName(setting)
-    local suffix = normalizedName and normalizedName:match("^RandomZeds%.(.+)$")
-    return suffix and "RandomZeds_Solo_" .. suffix
+    local suffix = normalizedName:match("^RandomZeds%.(.+)$")
+    if not suffix then return nil end
+    return "RandomZeds_Solo_" .. suffix
 end
 
 local function isRandomZedsPage(page)
-    for _, setting in ipairs(page and page.settings or {}) do
+    if not page then error("Sandbox page is required") end
+    if not page.settings then return false end
+    for _, setting in ipairs(page.settings) do
         local normalizedName = normalizeSettingName(setting)
-        if normalizedName and normalizedName:match("^RandomZeds%.") then
+        if normalizedName:match("^RandomZeds%.") then
             return true
         end
     end
@@ -66,8 +92,11 @@ end
 local function copyPage(page)
     local pageCopy = copyTable(page)
     pageCopy.settings = {}
-    for index, setting in ipairs(page.settings or {}) do
-        pageCopy.settings[index] = copyTable(setting)
+    local synapseAvailable = RandomZeds.hasSynapseFeatureSupport()
+    for _, setting in ipairs(page.settings) do
+        if synapseAvailable or not isSynapseFeatureOption(setting) then
+            pageCopy.settings[#pageCopy.settings + 1] = copyTable(setting)
+        end
     end
     return pageCopy
 end
@@ -80,15 +109,11 @@ local function shiftPanelChildren(panel, y, amount)
     end
 end
 
-local function addCenteredLabel(panel, height, labelText, font, y)
-    local label = ISLabel:new(0, 0, height, labelText, 1, 1, 1, 1, font)
-    panel:addChild(label)
-    label:setX((panel:getWidth() - label:getWidth()) / 2)
-    label:setY(y)
-end
-
 local function addRandomZedsSubtitles(panel, page)
-    if not panel or not page or not page.settings or not panel.labels then return panel end
+    if not panel then error("Sandbox panel is required") end
+    if not page then error("Sandbox page is required") end
+    if not page.settings then return panel end
+    if not panel.labels then error("Sandbox panel labels are required") end
     if not isRandomZedsPage(page) or panel.randomZedsSubtitles then return panel end
 
     RandomZeds.debug("Adding Random Zeds subtitles to sandbox page")
@@ -100,10 +125,18 @@ local function addRandomZedsSubtitles(panel, page)
     for _, setting in ipairs(page.settings) do
         local subtitle = setting.randomZedsSubtitle
         local row = panel.labels[setting.name]
-        if subtitle and row then
+        if subtitle then
+            if not row then
+                error("Sandbox row is missing for " .. setting.name)
+            end
             local y = row:getY()
             shiftPanelChildren(panel, y, subtitleAmount)
-            addCenteredLabel(panel, subtitleHeight, getText("Sandbox_Title_" .. subtitle), UIFont.Medium, y)
+            local label = ISLabel:new(
+                0, 0, subtitleHeight, getText("Sandbox_Title_" .. subtitle),
+                1, 1, 1, 1, UIFont.Medium)
+            panel:addChild(label)
+            label:setX((panel:getWidth() - label:getWidth()) / 2)
+            label:setY(y)
             addedHeight = addedHeight + subtitleAmount
         end
     end
@@ -116,7 +149,8 @@ local function addRandomZedsSubtitles(panel, page)
 end
 
 local function createSandboxPage(page)
-    if not page or not page.settings then return page end
+    if not page then error("Sandbox page is required") end
+    if not page.settings then return page end
 
     for _, setting in ipairs(page.settings) do
         local title = getTitle(setting)
@@ -141,7 +175,8 @@ end
 local soloSandboxPanelHooked = false
 
 local function createSoloSandboxPage(page)
-    if not page or not page.settings then return page end
+    if not page then error("Sandbox page is required") end
+    if not page.settings then return page end
 
     for _, setting in ipairs(page.settings) do
         if getSoloName(setting) then

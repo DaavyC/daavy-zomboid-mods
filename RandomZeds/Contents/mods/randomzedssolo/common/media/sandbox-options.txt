@@ -227,6 +227,96 @@ option RandomZeds.CrawlerHearingPoorChance {
     translation = RandomZeds_CrawlerHearingPoorChance,
 }
 
+option RandomZeds.CrawlerCognitionNavigateDoorsChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerCognitionNavigateDoorsChance,
+}
+
+option RandomZeds.CrawlerCognitionNavigateChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerCognitionNavigateChance,
+}
+
+option RandomZeds.CrawlerCognitionBasicNavigationChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerCognitionBasicNavigationChance,
+}
+
+option RandomZeds.CrawlerStrengthSuperhumanChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerStrengthSuperhumanChance,
+}
+
+option RandomZeds.CrawlerStrengthNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerStrengthNormalChance,
+}
+
+option RandomZeds.CrawlerStrengthWeakChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerStrengthWeakChance,
+}
+
+option RandomZeds.CrawlerMemoryLongChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerMemoryLongChance,
+}
+
+option RandomZeds.CrawlerMemoryNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerMemoryNormalChance,
+}
+
+option RandomZeds.CrawlerMemoryShortChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerMemoryShortChance,
+}
+
+option RandomZeds.CrawlerMemoryNoneChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerMemoryNoneChance,
+}
+
 option RandomZeds.ShamblerFragileChance {
     type = double,
     min = 0,
@@ -318,6 +408,96 @@ option RandomZeds.ShamblerHearingPoorChance {
     translation = RandomZeds_ShamblerHearingPoorChance,
 }
 
+option RandomZeds.ShamblerCognitionNavigateDoorsChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerCognitionNavigateDoorsChance,
+}
+
+option RandomZeds.ShamblerCognitionNavigateChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerCognitionNavigateChance,
+}
+
+option RandomZeds.ShamblerCognitionBasicNavigationChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerCognitionBasicNavigationChance,
+}
+
+option RandomZeds.ShamblerStrengthSuperhumanChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerStrengthSuperhumanChance,
+}
+
+option RandomZeds.ShamblerStrengthNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerStrengthNormalChance,
+}
+
+option RandomZeds.ShamblerStrengthWeakChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerStrengthWeakChance,
+}
+
+option RandomZeds.ShamblerMemoryLongChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerMemoryLongChance,
+}
+
+option RandomZeds.ShamblerMemoryNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerMemoryNormalChance,
+}
+
+option RandomZeds.ShamblerMemoryShortChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerMemoryShortChance,
+}
+
+option RandomZeds.ShamblerMemoryNoneChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerMemoryNoneChance,
+}
+
 option RandomZeds.FastShamblerFragileChance {
     type = double,
     min = 0,
@@ -407,6 +587,96 @@ option RandomZeds.FastShamblerHearingPoorChance {
     default = 0,
     page = RandomZeds,
     translation = RandomZeds_FastShamblerHearingPoorChance,
+}
+
+option RandomZeds.FastShamblerCognitionNavigateDoorsChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerCognitionNavigateDoorsChance,
+}
+
+option RandomZeds.FastShamblerCognitionNavigateChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerCognitionNavigateChance,
+}
+
+option RandomZeds.FastShamblerCognitionBasicNavigationChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerCognitionBasicNavigationChance,
+}
+
+option RandomZeds.FastShamblerStrengthSuperhumanChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerStrengthSuperhumanChance,
+}
+
+option RandomZeds.FastShamblerStrengthNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerStrengthNormalChance,
+}
+
+option RandomZeds.FastShamblerStrengthWeakChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerStrengthWeakChance,
+}
+
+option RandomZeds.FastShamblerMemoryLongChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerMemoryLongChance,
+}
+
+option RandomZeds.FastShamblerMemoryNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerMemoryNormalChance,
+}
+
+option RandomZeds.FastShamblerMemoryShortChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerMemoryShortChance,
+}
+
+option RandomZeds.FastShamblerMemoryNoneChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_FastShamblerMemoryNoneChance,
 }
 
 option RandomZeds.SprinterSpeedMultiplier {
@@ -525,6 +795,96 @@ option RandomZeds.SprinterHearingPoorChance {
     default = 0,
     page = RandomZeds,
     translation = RandomZeds_SprinterHearingPoorChance,
+}
+
+option RandomZeds.SprinterCognitionNavigateDoorsChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterCognitionNavigateDoorsChance,
+}
+
+option RandomZeds.SprinterCognitionNavigateChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterCognitionNavigateChance,
+}
+
+option RandomZeds.SprinterCognitionBasicNavigationChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterCognitionBasicNavigationChance,
+}
+
+option RandomZeds.SprinterStrengthSuperhumanChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterStrengthSuperhumanChance,
+}
+
+option RandomZeds.SprinterStrengthNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterStrengthNormalChance,
+}
+
+option RandomZeds.SprinterStrengthWeakChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterStrengthWeakChance,
+}
+
+option RandomZeds.SprinterMemoryLongChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterMemoryLongChance,
+}
+
+option RandomZeds.SprinterMemoryNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterMemoryNormalChance,
+}
+
+option RandomZeds.SprinterMemoryShortChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterMemoryShortChance,
+}
+
+option RandomZeds.SprinterMemoryNoneChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterMemoryNoneChance,
 }
 
 option RandomZedsNight.CrawlerChance {
@@ -654,6 +1014,96 @@ option RandomZedsNight.CrawlerHearingPoorChance {
     translation = RandomZeds_CrawlerHearingPoorChance,
 }
 
+option RandomZedsNight.CrawlerCognitionNavigateDoorsChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerCognitionNavigateDoorsChance,
+}
+
+option RandomZedsNight.CrawlerCognitionNavigateChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerCognitionNavigateChance,
+}
+
+option RandomZedsNight.CrawlerCognitionBasicNavigationChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerCognitionBasicNavigationChance,
+}
+
+option RandomZedsNight.CrawlerStrengthSuperhumanChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerStrengthSuperhumanChance,
+}
+
+option RandomZedsNight.CrawlerStrengthNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerStrengthNormalChance,
+}
+
+option RandomZedsNight.CrawlerStrengthWeakChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerStrengthWeakChance,
+}
+
+option RandomZedsNight.CrawlerMemoryLongChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerMemoryLongChance,
+}
+
+option RandomZedsNight.CrawlerMemoryNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerMemoryNormalChance,
+}
+
+option RandomZedsNight.CrawlerMemoryShortChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerMemoryShortChance,
+}
+
+option RandomZedsNight.CrawlerMemoryNoneChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerMemoryNoneChance,
+}
+
 option RandomZedsNight.ShamblerFragileChance {
     type = double,
     min = 0,
@@ -745,6 +1195,96 @@ option RandomZedsNight.ShamblerHearingPoorChance {
     translation = RandomZeds_ShamblerHearingPoorChance,
 }
 
+option RandomZedsNight.ShamblerCognitionNavigateDoorsChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerCognitionNavigateDoorsChance,
+}
+
+option RandomZedsNight.ShamblerCognitionNavigateChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerCognitionNavigateChance,
+}
+
+option RandomZedsNight.ShamblerCognitionBasicNavigationChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerCognitionBasicNavigationChance,
+}
+
+option RandomZedsNight.ShamblerStrengthSuperhumanChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerStrengthSuperhumanChance,
+}
+
+option RandomZedsNight.ShamblerStrengthNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerStrengthNormalChance,
+}
+
+option RandomZedsNight.ShamblerStrengthWeakChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerStrengthWeakChance,
+}
+
+option RandomZedsNight.ShamblerMemoryLongChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerMemoryLongChance,
+}
+
+option RandomZedsNight.ShamblerMemoryNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerMemoryNormalChance,
+}
+
+option RandomZedsNight.ShamblerMemoryShortChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerMemoryShortChance,
+}
+
+option RandomZedsNight.ShamblerMemoryNoneChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerMemoryNoneChance,
+}
+
 option RandomZedsNight.FastShamblerFragileChance {
     type = double,
     min = 0,
@@ -834,6 +1374,96 @@ option RandomZedsNight.FastShamblerHearingPoorChance {
     default = 0,
     page = RandomZedsNight,
     translation = RandomZeds_FastShamblerHearingPoorChance,
+}
+
+option RandomZedsNight.FastShamblerCognitionNavigateDoorsChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerCognitionNavigateDoorsChance,
+}
+
+option RandomZedsNight.FastShamblerCognitionNavigateChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerCognitionNavigateChance,
+}
+
+option RandomZedsNight.FastShamblerCognitionBasicNavigationChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerCognitionBasicNavigationChance,
+}
+
+option RandomZedsNight.FastShamblerStrengthSuperhumanChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerStrengthSuperhumanChance,
+}
+
+option RandomZedsNight.FastShamblerStrengthNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerStrengthNormalChance,
+}
+
+option RandomZedsNight.FastShamblerStrengthWeakChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerStrengthWeakChance,
+}
+
+option RandomZedsNight.FastShamblerMemoryLongChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerMemoryLongChance,
+}
+
+option RandomZedsNight.FastShamblerMemoryNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerMemoryNormalChance,
+}
+
+option RandomZedsNight.FastShamblerMemoryShortChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerMemoryShortChance,
+}
+
+option RandomZedsNight.FastShamblerMemoryNoneChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_FastShamblerMemoryNoneChance,
 }
 
 option RandomZedsNight.SprinterSpeedMultiplier {
@@ -952,6 +1582,96 @@ option RandomZedsNight.SprinterHearingPoorChance {
     default = 0,
     page = RandomZedsNight,
     translation = RandomZeds_SprinterHearingPoorChance,
+}
+
+option RandomZedsNight.SprinterCognitionNavigateDoorsChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterCognitionNavigateDoorsChance,
+}
+
+option RandomZedsNight.SprinterCognitionNavigateChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterCognitionNavigateChance,
+}
+
+option RandomZedsNight.SprinterCognitionBasicNavigationChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterCognitionBasicNavigationChance,
+}
+
+option RandomZedsNight.SprinterStrengthSuperhumanChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterStrengthSuperhumanChance,
+}
+
+option RandomZedsNight.SprinterStrengthNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterStrengthNormalChance,
+}
+
+option RandomZedsNight.SprinterStrengthWeakChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterStrengthWeakChance,
+}
+
+option RandomZedsNight.SprinterMemoryLongChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterMemoryLongChance,
+}
+
+option RandomZedsNight.SprinterMemoryNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterMemoryNormalChance,
+}
+
+option RandomZedsNight.SprinterMemoryShortChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterMemoryShortChance,
+}
+
+option RandomZedsNight.SprinterMemoryNoneChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterMemoryNoneChance,
 }
 
 option RandomZedsWeather.CrawlerChance {
@@ -1081,6 +1801,96 @@ option RandomZedsWeather.CrawlerHearingPoorChance {
     translation = RandomZeds_CrawlerHearingPoorChance,
 }
 
+option RandomZedsWeather.CrawlerCognitionNavigateDoorsChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerCognitionNavigateDoorsChance,
+}
+
+option RandomZedsWeather.CrawlerCognitionNavigateChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerCognitionNavigateChance,
+}
+
+option RandomZedsWeather.CrawlerCognitionBasicNavigationChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerCognitionBasicNavigationChance,
+}
+
+option RandomZedsWeather.CrawlerStrengthSuperhumanChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerStrengthSuperhumanChance,
+}
+
+option RandomZedsWeather.CrawlerStrengthNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerStrengthNormalChance,
+}
+
+option RandomZedsWeather.CrawlerStrengthWeakChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerStrengthWeakChance,
+}
+
+option RandomZedsWeather.CrawlerMemoryLongChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerMemoryLongChance,
+}
+
+option RandomZedsWeather.CrawlerMemoryNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerMemoryNormalChance,
+}
+
+option RandomZedsWeather.CrawlerMemoryShortChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerMemoryShortChance,
+}
+
+option RandomZedsWeather.CrawlerMemoryNoneChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerMemoryNoneChance,
+}
+
 option RandomZedsWeather.ShamblerFragileChance {
     type = double,
     min = 0,
@@ -1172,6 +1982,96 @@ option RandomZedsWeather.ShamblerHearingPoorChance {
     translation = RandomZeds_ShamblerHearingPoorChance,
 }
 
+option RandomZedsWeather.ShamblerCognitionNavigateDoorsChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerCognitionNavigateDoorsChance,
+}
+
+option RandomZedsWeather.ShamblerCognitionNavigateChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerCognitionNavigateChance,
+}
+
+option RandomZedsWeather.ShamblerCognitionBasicNavigationChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerCognitionBasicNavigationChance,
+}
+
+option RandomZedsWeather.ShamblerStrengthSuperhumanChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerStrengthSuperhumanChance,
+}
+
+option RandomZedsWeather.ShamblerStrengthNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerStrengthNormalChance,
+}
+
+option RandomZedsWeather.ShamblerStrengthWeakChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerStrengthWeakChance,
+}
+
+option RandomZedsWeather.ShamblerMemoryLongChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerMemoryLongChance,
+}
+
+option RandomZedsWeather.ShamblerMemoryNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerMemoryNormalChance,
+}
+
+option RandomZedsWeather.ShamblerMemoryShortChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerMemoryShortChance,
+}
+
+option RandomZedsWeather.ShamblerMemoryNoneChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerMemoryNoneChance,
+}
+
 option RandomZedsWeather.FastShamblerFragileChance {
     type = double,
     min = 0,
@@ -1261,6 +2161,96 @@ option RandomZedsWeather.FastShamblerHearingPoorChance {
     default = 0,
     page = RandomZedsWeather,
     translation = RandomZeds_FastShamblerHearingPoorChance,
+}
+
+option RandomZedsWeather.FastShamblerCognitionNavigateDoorsChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerCognitionNavigateDoorsChance,
+}
+
+option RandomZedsWeather.FastShamblerCognitionNavigateChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerCognitionNavigateChance,
+}
+
+option RandomZedsWeather.FastShamblerCognitionBasicNavigationChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerCognitionBasicNavigationChance,
+}
+
+option RandomZedsWeather.FastShamblerStrengthSuperhumanChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerStrengthSuperhumanChance,
+}
+
+option RandomZedsWeather.FastShamblerStrengthNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerStrengthNormalChance,
+}
+
+option RandomZedsWeather.FastShamblerStrengthWeakChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerStrengthWeakChance,
+}
+
+option RandomZedsWeather.FastShamblerMemoryLongChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerMemoryLongChance,
+}
+
+option RandomZedsWeather.FastShamblerMemoryNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerMemoryNormalChance,
+}
+
+option RandomZedsWeather.FastShamblerMemoryShortChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerMemoryShortChance,
+}
+
+option RandomZedsWeather.FastShamblerMemoryNoneChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_FastShamblerMemoryNoneChance,
 }
 
 option RandomZedsWeather.SprinterSpeedMultiplier {
@@ -1379,4 +2369,94 @@ option RandomZedsWeather.SprinterHearingPoorChance {
     default = 0,
     page = RandomZedsWeather,
     translation = RandomZeds_SprinterHearingPoorChance,
+}
+
+option RandomZedsWeather.SprinterCognitionNavigateDoorsChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterCognitionNavigateDoorsChance,
+}
+
+option RandomZedsWeather.SprinterCognitionNavigateChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterCognitionNavigateChance,
+}
+
+option RandomZedsWeather.SprinterCognitionBasicNavigationChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterCognitionBasicNavigationChance,
+}
+
+option RandomZedsWeather.SprinterStrengthSuperhumanChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterStrengthSuperhumanChance,
+}
+
+option RandomZedsWeather.SprinterStrengthNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterStrengthNormalChance,
+}
+
+option RandomZedsWeather.SprinterStrengthWeakChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterStrengthWeakChance,
+}
+
+option RandomZedsWeather.SprinterMemoryLongChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterMemoryLongChance,
+}
+
+option RandomZedsWeather.SprinterMemoryNormalChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 100,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterMemoryNormalChance,
+}
+
+option RandomZedsWeather.SprinterMemoryShortChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterMemoryShortChance,
+}
+
+option RandomZedsWeather.SprinterMemoryNoneChance {
+    type = double,
+    min = 0,
+    max = 100,
+    default = 0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterMemoryNoneChance,
 }

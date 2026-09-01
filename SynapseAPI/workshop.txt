@@ -1,0 +1,40 @@
+version=1
+id=3793697487
+title=Synapse API
+description=[h1]Synapse API [B42.20][/h1]
+description=An optional Java library for my Project Zomboid mods.
+description=Install it when one of my mods requires it.
+description=
+description=[h2]Install ZombieBuddy[/h2]
+description=Subscribe to [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853]ZombieBuddy[/url] on Steam.
+description=On Windows, download [url=https://github.com/zed-0xff/ZombieBuddy/releases/download/windows_installer_4.2/ZombieBuddyInstaller_v4.2.exe]ZombieBuddy Installer[/url].
+description=ZombieBuddy loads unrestricted Java code. Install Java mods only from sources you trust.
+description=[list]
+description=[*]On Windows, run the installer and choose [b]Both[/b] to patch [b]Normal Launch[/b] and [b]Alternate Launch[/b].
+description=[*]On macOS and Linux, copy [b]ZombieBuddy.jar[/b] from the ZombieBuddy mod's [b]libs[/b] folder to the Project Zomboid game directory.
+description=[*]On macOS and Linux, add [b]-javaagent:ZombieBuddy.jar --[/b] to the Steam launch options.
+description=[/list]
+description=Enable ZombieBuddy in the Project Zomboid mod manager on each game client.
+description=On a game client, approve each Java mod JAR when ZombieBuddy asks.
+description=
+description=[h2]Singleplayer[/h2]
+description=Start Project Zomboid from Steam.
+description=
+description=[h2]Host mode[/h2]
+description=On Windows, start [b]ProjectZomboid64.bat[/b] from the Project Zomboid game directory.
+description=On macOS and Linux, use the Singleplayer launch method.
+description=
+description=[h2]Dedicated server[/h2]
+description=Use [b]policy=allow-all[/b] on the dedicated server to approve Java mods without prompts.
+description=[list]
+description=[*]On Windows, copy [b]ZombieBuddy.jar[/b] and [b]zbNative.dll[/b] from the ZombieBuddy mod's [b]libs[/b] folder to the server's Project Zomboid directory.
+description=[*]On Windows, set [b]SET _JAVA_OPTIONS=-agentlib:zbNative=policy=allow-all[/b] in [b]ProjectZomboidServer.bat[/b].
+description=[*]On macOS and Linux, copy [b]ZombieBuddy.jar[/b] from the ZombieBuddy mod's [b]libs[/b] folder to the server's Project Zomboid directory.
+description=[*]On macOS and Linux, add [b]-javaagent:ZombieBuddy.jar=policy=allow-all --[/b] to the server Java options.
+description=[*]Enable ZombieBuddy in the server's mod list.
+description=[*]Install and configure ZombieBuddy on each client that loads Java mods.
+description=[/list]
+description=On Windows, start [b]ProjectZomboidServer.bat[/b].
+description=On macOS and Linux, start the dedicated server with its configured Java command.
+tags=Build 42;Framework
+visibility=public

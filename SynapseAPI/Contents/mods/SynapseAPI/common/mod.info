@@ -1,0 +1,12 @@
+name=Synapse API
+id=SynapseAPI
+author=Daavy
+icon=poster.png
+poster=poster.png
+description=Optional Java support library for Daavy's Project Zomboid mods.
+modversion=1.0.0
+pzversion=42
+versionMin=42.20
+require=\ZombieBuddy
+javaJarFile=media/java/SynapseAPI.jar
+javaPkgName=com.daavy.synapse

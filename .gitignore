@@ -1,12 +1,10 @@
 # Codex
-## Markdown Files
 AGENTS.md
-TOOLS.md
-## Folders
-data
-## Tools
 .tools
 .emmyrc.json
+
+# IDE
+.zed
 
 # Ignore (mods that I don't want to commit but are in my local mod folder)
 ModTemplate

@@ -359,12 +359,12 @@ local function getCurrentPeriod()
         dayStart >= 0, nightStart >= 0)
     if exclusivePeriod then return exclusivePeriod end
 
-    if dayStart >= nightStart then
-        error("Day start must be before night start for " .. seasonName)
+    if dayStart == nightStart then
+        error("Day and night starts must differ for " .. seasonName)
     end
 
     local timeOfDay = getGameTime():getTimeOfDay()
-    local isDay = timeOfDay >= dayStart and timeOfDay < nightStart
+    local isDay = RandomZeds.isDayPeriod(timeOfDay, dayStart, nightStart)
     local period
     if isDay then
         period = DAY_PERIOD

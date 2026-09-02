@@ -108,6 +108,13 @@ function RandomZeds.requireProfilePeriod(period)
     return period
 end
 
+function RandomZeds.isDayPeriod(timeOfDay, dayStart, nightStart)
+    if dayStart < nightStart then
+        return timeOfDay >= dayStart and timeOfDay < nightStart
+    end
+    return timeOfDay >= dayStart or timeOfDay < nightStart
+end
+
 function RandomZeds.isExcluded(zombie)
     if not zombie then error("Zombie is required") end
     local modData = zombie:getModData()

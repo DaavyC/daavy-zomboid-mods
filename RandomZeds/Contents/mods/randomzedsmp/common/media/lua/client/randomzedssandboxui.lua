@@ -43,9 +43,7 @@ local SUBTITLE_BY_OPTION = {
 }
 
 local function normalizeSettingName(setting)
-    if not setting or not setting.name then
-        error("Sandbox setting name is required")
-    end
+    if not setting or type(setting.name) ~= "string" then return nil end
 
     return setting.name
         :gsub("^RandomZedsNight", "RandomZeds")
@@ -55,6 +53,7 @@ end
 
 local function isSynapseFeatureOption(setting)
     local normalizedName = normalizeSettingName(setting)
+    if not normalizedName then return false end
     return normalizedName:match("^RandomZeds%.[^%.]+Cognition") ~= nil
         or normalizedName:match("^RandomZeds%.[^%.]+Strength") ~= nil
         or normalizedName:match("^RandomZeds%.[^%.]+Memory") ~= nil
@@ -62,20 +61,18 @@ end
 
 local function getTitle(setting)
     local normalizedName = normalizeSettingName(setting)
-    return TITLE_BY_OPTION[normalizedName]
+    return normalizedName and TITLE_BY_OPTION[normalizedName]
 end
 
 local function getSubtitle(setting)
     local normalizedName = normalizeSettingName(setting)
-    return SUBTITLE_BY_OPTION[normalizedName]
+    return normalizedName and SUBTITLE_BY_OPTION[normalizedName]
 end
 
 local function isRandomZedsPage(page)
-    if not page then error("Sandbox page is required") end
-    if not page.settings then return false end
-    for _, setting in ipairs(page.settings) do
+    for _, setting in ipairs(page and page.settings or {}) do
         local normalizedName = normalizeSettingName(setting)
-        if normalizedName:match("^RandomZeds%.") then
+        if normalizedName and normalizedName:match("^RandomZeds%.") then
             return true
         end
     end
@@ -84,21 +81,37 @@ end
 
 local function getAdminName(setting)
     local normalizedName = normalizeSettingName(setting)
-    local suffix = normalizedName:match("^RandomZeds%.(.+)$")
-    if not suffix then return nil end
-    return "RandomZeds_Admin_" .. suffix
+    local suffix = normalizedName and normalizedName:match("^RandomZeds%.(.+)$")
+    return suffix and "RandomZeds_Admin_" .. suffix
 end
 
 local function copyPage(page)
     local pageCopy = copyTable(page)
     pageCopy.settings = {}
     local synapseAvailable = RandomZeds.hasSynapseFeatureSupport()
-    for _, setting in ipairs(page.settings) do
+    for _, setting in ipairs(page.settings or {}) do
         if synapseAvailable or not isSynapseFeatureOption(setting) then
             pageCopy.settings[#pageCopy.settings + 1] = copyTable(setting)
         end
     end
     return pageCopy
+end
+
+local function customizePage(page, needsCustomization, customizeSetting, message)
+    if not page or not page.settings then return page end
+
+    for _, setting in ipairs(page.settings) do
+        if needsCustomization(setting) then
+            local customPage = copyPage(page)
+            RandomZeds.debug(message)
+            for _, customSetting in ipairs(customPage.settings) do
+                customizeSetting(customSetting)
+            end
+            return customPage
+        end
+    end
+
+    return page
 end
 
 local function shiftPanelChildren(panel, y, amount)
@@ -110,10 +123,7 @@ local function shiftPanelChildren(panel, y, amount)
 end
 
 local function addRandomZedsSubtitles(panel, page)
-    if not panel then error("Sandbox panel is required") end
-    if not page then error("Sandbox page is required") end
-    if not page.settings then return panel end
-    if not panel.labels then error("Sandbox panel labels are required") end
+    if not panel or not page or not page.settings or not panel.labels then return panel end
     if not isRandomZedsPage(page) or panel.randomZedsSubtitles then return panel end
 
     RandomZeds.debug("Adding Random Zeds subtitles to sandbox page")
@@ -123,12 +133,9 @@ local function addRandomZedsSubtitles(panel, page)
     local subtitleAmount = subtitleHeight + subtitleSpacing
     local addedHeight = 0
     for _, setting in ipairs(page.settings) do
-        local subtitle = setting.randomZedsSubtitle
-        local row = panel.labels[setting.name]
-        if subtitle then
-            if not row then
-                error("Sandbox row is missing for " .. setting.name)
-            end
+        local subtitle = setting and setting.randomZedsSubtitle
+        local row = setting and panel.labels[setting.name]
+        if subtitle and row then
             local y = row:getY()
             shiftPanelChildren(panel, y, subtitleAmount)
             local label = ISLabel:new(
@@ -150,49 +157,45 @@ end
 
 local adminPanelHooked = false
 
+local function hostPageNeedsCustomization(setting)
+    local title = getTitle(setting)
+    return (title and setting.title ~= title)
+        or setting.randomZedsSubtitle ~= getSubtitle(setting)
+end
+
+local function customizeHostSetting(setting)
+    local title = getTitle(setting)
+    if title then setting.title = title end
+    setting.randomZedsSubtitle = getSubtitle(setting)
+end
+
 local function createHostPage(page)
-    if not page then error("Sandbox page is required") end
-    if not page.settings then return page end
+    return customizePage(
+        page,
+        hostPageNeedsCustomization,
+        customizeHostSetting,
+        "Customizing host sandbox page"
+    )
+end
 
-    for _, setting in ipairs(page.settings) do
-        local title = getTitle(setting)
-        local subtitle = getSubtitle(setting)
-        if (title and setting.title ~= title) or setting.randomZedsSubtitle ~= subtitle then
-            local hostPage = copyPage(page)
-            RandomZeds.debug("Customizing host sandbox page")
-            for _, hostSetting in ipairs(hostPage.settings) do
-                local hostTitle = getTitle(hostSetting)
-                if hostTitle then
-                    hostSetting.title = hostTitle
-                end
-                hostSetting.randomZedsSubtitle = getSubtitle(hostSetting)
-            end
-            return hostPage
-        end
+local function adminPageNeedsCustomization(setting)
+    return getAdminName(setting) ~= nil
+end
+
+local function customizeAdminSetting(setting)
+    local adminName = getAdminName(setting)
+    if adminName then
+        setting.translatedName = getText("Sandbox_" .. adminName)
     end
-
-    return page
 end
 
 local function createAdminPage(page)
-    if not page then error("Sandbox page is required") end
-    if not page.settings then return page end
-
-    for _, setting in ipairs(page.settings) do
-        if getAdminName(setting) then
-            local adminPage = copyPage(page)
-            RandomZeds.debug("Customizing admin sandbox page")
-            for _, adminSetting in ipairs(adminPage.settings) do
-                local adminName = getAdminName(adminSetting)
-                if adminName then
-                    adminSetting.translatedName = getText("Sandbox_" .. adminName)
-                end
-            end
-            return adminPage
-        end
-    end
-
-    return page
+    return customizePage(
+        page,
+        adminPageNeedsCustomization,
+        customizeAdminSetting,
+        "Customizing admin sandbox page"
+    )
 end
 
 local function installAdminPanelHook()
@@ -226,8 +229,7 @@ local function rebuildHostSettingsPage()
     local rebuilt = 0
     for _, listEntry in ipairs(pageEdit.listbox.items) do
         local pageEntry = listEntry.item
-        if not pageEntry then error("Sandbox page entry is required") end
-        if not pageEntry.category then
+        if pageEntry and not pageEntry.category then
             local page = pageEntry.page
             local hostPage = createHostPage(page)
             if hostPage ~= page then

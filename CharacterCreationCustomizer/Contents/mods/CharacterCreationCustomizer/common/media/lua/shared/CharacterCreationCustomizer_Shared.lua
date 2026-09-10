@@ -1,7 +1,17 @@
-CharacterCreationCustomizer = CharacterCreationCustomizer or {}
+local existingCustomizer = rawget(_G, "CharacterCreationCustomizer")
+if existingCustomizer then return existingCustomizer end
 
-local M = CharacterCreationCustomizer
+local M = {}
+rawset(_G, "CharacterCreationCustomizer", M)
 local DEBUG_OPTION_NAME = "CharacterCreationCustomizer.Debug"
+local PROFESSION_OPTION_SUFFIXES = { "Disable", "Cost", "GrantedTraits", "GrantedItems" }
+local standardPerks
+local configurationFingerprintTable
+local configurationFingerprintKeys = {}
+local configurationFingerprintKeySet = {}
+local configurationFingerprintValues = {}
+local configurationFingerprintKeyCount
+local configurationFingerprintValue
 
 M.standardPerkNames = {
     "Aiming", "Reloading",
@@ -109,14 +119,12 @@ M.englishTraitLabels = {
 
 M.originalTraitDefinitions = M.originalTraitDefinitions or {}
 M.originalTraitDefinitionsByShortKey = M.originalTraitDefinitionsByShortKey or {}
-M.originalProfessionGrants = M.originalProfessionGrants or {}
-M.invalidGrantWarnings = M.invalidGrantWarnings or {}
-M.invalidItemWarnings = M.invalidItemWarnings or {}
+M.originalProfessionDefinitions = {}
+M.originalProfessionGrants = {}
 
 function M.isDebugEnabled()
-    local options = getSandboxOptions and getSandboxOptions()
-    local option = options and options:getOptionByName(DEBUG_OPTION_NAME)
-    return option and option:getValue() == true
+    local option = getSandboxOptions():getOptionByName(DEBUG_OPTION_NAME)
+    return option:asConfigOption():getValueAsObject() == true
 end
 
 function M.debug(message)
@@ -141,6 +149,49 @@ function M.professionKey(definition)
     return name and tostring(name):gsub("^.*:", "") or tostring(professionType)
 end
 
+local function optionalOptionMissing(options, section, key)
+    if section == "NonBuyableTraits" then
+        local base = key:match("^(.+)_Buyable$")
+        local suffix = "Buyable"
+        if not base then
+            base = key:match("^(.+)_Cost$")
+            suffix = "Cost"
+        end
+        if not base then return false end
+        local counterpart = suffix == "Buyable" and "Cost" or "Buyable"
+        return not options:getOptionByName("CharacterCreationCustomizer." .. section .. "_"
+            .. base .. "_" .. counterpart)
+    end
+    if section == "Traits" then
+        local base = key:match("^(.+)_Disable$")
+        local suffix = "Disable"
+        if not base then
+            base = key:match("^(.+)_Cost$")
+            suffix = "Cost"
+        end
+        if not base then return false end
+        local counterpart = suffix == "Disable" and "Cost" or "Disable"
+        return not options:getOptionByName("CharacterCreationCustomizer." .. section .. "_"
+            .. base .. "_" .. counterpart)
+    end
+    if section == "Professions" then
+        local base = key:match("^(.+)_Disable$")
+            or key:match("^(.+)_Cost$")
+            or key:match("^(.+)_GrantedTraits$")
+            or key:match("^(.+)_GrantedItems$")
+        if not base then return false end
+        for index = 1, #PROFESSION_OPTION_SUFFIXES do
+            local suffix = PROFESSION_OPTION_SUFFIXES[index]
+            if options:getOptionByName("CharacterCreationCustomizer." .. section .. "_"
+                .. base .. "_" .. suffix) then
+                return false
+            end
+        end
+        return true
+    end
+    return false
+end
+
 function M.optionValue(section, key)
     local optionKey = section .. "_" .. key
     local optionName = "CharacterCreationCustomizer." .. optionKey
@@ -148,25 +199,74 @@ function M.optionValue(section, key)
     if sandbox and sandbox[optionKey] ~= nil then
         return sandbox[optionKey]
     end
-    if SandboxVars and SandboxVars[optionName] ~= nil then
-        return SandboxVars[optionName]
+
+    local options = getSandboxOptions()
+    local option = options:getOptionByName(optionName)
+    if not option then
+        if optionalOptionMissing(options, section, key) then return end
+        error("Missing sandbox option: " .. optionName)
+    end
+    return option:asConfigOption():getValueAsObject()
+end
+
+local function refreshConfigurationFingerprintKeys(sandbox)
+    local keyCount = 0
+    local changed = sandbox ~= configurationFingerprintTable
+    for _ in pairs(sandbox) do
+        keyCount = keyCount + 1
     end
 
-    if getSandboxOptions then
-        local option = getSandboxOptions():getOptionByName(optionName)
-        if option then
-            if option:getType() == "string" then
-                return option:getValueAsString()
+    if not changed and keyCount == configurationFingerprintKeyCount then
+        for key in pairs(sandbox) do
+            if not configurationFingerprintKeySet[key] then
+                changed = true
+                break
             end
-            return option:getValue()
         end
     end
+    if not changed and keyCount == configurationFingerprintKeyCount then return end
 
-    return nil
+    configurationFingerprintTable = sandbox
+    configurationFingerprintKeys = {}
+    configurationFingerprintKeySet = {}
+    configurationFingerprintValues = {}
+    configurationFingerprintKeyCount = keyCount
+    configurationFingerprintValue = nil
+    for key in pairs(sandbox) do
+        configurationFingerprintKeys[#configurationFingerprintKeys + 1] = key
+        configurationFingerprintKeySet[key] = true
+        configurationFingerprintValues[key] = sandbox[key]
+    end
+    table.sort(configurationFingerprintKeys)
+end
+
+function M.configurationFingerprint()
+    local sandbox = SandboxVars and SandboxVars.CharacterCreationCustomizer
+    if not sandbox then return end
+
+    refreshConfigurationFingerprintKeys(sandbox)
+
+    local changed = configurationFingerprintValue == nil
+    for index = 1, #configurationFingerprintKeys do
+        local key = configurationFingerprintKeys[index]
+        local value = sandbox[key]
+        if configurationFingerprintValues[key] ~= value then
+            configurationFingerprintValues[key] = value
+            changed = true
+        end
+    end
+    if not changed then return configurationFingerprintValue end
+
+    local values = {}
+    for index = 1, #configurationFingerprintKeys do
+        local key = configurationFingerprintKeys[index]
+        values[index] = tostring(key) .. ":" .. tostring(configurationFingerprintValues[key])
+    end
+    configurationFingerprintValue = table.concat(values, "|")
+    return configurationFingerprintValue
 end
 
 function M.rememberTraits()
-    if not CharacterTraitDefinition then return end
     local definitions = CharacterTraitDefinition.getTraits()
     for i = 0, definitions:size() - 1 do
         local definition = definitions:get(i)
@@ -178,11 +278,11 @@ function M.rememberTraits()
 end
 
 function M.rememberProfessions()
-    if not CharacterProfessionDefinition then return end
     local professions = CharacterProfessionDefinition.getProfessions()
     for i = 0, professions:size() - 1 do
         local profession = professions:get(i)
         local key = M.professionKey(profession)
+        M.originalProfessionDefinitions[key] = M.originalProfessionDefinitions[key] or profession
         if not M.originalProfessionGrants[key] then
             local grants = {}
             local grantedTraits = profession:getGrantedTraits()
@@ -195,16 +295,19 @@ function M.rememberProfessions()
 end
 
 function M.originalTrait(definition)
-    return M.originalTraitDefinitions[M.definitionKey(definition)] or definition
+    local key = M.definitionKey(definition)
+    local original = M.originalTraitDefinitions[key]
+    if not original then error("Missing original trait definition: " .. key) end
+    return original
 end
 
 function M.traitGroup(definition)
     local original = M.originalTrait(definition)
-    local isFree = original:isFree()
-    if isFree then
+    if original:isFree() then
         if not M.traitBuyable(original) then return "NonBuyableTraits" end
         return M.traitCost(original) < 0 and "NegativeTraits" or "PositiveTraits"
     end
+
     local cost = original:getCost()
     if cost > 0 then return "PositiveTraits" end
     if cost < 0 then return "NegativeTraits" end
@@ -233,63 +336,75 @@ end
 
 function M.traitCost(definition)
     local configuredCost = M.traitValue(definition, "Cost")
-    return tonumber(configuredCost) or M.originalTrait(definition):getCost()
-end
-
-local function copyGrantedTraits(source, target)
-    local grantedTraits = source:getGrantedTraits()
-    for i = 0, grantedTraits:size() - 1 do
-        target:addGrantedTrait(grantedTraits:get(i))
-    end
+    local original = M.originalTrait(definition)
+    if configuredCost == nil then return original:getCost() end
+    local cost = tonumber(configuredCost)
+    if cost == nil then error("Invalid trait cost for " .. M.definitionKey(original)) end
+    return cost
 end
 
 local function preserveTranslatedText(translatedText)
     return (tostring(translatedText):gsub("%%", "%%%%"))
 end
 
-local function copyGrantedRecipes(source, target)
-    local grantedRecipes = source:getGrantedRecipes()
-    for i = 0, grantedRecipes:size() - 1 do
-        target:addGrantedRecipe(grantedRecipes:get(i))
+local function listValues(values)
+    local result = {}
+    for i = 0, values:size() - 1 do
+        result[#result + 1] = values:get(i)
+    end
+    return result
+end
+
+local function forEachListToken(value, callback)
+    if value == nil then return end
+    for rawToken in (tostring(value) .. ","):gmatch("(.-),") do
+        local token = rawToken:gsub("^%s+", ""):gsub("%s+$", "")
+        if token ~= "" then callback(token) end
     end
 end
 
-local function copyXpBoosts(source, target)
-    local xpBoosts = source:getXpBoosts()
-    if not xpBoosts then return end
-    for perk, level in pairs(transformIntoKahluaTable(xpBoosts)) do
-        target:addXPBoost(perk, level:intValue())
+local function xpBoostValues(definition)
+    local result = {}
+    for perk, level in pairs(transformIntoKahluaTable(definition:getXpBoosts())) do
+        result[perk] = level:intValue()
     end
+    return result
 end
 
-local function copyTraitRestrictions(source, target)
-    local mutuallyExclusiveTraits = source:getMutuallyExclusiveTraits()
-    for i = 0, mutuallyExclusiveTraits:size() - 1 do
-        target:addMutuallyExclusive(mutuallyExclusiveTraits:get(i))
+local function copyTraitDefinition(definition)
+    return {
+        type = definition:getType(),
+        name = preserveTranslatedText(definition:getUIName()),
+        description = definition:getDescription(),
+        disabledInMultiplayer = definition:isDisabledInMultiplayer(),
+        grantedTraits = listValues(definition:getGrantedTraits()),
+        grantedRecipes = listValues(definition:getGrantedRecipes()),
+        mutuallyExclusiveTraits = listValues(definition:getMutuallyExclusiveTraits()),
+        xpBoosts = xpBoostValues(definition),
+    }
+end
+
+local function applyDefinitionSnapshot(replacement, snapshot)
+    if snapshot.description ~= nil then replacement:setDescription(snapshot.description) end
+    for index = 1, #snapshot.grantedTraits do replacement:addGrantedTrait(snapshot.grantedTraits[index]) end
+    for index = 1, #snapshot.grantedRecipes do replacement:addGrantedRecipe(snapshot.grantedRecipes[index]) end
+    for index = 1, #(snapshot.mutuallyExclusiveTraits or {}) do
+        replacement:addMutuallyExclusive(snapshot.mutuallyExclusiveTraits[index])
     end
+    for perk, level in pairs(snapshot.xpBoosts) do replacement:addXPBoost(perk, level) end
 end
 
-local function copyTexture(source, target)
-    local texture = source:getTexture()
-    if texture then target:setTexture(texture) end
-end
-
-local function replaceTraitDefinition(definition, cost, isFree)
+local function applyTraitSnapshot(snapshot, cost, isFree)
+    local description = snapshot.description or ""
     local replacement = CharacterTraitDefinition.addCharacterTraitDefinition(
-        definition:getType(),
-        preserveTranslatedText(definition:getUIName()),
+        snapshot.type,
+        snapshot.name,
         cost,
-        nil,
+        preserveTranslatedText(description),
         isFree,
-        definition:isDisabledInMultiplayer()
+        snapshot.disabledInMultiplayer
     )
-    replacement:setDescription(definition:getDescription())
-
-    copyGrantedTraits(definition, replacement)
-    copyGrantedRecipes(definition, replacement)
-    copyTraitRestrictions(definition, replacement)
-    copyXpBoosts(definition, replacement)
-    copyTexture(definition, replacement)
+    applyDefinitionSnapshot(replacement, snapshot)
 end
 
 function M.applyTraitCosts()
@@ -299,11 +414,9 @@ function M.applyTraitCosts()
             local cost = M.traitCost(definition)
             local current = CharacterTraitDefinition.getCharacterTraitDefinition(definition:getType())
             local isFree = definition:isFree() and not M.traitBuyable(definition)
-            if current and (current:getCost() ~= cost or current:isFree() ~= isFree) then
-                local replacementSucceeded, replacementError = pcall(replaceTraitDefinition, definition, cost, isFree)
-                if not replacementSucceeded then
-                    print("[Character Creation Customizer] " .. tostring(replacementError))
-                end
+            if not current then error("Missing current trait definition: " .. M.definitionKey(definition)) end
+            if current:getCost() ~= cost or current:isFree() ~= isFree then
+                applyTraitSnapshot(copyTraitDefinition(definition), cost, isFree)
             end
         end
     end
@@ -327,7 +440,7 @@ function M.resolveTraitLabel(value)
 
     local shortKey = stableKey:gsub("^.*:", "")
     local definition = M.originalTraitDefinitionsByShortKey[shortKey]
-    if definition then return definition end
+    if definition ~= nil then return definition end
     local compactShortKey = shortKey:gsub("[_%-]", "")
     for candidateKey, candidate in pairs(M.originalTraitDefinitionsByShortKey) do
         if tostring(candidateKey):gsub("[_%-]", "") == compactShortKey then
@@ -337,7 +450,7 @@ function M.resolveTraitLabel(value)
 
     local alias = M.englishTraitLabels[normalized]
     definition = alias and M.originalTraitDefinitionsByShortKey[alias]
-    if definition then return definition end
+    if definition ~= nil then return definition end
 
     for _, candidate in pairs(M.originalTraitDefinitions) do
         if M.normalizeLabel(candidate:getLabel()) == normalized then
@@ -346,37 +459,22 @@ function M.resolveTraitLabel(value)
     end
 end
 
-local function warnOnce(warnings, warningKey, message)
-    if warnings[warningKey] then return end
-    warnings[warningKey] = true
-    print("[Character Creation Customizer] " .. message)
-end
-
 function M.parseGrantedTraits(value, profession)
     local grantedTraits = {}
     local seen = {}
-    if value == nil then
-        return grantedTraits
-    end
-
-    for rawToken in (tostring(value) .. ","):gmatch("(.-),") do
-        local token = rawToken:gsub("^%s+", ""):gsub("%s+$", "")
-        if token ~= "" then
-            local definition = M.resolveTraitLabel(token)
-            if definition then
-                local key = M.definitionKey(definition)
-                if not seen[key] then
-                    seen[key] = true
-                    grantedTraits[#grantedTraits + 1] = definition:getType()
-                end
-            else
-                local professionKey = profession and M.professionKey(profession) or "unknown"
-                local warningKey = professionKey .. ":" .. M.normalizeLabel(token)
-                warnOnce(M.invalidGrantWarnings, warningKey,
-                    "Unknown trait '" .. token .. "' in profession " .. professionKey)
+    forEachListToken(value, function(token)
+        local definition = M.resolveTraitLabel(token)
+        if definition then
+            local key = M.definitionKey(definition)
+            if not seen[key] then
+                seen[key] = true
+                grantedTraits[#grantedTraits + 1] = definition:getType()
             end
+        else
+            local professionKey = profession and M.professionKey(profession) or "unknown"
+            error("Unknown trait '" .. token .. "' in profession " .. professionKey)
         end
-    end
+    end)
 
     return grantedTraits
 end
@@ -390,39 +488,26 @@ function M.professionGrantedTraits(profession)
     local professionKey = M.professionKey(profession)
     local configured = M.professionValue(profession, "GrantedTraits")
     if configured == nil then
-        return M.originalProfessionGrants[professionKey] or {}
+        local originalGrants = M.originalProfessionGrants[professionKey]
+        if not originalGrants then error("Missing original grants for profession " .. professionKey) end
+        return originalGrants
     end
     if M.normalizeLabel(configured) == "" then return {} end
     local grants = M.parseGrantedTraits(configured, profession)
-    if #grants == 0 then
-        local warningKey = professionKey .. ":<no-valid-grants>"
-        if not M.invalidGrantWarnings[warningKey] then
-            M.invalidGrantWarnings[warningKey] = true
-            print("[Character Creation Customizer] No valid granted traits for profession " .. professionKey)
-        end
-        return M.originalProfessionGrants[professionKey] or {}
-    end
+    if #grants == 0 then error("No valid granted traits for profession " .. professionKey) end
     return grants
 end
 
 function M.parseGrantedItems(value, profession)
     local grantedItems = {}
-    if value == nil then return grantedItems end
-
-    for rawToken in (tostring(value) .. ","):gmatch("(.-),") do
-        local token = rawToken:gsub("^%s+", ""):gsub("%s+$", "")
-        if token ~= "" then
-            local itemDefinition = ScriptManager.instance:FindItem(token)
-            if itemDefinition then
-                grantedItems[#grantedItems + 1] = itemDefinition:getFullName()
-            else
-                local professionKey = profession and M.professionKey(profession) or "unknown"
-                local warningKey = professionKey .. ":" .. M.normalizeLabel(token)
-                warnOnce(M.invalidItemWarnings, warningKey,
-                    "Unknown item '" .. token .. "' in profession " .. professionKey)
-            end
+    forEachListToken(value, function(token)
+        local itemDefinition = ScriptManager.instance:FindItem(token)
+        if itemDefinition == nil then
+            local professionKey = profession and M.professionKey(profession) or "unknown"
+            error("Unknown item '" .. token .. "' in profession " .. professionKey)
         end
-    end
+        grantedItems[#grantedItems + 1] = itemDefinition:getFullName()
+    end)
 
     return grantedItems
 end
@@ -436,55 +521,93 @@ function M.professionEnabled(profession)
 end
 
 function M.professionCost(profession)
+    M.rememberProfessions()
     local configuredCost = M.professionValue(profession, "Cost")
-    return tonumber(configuredCost) or profession:getCost()
+    local professionKey = M.professionKey(profession)
+    local original = M.originalProfessionDefinitions[professionKey]
+    if not original then error("Missing original profession definition: " .. professionKey) end
+    if configuredCost == nil then return original:getCost() end
+    local cost = tonumber(configuredCost)
+    if cost == nil then error("Invalid profession cost for " .. professionKey) end
+    return cost
+end
+
+local function sameGrantTypes(current, desired)
+    if current:size() ~= #desired then return false end
+    for index = 1, #desired do
+        if current:get(index - 1) ~= desired[index] then return false end
+    end
+    return true
+end
+
+local function copyProfessionDefinition(definition, grantedTraits, cost)
+    return {
+        type = definition:getType(),
+        name = preserveTranslatedText(definition:getUIName()),
+        description = definition:getDescription(),
+        texture = definition:getTexture(),
+        grantedTraits = grantedTraits,
+        grantedRecipes = listValues(definition:getGrantedRecipes()),
+        xpBoosts = xpBoostValues(definition),
+        cost = cost,
+    }
+end
+
+local function applyProfessionSnapshot(snapshot)
+    local description = snapshot.description or ""
+    local replacement = CharacterProfessionDefinition.addCharacterProfessionDefinition(
+        snapshot.type,
+        snapshot.name,
+        snapshot.cost,
+        preserveTranslatedText(description),
+        snapshot.texture and snapshot.texture:getName()
+    )
+    applyDefinitionSnapshot(replacement, snapshot)
 end
 
 function M.applyProfessionTraits()
-    if not CharacterProfessionDefinition then return end
+    M.rememberProfessions()
     local professions = CharacterProfessionDefinition.getProfessions()
     for i = 0, professions:size() - 1 do
         local profession = professions:get(i)
+        local professionKey = M.professionKey(profession)
+        local original = M.originalProfessionDefinitions[professionKey]
+        if not original then error("Missing original profession definition: " .. professionKey) end
         local grants = M.professionGrantedTraits(profession)
-        local texture = profession:getTexture()
-        local replacement = CharacterProfessionDefinition.addCharacterProfessionDefinition(
-            profession:getType(),
-            preserveTranslatedText(profession:getUIName()),
-            profession:getCost(),
-            nil,
-            texture and texture:getName()
-        )
-        replacement:setDescription(profession:getDescription())
-        for _, grant in ipairs(grants) do
-            replacement:addGrantedTrait(grant)
+        local desiredCost = M.professionCost(profession)
+        if profession:getCost() ~= desiredCost
+            or not sameGrantTypes(profession:getGrantedTraits(), grants) then
+            applyProfessionSnapshot(copyProfessionDefinition(original, grants, desiredCost))
         end
-        copyGrantedRecipes(profession, replacement)
-        copyXpBoosts(profession, replacement)
-
     end
 end
 
 function M.getStandardPerks()
-    if M.standardPerks then return M.standardPerks end
-    M.standardPerks = {}
-    for _, key in ipairs(M.standardPerkNames) do
+    if standardPerks ~= nil then return standardPerks end
+    standardPerks = {}
+    for index = 1, #M.standardPerkNames do
+        local key = M.standardPerkNames[index]
         local perk = Perks[key]
-        local definition = perk and PerkFactory.getPerk(perk)
-        if definition and definition:getParent() ~= Perks.None then
-            M.standardPerks[#M.standardPerks + 1] = {
-                key = key,
-                perk = perk,
-                group = tostring(definition:getParent():getName()),
-                order = #M.standardPerks,
-            }
-        end
+        if not perk then error("Missing perk enum: " .. key) end
+        local definition = PerkFactory.getPerk(perk)
+        if not definition then error("Missing perk definition: " .. key) end
+        local parent = definition:getParent()
+        if parent == Perks.None then error("Missing perk group: " .. key) end
+        standardPerks[#standardPerks + 1] = {
+            key = key,
+            perk = perk,
+            group = tostring(parent:getName()),
+            order = #standardPerks,
+        }
     end
 
-    return M.standardPerks
+    return standardPerks
 end
 
 function M.standardValue(entry)
-    local initialLevel = tonumber(M.optionValue("Standard", entry.key .. "_InitialLevel")) or 0
+    local configuredLevel = M.optionValue("Standard", entry.key .. "_InitialLevel")
+    local initialLevel = configuredLevel == nil and 0 or tonumber(configuredLevel)
+    if initialLevel == nil then error("Invalid initial level for " .. entry.key) end
     return math.max(-10, math.min(10, initialLevel))
 end
 
@@ -513,13 +636,21 @@ function M.configurationSignature()
             .. tostring(M.traitCost(definition))
     end
 
-    if CharacterProfessionDefinition then
-        local professions = CharacterProfessionDefinition.getProfessions()
-        for i = 0, professions:size() - 1 do
-            local profession = professions:get(i)
-            values[#values + 1] = "profession:" .. M.professionKey(profession) .. ":"
-                .. tostring(M.professionValue(profession, "GrantedTraits"))
-        end
+    local professions = CharacterProfessionDefinition.getProfessions()
+    for i = 0, professions:size() - 1 do
+        local profession = professions:get(i)
+        M.professionGrantedTraits(profession)
+        M.parseGrantedItems(M.professionValue(profession, "GrantedItems"), profession)
+        values[#values + 1] = "profession:" .. M.professionKey(profession) .. ":"
+            .. tostring(M.professionValue(profession, "GrantedTraits")) .. ":"
+            .. tostring(M.professionCost(profession))
+    end
+
+    local standardPerkEntries = M.getStandardPerks()
+    for index = 1, #standardPerkEntries do
+        local entry = standardPerkEntries[index]
+        if not entry then error("Missing standard perk entry: " .. tostring(index)) end
+        values[#values + 1] = "standard:" .. entry.key .. ":" .. tostring(M.standardValue(entry))
     end
 
     table.sort(values)
@@ -527,22 +658,25 @@ function M.configurationSignature()
 end
 
 function M.apply()
-    local signatureOk, signature = pcall(M.configurationSignature)
-    if not signatureOk then
-        print("[Character Creation Customizer] " .. tostring(signature))
+    local fingerprint = M.configurationFingerprint()
+    if fingerprint ~= nil
+        and fingerprint == M.appliedConfigurationFingerprint
+        and M.appliedSignature ~= nil then
         return
     end
-    if signature == M.appliedSignature then return end
+
+    local signature = M.configurationSignature()
+    if signature == M.appliedSignature then
+        M.appliedConfigurationFingerprint = fingerprint
+        return
+    end
 
     M.debug("Applying configuration")
-    local applicationSucceeded, applicationError = pcall(function()
-        M.applyTraitCosts()
-        M.applyProfessionTraits()
-    end)
-    if applicationSucceeded then
-        M.appliedSignature = signature
-        M.debug("Configuration applied")
-    else
-        print("[Character Creation Customizer] " .. tostring(applicationError))
-    end
+    M.applyTraitCosts()
+    M.applyProfessionTraits()
+    M.appliedSignature = signature
+    M.appliedConfigurationFingerprint = fingerprint
+    M.debug("Configuration applied")
 end
+
+return M

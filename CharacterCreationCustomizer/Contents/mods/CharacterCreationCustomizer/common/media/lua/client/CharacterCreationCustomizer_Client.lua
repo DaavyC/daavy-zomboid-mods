@@ -1,6 +1,6 @@
+local M = require "CharacterCreationCustomizer_Shared"
 require "OptionScreens/CharacterCreationProfession"
 
-local M = CharacterCreationCustomizer
 local UI_BORDER_SPACING = 10
 local SCROLL_BAR_WIDTH = 13
 local SKILL_LEVEL_COLOR = { r = 1.0, g = 0.75, b = 0.15 }
@@ -14,9 +14,16 @@ local XP_MULTIPLIER_COLORS = {
 }
 local OTHER_SKILLS_POSITIVE_COLOR = { r = 0.20, g = 0.78, b = 0.80 }
 local OTHER_SKILLS_NEGATIVE_COLOR = { r = 0.86, g = 0.35, b = 0.60 }
+local SKILL_PERCENTAGES = {
+    [0] = "+ 0%",
+    [1] = "+ 75%",
+    [2] = "+ 100%",
+    [3] = "+ 125%",
+}
+local pacifistPerks
 
-if M.clientInstalled then return end
-M.clientInstalled = true
+if rawget(M, "clientInstalled") then return end
+rawset(M, "clientInstalled", true)
 
 local groupOrder = {
     QOL = 1,
@@ -24,6 +31,20 @@ local groupOrder = {
     NegativeTraits = 2,
     NonBuyableTraits = 3,
     Professions = 1,
+}
+
+local fixedSettingGroups = {
+    QOL = "QOL",
+    Professions = "Professions",
+    NonBuyableTraits = "NonBuyableTraits",
+}
+
+local sandboxTitleKeys = {
+    QOL = "Sandbox_Title_QOL",
+    PositiveTraits = "Sandbox_Title_PositiveTraits",
+    NegativeTraits = "Sandbox_Title_NegativeTraits",
+    NonBuyableTraits = "Sandbox_Title_NonBuyableTraits",
+    Professions = "Sandbox_Title_Professions",
 }
 
 local partOrder = {
@@ -64,24 +85,32 @@ local settingTitles = {
     ["CharacterCreationCustomizer.Debug"] = "CharacterCreationCustomizer_Advanced",
 }
 
+local traitItemStates = setmetatable({}, { __mode = "k" })
+
+local function traitItemState(item)
+    local state = traitItemStates[item]
+    if not state then
+        state = {}
+        traitItemStates[item] = state
+    end
+    return state
+end
+
 local function trimTooltipText(value)
     return tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
 end
 
 local function automaticTooltip(setting)
-    if not getSandboxOptions then return end
-    local options = getSandboxOptions()
-    local option = options and options:getOptionByName(setting.name)
-    if not option then return end
-    local optionType = option:getType()
-    if optionType == "integer" or optionType == "double" then
-        return "Min: " .. tostring(option:getMin()) .. " Max: " .. tostring(option:getMax()) .. " Default: " .. tostring(option:getDefaultValue())
-    end
-    local rawDefault = option:getDefaultValue()
-    if rawDefault == nil then return end
-    local defaultValue = tostring(rawDefault)
-    if defaultValue == "" then return end
-    return "Default: " .. defaultValue
+    local option = getSandboxOptions():getOptionByName(setting.name)
+    if not option then error("Missing sandbox option: " .. setting.name) end
+    return (option:getTooltip() or ""):gsub("\\n", "\n")
+end
+
+local function tooltipRemainder(automaticText, descriptionText)
+    if automaticText == descriptionText then return "" end
+    if automaticText:sub(1, #descriptionText) ~= descriptionText then return automaticText end
+    if automaticText:sub(#descriptionText + 1, #descriptionText + 1) ~= "\n" then return automaticText end
+    return trimTooltipText(automaticText:sub(#descriptionText + 2))
 end
 
 local function composeTooltip(setting, description)
@@ -89,7 +118,9 @@ local function composeTooltip(setting, description)
     local automaticText = trimTooltipText(automaticTooltip(setting))
     if automaticText == "" then return descriptionText end
     if descriptionText == "" then return automaticText end
-    return descriptionText .. "\n" .. automaticText
+    local automaticRemainder = tooltipRemainder(automaticText, descriptionText)
+    if automaticRemainder == "" then return descriptionText end
+    return descriptionText .. "\n" .. automaticRemainder
 end
 
 local function qolEnabled(key)
@@ -99,18 +130,41 @@ local function qolEnabled(key)
 end
 
 local standardGroupRanks
+local standardPerkIndex
+
+local function indexStandardPerks()
+    if standardPerkIndex ~= nil then return standardPerkIndex end
+
+    local entriesByKey = {}
+    local entriesByPerk = {}
+    local standardPerks = M.getStandardPerks()
+    for index = 1, #standardPerks do
+        local entry = standardPerks[index]
+        entriesByKey[entry.key] = entry
+        entriesByPerk[entry.perk] = entry
+        entriesByPerk[tostring(entry.perk)] = entry
+    end
+    standardPerkIndex = { byKey = entriesByKey, byPerk = entriesByPerk }
+    return standardPerkIndex
+end
 
 local function standardEntry(key)
-    for _, entry in ipairs(M.getStandardPerks()) do
-        if entry.key == key then return entry end
-    end
+    return indexStandardPerks().byKey[key]
+end
+
+local function requiredStandardEntry(key)
+    local entry = standardEntry(key)
+    if not entry then error("Missing standard perk: " .. key) end
+    return entry
 end
 
 local function standardGroupRank(group)
     if not standardGroupRanks then
         standardGroupRanks = {}
         local rank = 0
-        for _, entry in ipairs(M.getStandardPerks()) do
+        local standardPerks = M.getStandardPerks()
+        for index = 1, #standardPerks do
+            local entry = standardPerks[index]
             if not standardGroupRanks[entry.group] then
                 rank = rank + 1
                 standardGroupRanks[entry.group] = rank
@@ -118,6 +172,12 @@ local function standardGroupRank(group)
         end
     end
     return standardGroupRanks[group] or 99
+end
+
+local function traitDefinitionByType(traitType)
+    local trait = CharacterTraitDefinition.getCharacterTraitDefinition(traitType)
+    if trait == nil then error("Missing trait definition: " .. tostring(traitType)) end
+    return trait
 end
 
 local function populateNativeTraitList(self, list, positive)
@@ -128,7 +188,7 @@ local function populateNativeTraitList(self, list, positive)
     for i = 0, traitList:size() - 1 do
         local trait = traitList:get(i)
         local original = M.originalTrait(trait)
-        local current = CharacterTraitDefinition.getCharacterTraitDefinition(original:getType()) or trait
+        local current = traitDefinitionByType(original:getType())
         local group = M.traitGroup(original)
         local selectable = not original:isFree() or M.traitBuyable(original)
         if M.traitEnabled(original) and selectable and group == expectedGroup and self:isTraitEnabled(current) and not self:isTraitExcluded(current) then
@@ -137,11 +197,11 @@ local function populateNativeTraitList(self, list, positive)
     end
 end
 
-CharacterCreationProfession.populateTraitList = function(self, list)
+function CharacterCreationProfession:populateTraitList(list)
     populateNativeTraitList(self, list, true)
 end
 
-CharacterCreationProfession.populateBadTraitList = function(self, list)
+function CharacterCreationProfession:populateBadTraitList(list)
     populateNativeTraitList(self, list, false)
 end
 
@@ -150,9 +210,12 @@ local function traitKey(trait)
 end
 
 local function findTrait(list, key)
-    for index, item in ipairs(list.items or {}) do
-        if traitKey(item.item) == key then
-            return index, item
+    local items = list.items
+    if not items then return end
+    for index = 1, #items do
+        local traitItem = items[index]
+        if traitKey(traitItem.item) == key then
+            return index, traitItem
         end
     end
 end
@@ -169,8 +232,10 @@ end
 
 local function removeTraitFromList(list, trait)
     local key = traitKey(trait)
-    for index = #(list.items or {}), 1, -1 do
-        if traitKey(list.items[index].item) == key then
+    local items = list.items
+    if not items then return end
+    for index = #items, 1, -1 do
+        if traitKey(items[index].item) == key then
             list:removeItemByIndex(index)
         end
     end
@@ -209,29 +274,43 @@ local function setFreeSource(self, trait, source, active)
 end
 
 local function refreshFreeTraitFlags(self)
-    for _, item in ipairs(self.listboxTraitSelected.items or {}) do
-        local free = isFreeTrait(self, item.item)
-        item.freeTrait = free or nil
+    local items = self.listboxTraitSelected.items
+    if not items then return end
+    for index = 1, #items do
+        local selectedItem = items[index]
+        local free = isFreeTrait(self, selectedItem.item)
+        traitItemState(selectedItem).freeTrait = free or nil
     end
 end
 
-CharacterCreationProfession.doTestForMutuallyExclusiveTraits = function(self, trait, isRemovingTrait)
-    M.rememberTraits()
-    for i = 0, trait:getMutuallyExclusiveTraits():size() - 1 do
-        local exclusiveTrait = trait:getMutuallyExclusiveTraits():get(i)
-        local exclusiveDefinition = CharacterTraitDefinition.getCharacterTraitDefinition(exclusiveTrait)
-        if exclusiveDefinition and not exclusiveDefinition:isFree() then
-            local original = M.originalTrait(exclusiveDefinition)
-            local group = M.traitGroup(original)
-            local list = group == "PositiveTraits" and self.listboxTrait or group == "NegativeTraits" and self.listboxBadTrait
-            if isRemovingTrait then
-                if M.traitEnabled(original) and not self:isTraitExcluded(exclusiveDefinition) then
-                    if list then addUniqueTrait(list, exclusiveDefinition) end
-                end
-            else
-                if list then removeTraitFromList(list, exclusiveDefinition) end
-            end
+local function updateMutuallyExclusiveTrait(self, traitType, isRemovingTrait)
+    local exclusiveDefinition = CharacterTraitDefinition.getCharacterTraitDefinition(traitType)
+    if not exclusiveDefinition or exclusiveDefinition:isFree() then return end
+
+    local original = M.originalTrait(exclusiveDefinition)
+    local group = M.traitGroup(original)
+    if isRemovingTrait then
+        if not M.traitEnabled(original) or self:isTraitExcluded(exclusiveDefinition) then return end
+        if group == "PositiveTraits" then
+            addUniqueTrait(self.listboxTrait, exclusiveDefinition)
+        elseif group == "NegativeTraits" then
+            addUniqueTrait(self.listboxBadTrait, exclusiveDefinition)
         end
+        return
+    end
+
+    if group == "PositiveTraits" then
+        removeTraitFromList(self.listboxTrait, exclusiveDefinition)
+    elseif group == "NegativeTraits" then
+        removeTraitFromList(self.listboxBadTrait, exclusiveDefinition)
+    end
+end
+
+function CharacterCreationProfession:doTestForMutuallyExclusiveTraits(trait, isRemovingTrait)
+    M.rememberTraits()
+    local mutuallyExclusiveTraits = trait:getMutuallyExclusiveTraits()
+    for i = 0, mutuallyExclusiveTraits:size() - 1 do
+        updateMutuallyExclusiveTrait(self, mutuallyExclusiveTraits:get(i), isRemovingTrait)
     end
 end
 
@@ -241,33 +320,32 @@ local function prepareGrantedTrait(self, trait, source)
     if not item then
         item = self.listboxTraitSelected:addItem(trait:getLabel(), trait, trait:getDescription())
     end
-    if item then
-        item.manualTrait = item.manualTrait == true
-        item.tooltip = trait:getDescription()
-    end
+    if not item then error("Failed to add granted trait: " .. traitKey(trait)) end
+    local state = traitItemState(item)
+    state.manualTrait = state.manualTrait == true
+    item.tooltip = trait:getDescription()
     removeTraitFromList(self.listboxTrait, trait)
     removeTraitFromList(self.listboxBadTrait, trait)
 end
 
-CharacterCreationProfession.addTrait = function(self, trait)
+function CharacterCreationProfession:addTrait(trait)
     local original = M.originalTrait(trait)
     if M.traitGroup(original) and not M.traitEnabled(original) then return end
     local key = traitKey(trait)
     if selectedTrait(self, key) then return end
 
     local selectedItem = self.listboxTraitSelected:addItem(trait:getLabel(), trait, trait:getDescription())
-    selectedItem.manualTrait = true
+    traitItemState(selectedItem).manualTrait = true
     if not isFreeTrait(self, trait) then self.pointToSpend = self.pointToSpend - trait:getCost() end
     removeTraitFromList(self.listboxTrait, trait)
     removeTraitFromList(self.listboxBadTrait, trait)
 
     local source = "trait:" .. key
-    for i = 0, trait:getGrantedTraits():size() - 1 do
-        local grantedTrait = CharacterTraitDefinition.getCharacterTraitDefinition(trait:getGrantedTraits():get(i))
-        if grantedTrait then
-            prepareGrantedTrait(self, grantedTrait, source)
-            self:doTestForMutuallyExclusiveTraits(grantedTrait, false)
-        end
+    local grantedTraits = trait:getGrantedTraits()
+    for i = 0, grantedTraits:size() - 1 do
+        local grantedTrait = traitDefinitionByType(grantedTraits:get(i))
+        prepareGrantedTrait(self, grantedTrait, source)
+        self:doTestForMutuallyExclusiveTraits(grantedTrait, false)
     end
 
     refreshFreeTraitFlags(self)
@@ -275,32 +353,31 @@ CharacterCreationProfession.addTrait = function(self, trait)
     self:repopulateTraitLists()
 end
 
-CharacterCreationProfession.onSelectChosenTrait = function(self, item)
+function CharacterCreationProfession:onSelectChosenTrait(item)
     local _, selected = selectedTrait(self, traitKey(item))
-    local canRemove = selected and selected.manualTrait == true and not isFreeTrait(self, item)
+    local canRemove = selected and traitItemState(selected).manualTrait == true and not isFreeTrait(self, item)
     self.removeTraitBtn:setEnable(canRemove or false)
 end
 
-CharacterCreationProfession.removeTrait = function(self, index)
+function CharacterCreationProfession:removeTrait(index)
     local selectedItem = self.listboxTraitSelected:getItem(index)
     if not selectedItem or isFreeTrait(self, selectedItem.item) then return end
 
     local trait = selectedItem.item
     local key = traitKey(trait)
     removeTraitFromList(self.listboxTraitSelected, trait)
-    if selectedItem.manualTrait ~= false then self.pointToSpend = self.pointToSpend + trait:getCost() end
+    if traitItemState(selectedItem).manualTrait ~= false then self.pointToSpend = self.pointToSpend + trait:getCost() end
 
     local source = "trait:" .. key
-    for i = 0, trait:getGrantedTraits():size() - 1 do
-        local grantedTrait = CharacterTraitDefinition.getCharacterTraitDefinition(trait:getGrantedTraits():get(i))
-        if grantedTrait then
-            setFreeSource(self, grantedTrait, source, false)
-            local key = traitKey(grantedTrait)
-            local _, grantedItem = selectedTrait(self, key)
-            if grantedItem and not isFreeTrait(self, grantedTrait) and grantedItem.manualTrait ~= true then
-                removeTraitFromList(self.listboxTraitSelected, grantedTrait)
-                self:doTestForMutuallyExclusiveTraits(grantedTrait, true)
-            end
+    local grantedTraits = trait:getGrantedTraits()
+    for i = 0, grantedTraits:size() - 1 do
+        local grantedTrait = traitDefinitionByType(grantedTraits:get(i))
+        setFreeSource(self, grantedTrait, source, false)
+        local grantedKey = traitKey(grantedTrait)
+        local _, grantedItem = selectedTrait(self, grantedKey)
+        if grantedItem and not isFreeTrait(self, grantedTrait) and traitItemState(grantedItem).manualTrait ~= true then
+            removeTraitFromList(self.listboxTraitSelected, grantedTrait)
+            self:doTestForMutuallyExclusiveTraits(grantedTrait, true)
         end
     end
 
@@ -310,7 +387,7 @@ CharacterCreationProfession.removeTrait = function(self, index)
 end
 
 local nativeRandomizeTraits = CharacterCreationProfession.randomizeTraits
-CharacterCreationProfession.randomizeTraits = function(self)
+function CharacterCreationProfession:randomizeTraits()
     if #self.listboxTrait.items == 0 or #self.listboxBadTrait.items == 0 then
         self:resetBuild()
         return
@@ -319,23 +396,28 @@ CharacterCreationProfession.randomizeTraits = function(self)
 end
 
 local nativeDrawTraitMap = CharacterCreationProfession.drawTraitMap
-CharacterCreationProfession.drawTraitMap = function(self, y, item, alt)
-    local isFreeGrant = item.freeTrait
+local function drawTraitMap(listbox, y, item, alt)
+    local isFreeGrant = traitItemState(item).freeTrait
     if not isFreeGrant then
-        return nativeDrawTraitMap(self, y, item, alt)
+        return nativeDrawTraitMap(listbox, y, item, alt)
     end
 
     local original = item.item
-    item.item = {
+    local proxyItem = {
         getTexture = function() return original:getTexture() end,
         getCost = function() return 0 end,
         getLabel = function() return original:getLabel() end,
         getRightLabel = function() return "" end,
     }
-    local drawHeight = nativeDrawTraitMap(self, y, item, alt)
-    item.item = original
-    return drawHeight
+    return nativeDrawTraitMap(listbox, y, {
+        index = item.index,
+        height = item.height,
+        itemindex = item.itemindex,
+        text = item.text,
+        item = proxyItem,
+    }, alt)
 end
+CharacterCreationProfession.drawTraitMap = drawTraitMap
 
 local function professionPointDisplay(profession)
     local pointsDelta = M.professionCost(profession)
@@ -349,25 +431,24 @@ local function professionPointDisplay(profession)
 end
 
 local nativeDrawProfessionMap = CharacterCreationProfession.drawProfessionMap
-CharacterCreationProfession.drawProfessionMap = function(self, y, professionEntry, alt)
-    local nextY = nativeDrawProfessionMap(self, y, professionEntry, alt)
+local function drawProfessionMap(listbox, y, professionEntry, alt)
+    local nextY = nativeDrawProfessionMap(listbox, y, professionEntry, alt)
     if not qolEnabled("ShowProfessionPoints_Enabled") then return nextY end
 
     local pointText, pointR, pointG, pointB = professionPointDisplay(professionEntry.item)
-    local dy = (professionEntry.height - self.fontHgt) / 2
-    local right = self.width - UI_BORDER_SPACING - SCROLL_BAR_WIDTH
-    self:drawTextRight(pointText, right, y + dy,
+    local dy = (professionEntry.height - listbox.fontHgt) / 2
+    local right = listbox.width - UI_BORDER_SPACING - SCROLL_BAR_WIDTH
+    listbox:drawTextRight(pointText, right, y + dy,
         pointR, pointG, pointB, 0.9, UIFont.Small)
     return nextY
 end
+CharacterCreationProfession.drawProfessionMap = drawProfessionMap
 
 local function grantedTraitDefinitions(traitTypes)
     local definitions = {}
-    for _, traitType in ipairs(traitTypes or {}) do
-        local trait = CharacterTraitDefinition.getCharacterTraitDefinition(traitType)
-        if trait then
-            definitions[#definitions + 1] = trait
-        end
+    if not traitTypes then return definitions end
+    for index = 1, #traitTypes do
+        definitions[#definitions + 1] = traitDefinitionByType(traitTypes[index])
     end
     return definitions
 end
@@ -375,11 +456,13 @@ end
 local function removeGrantedProfessionTraits(self, traitTypes, professionKey)
     local source = professionKey and "profession:" .. professionKey
     if not source then return end
-    for _, trait in ipairs(grantedTraitDefinitions(traitTypes)) do
+    local grantedDefinitions = grantedTraitDefinitions(traitTypes)
+    for index = 1, #grantedDefinitions do
+        local trait = grantedDefinitions[index]
         local key = traitKey(trait)
         setFreeSource(self, trait, source, false)
         local _, selectedItem = selectedTrait(self, key)
-        if selectedItem and not isFreeTrait(self, trait) and selectedItem.manualTrait ~= true then
+        if selectedItem and not isFreeTrait(self, trait) and traitItemState(selectedItem).manualTrait ~= true then
             removeTraitFromList(self.listboxTraitSelected, trait)
             self:doTestForMutuallyExclusiveTraits(trait, true)
         end
@@ -389,7 +472,9 @@ end
 
 local function addGrantedProfessionTraits(self, profession, traitTypes)
     local source = "profession:" .. M.professionKey(profession)
-    for _, trait in ipairs(grantedTraitDefinitions(traitTypes)) do
+    local grantedDefinitions = grantedTraitDefinitions(traitTypes)
+    for index = 1, #grantedDefinitions do
+        local trait = grantedDefinitions[index]
         prepareGrantedTrait(self, trait, source)
         self:doTestForMutuallyExclusiveTraits(trait, false)
     end
@@ -398,20 +483,23 @@ local function addGrantedProfessionTraits(self, profession, traitTypes)
 end
 
 local function refreshSelectedTraitDefinitions(self)
-    for _, selectedItem in ipairs(self.listboxTraitSelected.items or {}) do
-        local definition = CharacterTraitDefinition.getCharacterTraitDefinition(selectedItem.item:getType())
-        if definition then
-            selectedItem.item = definition
-            selectedItem.text = definition:getLabel()
-            selectedItem.tooltip = definition:getDescription()
-        end
+    local items = self.listboxTraitSelected.items
+    if not items then return end
+    for index = 1, #items do
+        local selectedItem = items[index]
+        local definition = traitDefinitionByType(selectedItem.item:getType())
+        selectedItem.item = definition
+        selectedItem.text = definition:getLabel()
+        selectedItem.tooltip = definition:getDescription()
     end
     refreshFreeTraitFlags(self)
 end
 
 local function removeDisabledSelectedTraits(self)
-    for index = #(self.listboxTraitSelected.items or {}), 1, -1 do
-        local selectedItem = self.listboxTraitSelected.items[index]
+    local items = self.listboxTraitSelected.items
+    if not items then return end
+    for index = #items, 1, -1 do
+        local selectedItem = items[index]
         if not isFreeTrait(self, selectedItem.item)
             and not M.traitEnabled(M.originalTrait(selectedItem.item)) then
             self:removeTrait(index)
@@ -420,10 +508,12 @@ local function removeDisabledSelectedTraits(self)
 end
 
 local function removeUnbuyableSelectedTraits(self)
-    for index = #(self.listboxTraitSelected.items or {}), 1, -1 do
-        local selectedItem = self.listboxTraitSelected.items[index]
+    local items = self.listboxTraitSelected.items
+    if not items then return end
+    for index = #items, 1, -1 do
+        local selectedItem = items[index]
         local original = M.originalTrait(selectedItem.item)
-        if selectedItem.manualTrait and not isFreeTrait(self, selectedItem.item)
+        if traitItemState(selectedItem).manualTrait and not isFreeTrait(self, selectedItem.item)
             and original:isFree() and not M.traitBuyable(original) then
             self:removeTrait(index)
         end
@@ -431,21 +521,32 @@ local function removeUnbuyableSelectedTraits(self)
 end
 
 local function recalculatePointToSpend(self)
-    local pointToSpend = 0
-    for _, item in ipairs(self.listboxTraitSelected.items or {}) do
-        if item.manualTrait and not isFreeTrait(self, item.item) then
-            pointToSpend = pointToSpend - item.item:getCost()
+    local pointToSpend = 0.0
+    local items = self.listboxTraitSelected.items
+    if not items then
+        self.pointToSpend = pointToSpend
+        return
+    end
+    for index = 1, #items do
+        local selectedItem = items[index]
+        if traitItemState(selectedItem).manualTrait and not isFreeTrait(self, selectedItem.item) then
+            pointToSpend = pointToSpend - selectedItem.item:getCost()
         end
     end
     self.pointToSpend = pointToSpend
 end
 
 local function removeConflictingProfessionTraits(self, grantedDefinitions)
-    for index = #(self.listboxTraitSelected.items or {}), 1, -1 do
-        local selected = self.listboxTraitSelected.items[index].item
+    local selectedItems = self.listboxTraitSelected.items
+    if not selectedItems then return end
+    for index = #selectedItems, 1, -1 do
+        local selected = selectedItems[index].item
+        local selectedType = selected:getType()
         local shouldRemove = false
-        for _, granted in ipairs(grantedDefinitions) do
-            if granted:getMutuallyExclusiveTraits():contains(selected:getType()) then
+        for grantedIndex = 1, #grantedDefinitions do
+            local grantedTrait = grantedDefinitions[grantedIndex]
+            local mutuallyExclusiveTraits = grantedTrait:getMutuallyExclusiveTraits()
+            if mutuallyExclusiveTraits:contains(selectedType) then
                 shouldRemove = true
                 break
             end
@@ -454,24 +555,44 @@ local function removeConflictingProfessionTraits(self, grantedDefinitions)
     end
 end
 
+local function requireMainScreen()
+    local mainScreen = MainScreen.instance
+    if not mainScreen then error("Main screen is unavailable") end
+    if not mainScreen.desc then error("Main screen description panel is unavailable") end
+    return mainScreen
+end
+
+local function requireCreationMain()
+    local creationMain = CharacterCreationMain.instance
+    if not creationMain then error("Character creation main screen is unavailable") end
+    return creationMain
+end
+
 local function applyProfessionSelection(self, profession)
+    local mainScreen = requireMainScreen()
     self.profession = profession
-    for index, professionEntry in ipairs(self.listboxProf.items or {}) do
-        if professionEntry.item == profession then
-            self.listboxProf.selected = index
-            break
+    local professionItems = self.listboxProf.items
+    if professionItems then
+        for index = 1, #professionItems do
+            local professionEntry = professionItems[index]
+            if professionEntry.item == profession then
+                self.listboxProf.selected = index
+                break
+            end
         end
     end
 
-    local descriptionPanel = MainScreen.instance.desc
+    local descriptionPanel = mainScreen.desc
     descriptionPanel:setProfessionSkills(profession)
     descriptionPanel:setCharacterProfession(profession:getType())
     self.cost = M.professionCost(profession)
     self:changeClothes()
 end
 
-CharacterCreationProfession.onSelectProf = function(self, profession)
+function CharacterCreationProfession:onSelectProf(profession)
     if not profession then return end
+    requireMainScreen()
+    requireCreationMain()
     freeSources(self)
     M.apply()
     local fallback = M.fallbackProfession()
@@ -501,10 +622,10 @@ CharacterCreationProfession.onSelectProf = function(self, profession)
     CharacterCreationMain.sort(self.listboxTrait.items)
     CharacterCreationMain.invertSort(self.listboxBadTrait.items)
     CharacterCreationMain.sort(self.listboxTraitSelected.items)
-    CharacterCreationMain.instance:disableBtn()
+    requireCreationMain():disableBtn()
 end
 
-CharacterCreationProfession.populateProfessionList = function(self, list)
+function CharacterCreationProfession.populateProfessionList(_, list)
     M.apply()
     list:clear()
     local professionList = CharacterProfessionDefinition.getProfessions()
@@ -520,10 +641,9 @@ CharacterCreationProfession.populateProfessionList = function(self, list)
 
     if not hasEnabledProfession then
         local fallback = M.fallbackProfession()
-        if fallback then
-            local newitem = list:addItem(fallback:getUIName(), fallback)
-            newitem.tooltip = fallback:getDescription()
-        end
+        if not fallback then error("No profession is available for character creation") end
+        local newitem = list:addItem(fallback:getUIName(), fallback)
+        newitem.tooltip = fallback:getDescription()
     end
 
     list:sort(function(a, b)
@@ -542,26 +662,37 @@ local function addXpBoosts(levels, boosts)
     end
 end
 
+local function professionWhiteBar()
+    local professionScreen = CharacterCreationProfession.instance
+    if not professionScreen then error("Character creation profession screen is unavailable") end
+    if not professionScreen.whiteBar then error("Character creation profession white bar is unavailable") end
+    return professionScreen.whiteBar
+end
+
 local function drawExtraBars(self, y, vanillaLevel, extraLevel, reducedLevel)
-    local dy = (self.itemheight - self.fontHgt) / 2
+    extraLevel = extraLevel or 0
     reducedLevel = reducedLevel or 0
-    local blitH = getTextManager():getFontHeight(UIFont.Small)
+    if extraLevel == 0 and reducedLevel == 0 then return end
+    local dy = (self.itemheight - self.fontHgt) / 2
+    local textManager = getTextManager()
+    local whiteBar = professionWhiteBar()
+    local blitH = textManager:getFontHeight(UIFont.Small)
     local blitW = math.floor(blitH / (10/3))
     local blitGap = math.floor(blitW / 4)
     local multiplierText = qolEnabled("ShowXPMultiplier_Enabled") and "x1.00" or "+ 100%"
-    local blitXOffset = getTextManager():MeasureStringX(UIFont.Small, multiplierText) + SCROLL_BAR_WIDTH
+    local blitXOffset = textManager:MeasureStringX(UIFont.Small, multiplierText) + SCROLL_BAR_WIDTH
     local greenBlitsX = self.width - (blitXOffset + 12 * (blitW + blitGap))
 
     for i = 1, extraLevel do
         local position = vanillaLevel + i
-        self:drawTextureScaled(CharacterCreationProfession.instance.whiteBar,
+        self:drawTextureScaled(whiteBar,
             greenBlitsX + (position * (blitW + blitGap)), y + dy, blitW, blitH, 1,
             0.15, 0.55, 0.9)
     end
 
     for i = 1, reducedLevel do
         local position = vanillaLevel - reducedLevel + i
-        self:drawTextureScaled(CharacterCreationProfession.instance.whiteBar,
+        self:drawTextureScaled(whiteBar,
             greenBlitsX + (position * (blitW + blitGap)), y + dy, blitW, blitH, 1,
             0.9, 0.2, 0.2)
     end
@@ -580,24 +711,19 @@ local function xpMultiplierColor(level)
 end
 
 local function perkKey(perk)
-    for _, entry in ipairs(M.getStandardPerks()) do
-        if entry.perk == perk or tostring(entry.perk) == tostring(perk) then
-            return entry.key
-        end
-    end
-    return tostring(perk)
+    local entriesByPerk = indexStandardPerks().byPerk
+    local entry = entriesByPerk[perk] or entriesByPerk[tostring(perk)]
+    return entry and entry.key or tostring(perk)
 end
 
 local function vanillaMultiplierValue(key, default)
     local values = SandboxVars and SandboxVars.MultiplierConfig
     local multiplierValue = values and values[key]
-    if multiplierValue == nil and SandboxVars then
-        multiplierValue = SandboxVars["MultiplierConfig." .. key]
-    end
-    if multiplierValue == nil and getSandboxOptions then
-        local options = getSandboxOptions()
-        local option = options and options:getOptionByName("MultiplierConfig." .. key)
-        multiplierValue = option and option:getValue()
+    if multiplierValue == nil then
+        local optionName = "MultiplierConfig." .. key
+        local option = getSandboxOptions():getOptionByName(optionName)
+        if not option then error("Missing sandbox option: " .. optionName) end
+        multiplierValue = option:asConfigOption():getValueAsObject()
     end
     return multiplierValue == nil and default or multiplierValue
 end
@@ -605,7 +731,10 @@ end
 local function configXpMultiplier(perk)
     local global = vanillaMultiplierValue("GlobalToggle", true)
     local key = (global == true or global == 1 or global == "true") and "Global" or perkKey(perk)
-    return tonumber(vanillaMultiplierValue(key, 1)) or 1
+    local configuredMultiplier = vanillaMultiplierValue(key, 1)
+    local multiplier = tonumber(configuredMultiplier)
+    if multiplier == nil then error("Invalid XP multiplier for " .. key) end
+    return multiplier
 end
 
 local function pointXpMultiplier(perk, level)
@@ -620,24 +749,32 @@ end
 
 local function selectedTraitFlags(self)
     local flags = {}
-    for _, item in pairs(self.listboxTraitSelected and self.listboxTraitSelected.items or {}) do
-        flags[item.item:getType()] = true
+    local listbox = self.listboxTraitSelected
+    local items = listbox and listbox.items
+    if not items then return flags end
+    for index = 1, #items do
+        flags[items[index].item:getType()] = true
     end
     return flags
 end
 
 local function isPacifistSkill(perk)
-    return perk == Perks.SmallBlade
-        or perk == Perks.LongBlade
-        or perk == Perks.SmallBlunt
-        or perk == Perks.Spear
-        or perk == Perks.Blunt
-        or perk == Perks.Axe
-        or perk == Perks.Aiming
+    if pacifistPerks == nil then
+        pacifistPerks = {
+            [Perks.SmallBlade] = true,
+            [Perks.LongBlade] = true,
+            [Perks.SmallBlunt] = true,
+            [Perks.Spear] = true,
+            [Perks.Blunt] = true,
+            [Perks.Axe] = true,
+            [Perks.Aiming] = true,
+        }
+    end
+    return pacifistPerks[perk] == true
 end
 
 local function additionalXpMultiplier(perk, group, flags)
-    local multiplier = 1
+    local multiplier = 1.0
     local physical = isPhysicalPerk(perk)
     if flags[CharacterTrait.FAST_LEARNER] and not physical then
         multiplier = multiplier * 1.3
@@ -693,19 +830,27 @@ end
 
 local function traitTintedColor(color, flags)
     local tintedColor = color
-    local good = getCore():getGoodHighlitedColor()
-    local bad = getCore():getBadHighlitedColor()
+    local good
+    local bad
+    if flags and (flags.fastLearner or flags.crafty) then
+        local goodColor = getCore():getGoodHighlitedColor()
+        good = { r = goodColor:getR(), g = goodColor:getG(), b = goodColor:getB() }
+    end
+    if flags and (flags.slowLearner or flags.reluctantFighter) then
+        local badColor = getCore():getBadHighlitedColor()
+        bad = { r = badColor:getR(), g = badColor:getG(), b = badColor:getB() }
+    end
     if flags and flags.fastLearner then
-        tintedColor = mixColor(tintedColor, { r = good:getR(), g = good:getG(), b = good:getB() }, 0.2)
+        tintedColor = mixColor(tintedColor, good, 0.2)
     end
     if flags and flags.slowLearner then
-        tintedColor = mixColor(tintedColor, { r = bad:getR(), g = bad:getG(), b = bad:getB() }, 0.2)
+        tintedColor = mixColor(tintedColor, bad, 0.2)
     end
     if flags and flags.crafty then
-        tintedColor = mixColor(tintedColor, { r = good:getR(), g = good:getG(), b = good:getB() }, 0.2)
+        tintedColor = mixColor(tintedColor, good, 0.2)
     end
     if flags and flags.reluctantFighter then
-        tintedColor = mixColor(tintedColor, { r = bad:getR(), g = bad:getG(), b = bad:getB() }, 0.2)
+        tintedColor = mixColor(tintedColor, bad, 0.2)
     end
     return tintedColor
 end
@@ -718,11 +863,8 @@ local function otherSkillsMultiplierColor(skillData)
 end
 
 local function skillPercentage(level)
-    level = clampXpLevel(level)
-    if level == 0 then return "+ 0%" end
-    if level == 1 then return "+ 75%" end
-    if level == 2 then return "+ 100%" end
-    return "+ 125%"
+    local clampedLevel = clampXpLevel(level)
+    return SKILL_PERCENTAGES[clampedLevel] or SKILL_PERCENTAGES[3]
 end
 
 local function skillItem(skillSpec)
@@ -748,11 +890,12 @@ local function drawSkillLabel(self, y, skillEntry, dy, hc)
     local skillData = skillEntry.item
     if qolEnabled("ShowSkillLevels_Enabled") and skillData.showSkillLevel ~= false and skillData.skillName and skillData.skillLevel ~= nil then
         self:drawText(skillData.skillName, UI_BORDER_SPACING, y + dy, hc:getR(), hc:getG(), hc:getB(), 1, UIFont.Small)
-        local x = UI_BORDER_SPACING + getTextManager():MeasureStringX(UIFont.Small, skillData.skillName)
+        local textManager = getTextManager()
+        local x = UI_BORDER_SPACING + textManager:MeasureStringX(UIFont.Small, skillData.skillName)
         local separator = " - "
         x = x - 2
         self:drawText(separator, x, y + dy, SKILL_LEVEL_SEPARATOR_COLOR.r, SKILL_LEVEL_SEPARATOR_COLOR.g, SKILL_LEVEL_SEPARATOR_COLOR.b, 1, UIFont.Small)
-        x = x + getTextManager():MeasureStringX(UIFont.Small, separator)
+        x = x + textManager:MeasureStringX(UIFont.Small, separator)
         self:drawText(tostring(skillData.skillLevel), x, y + dy, SKILL_LEVEL_COLOR.r, SKILL_LEVEL_COLOR.g, SKILL_LEVEL_COLOR.b, 1, UIFont.Small)
         return
     end
@@ -768,75 +911,94 @@ local function drawSkillLabel(self, y, skillEntry, dy, hc)
 end
 
 local nativeDrawXpBoostMap = CharacterCreationProfession.drawXpBoostMap
-CharacterCreationProfession.drawXpBoostMap = function(self, y, skillEntry, alt)
-    local skillData = skillEntry.item
-    local extraLevel = skillData and skillData.extraLevel
-    local showMultiplier = qolEnabled("ShowXPMultiplier_Enabled")
-    local showLevels = qolEnabled("ShowSkillLevels_Enabled")
-    if skillData == nil then
-        return nativeDrawXpBoostMap(self, y, skillEntry, alt)
-    end
-
-    if showMultiplier or showLevels then
-        local vanillaLevel = skillData.level or 0
-        local dy = (self.itemheight - self.fontHgt) / 2
-        local hc = getCore():getGoodHighlitedColor()
-        local blitH = getTextManager():getFontHeight(UIFont.Small)
-        local blitW = math.floor(blitH / (10/3))
-        local blitGap = math.floor(blitW / 4)
-        local blitText = showMultiplier and "x1.00" or "+ 100%"
-        local blitXOffset = getTextManager():MeasureStringX(UIFont.Small, blitText) + SCROLL_BAR_WIDTH
-        local greenBlitsX = self.width - (blitXOffset + 12 * (blitW + blitGap))
-
-        drawSkillLabel(self, y, skillEntry, dy, hc)
-        for i = 1, vanillaLevel do
-            self:drawTextureScaled(CharacterCreationProfession.instance.whiteBar,
-                greenBlitsX + (i * (blitW + blitGap)), y + dy, blitW, blitH, 1,
-                hc:getR(), hc:getG(), hc:getB())
-        end
-        drawExtraBars(self, y, vanillaLevel, extraLevel or 0, skillData.reducedLevel or 0)
-        if showMultiplier or not isPhysicalPerk(skillData.perk) then
-            local text = skillData.percentage
-            local textR, textG, textB = hc:getR(), hc:getG(), hc:getB()
-            if showMultiplier then
-                text = string.format("x%.2f", itemXpMultiplier(skillData))
-                local textColor = skillData.otherSkills
-                    and otherSkillsMultiplierColor(skillData)
-                    or traitTintedColor(xpMultiplierColor(skillData.level), skillData.traitColorFlags)
-                textR, textG, textB = textColor.r, textColor.g, textColor.b
-            end
-            local right = self.width - UI_BORDER_SPACING - SCROLL_BAR_WIDTH
-            self:drawTextRight(text, right, y + dy, textR, textG, textB, 1, UIFont.Small)
-        end
-        local yy = y + self.itemheight
-        self:drawRectBorder(0, y, self:getWidth(), yy - y, 0.5, self.borderColor.r, self.borderColor.g, self.borderColor.b)
-        return yy
-    end
-
-    if extraLevel == nil then
-        return nativeDrawXpBoostMap(self, y, skillEntry, alt)
-    end
-
-    local vanillaLevel = skillData.level or 0
-    if vanillaLevel > 0 then
-        local drawHeight = nativeDrawXpBoostMap(self, y, skillEntry, alt)
-        drawExtraBars(self, y, vanillaLevel, extraLevel, skillData.reducedLevel)
-        return drawHeight
-    end
-
-    local dy = (self.itemheight - self.fontHgt) / 2
-    local hc = getCore():getGoodHighlitedColor()
-    drawSkillLabel(self, y, skillEntry, dy, hc)
-    drawExtraBars(self, y, 0, extraLevel, skillData.reducedLevel)
-    local yy = y + self.itemheight
-    self:drawRectBorder(0, y, self:getWidth(), yy - y, 0.5, self.borderColor.r, self.borderColor.g, self.borderColor.b)
+local function drawXpBoostBorder(listbox, y)
+    local yy = y + listbox.itemheight
+    listbox:drawRectBorder(0, y, listbox:getWidth(), yy - y, 0.5, listbox.borderColor.r, listbox.borderColor.g, listbox.borderColor.b)
     return yy
 end
 
+local function drawVanillaXpBars(listbox, y, vanillaLevel, dy, greenBlitsX, blitW, blitGap, blitH, hc)
+    if vanillaLevel == 0 then return end
+    local whiteBar = professionWhiteBar()
+    for i = 1, vanillaLevel do
+        listbox:drawTextureScaled(whiteBar,
+            greenBlitsX + (i * (blitW + blitGap)), y + dy, blitW, blitH, 1,
+            hc:getR(), hc:getG(), hc:getB())
+    end
+end
+
+local function drawXpMultiplier(listbox, y, skillData, showMultiplier, dy, hc)
+    if not showMultiplier and isPhysicalPerk(skillData.perk) then return end
+
+    local text = skillData.percentage
+    local textR, textG, textB = hc:getR(), hc:getG(), hc:getB()
+    if showMultiplier then
+        text = string.format("x%.2f", itemXpMultiplier(skillData))
+        local textColor = skillData.otherSkills
+            and otherSkillsMultiplierColor(skillData)
+            or traitTintedColor(xpMultiplierColor(skillData.level), skillData.traitColorFlags)
+        textR, textG, textB = textColor.r, textColor.g, textColor.b
+    end
+    local right = listbox.width - UI_BORDER_SPACING - SCROLL_BAR_WIDTH
+    listbox:drawTextRight(text, right, y + dy, textR, textG, textB, 1, UIFont.Small)
+end
+
+local function drawVisibleXpBoost(listbox, y, skillEntry, showMultiplier)
+    local skillData = skillEntry.item
+    local vanillaLevel = skillData.level or 0
+    local dy = (listbox.itemheight - listbox.fontHgt) / 2
+    local hc = getCore():getGoodHighlitedColor()
+    local blitH = getTextManager():getFontHeight(UIFont.Small)
+    local blitW = math.floor(blitH / (10/3))
+    local blitGap = math.floor(blitW / 4)
+    local blitText = showMultiplier and "x1.00" or "+ 100%"
+    local blitXOffset = getTextManager():MeasureStringX(UIFont.Small, blitText) + SCROLL_BAR_WIDTH
+    local greenBlitsX = listbox.width - (blitXOffset + 12 * (blitW + blitGap))
+
+    drawSkillLabel(listbox, y, skillEntry, dy, hc)
+    drawVanillaXpBars(listbox, y, vanillaLevel, dy, greenBlitsX, blitW, blitGap, blitH, hc)
+    drawExtraBars(listbox, y, vanillaLevel, skillData.extraLevel or 0, skillData.reducedLevel or 0)
+    drawXpMultiplier(listbox, y, skillData, showMultiplier, dy, hc)
+    return drawXpBoostBorder(listbox, y)
+end
+
+local function drawAdditionalXpBoost(listbox, y, skillEntry, alt)
+    local skillData = skillEntry.item
+    local extraLevel = skillData.extraLevel
+    local vanillaLevel = skillData.level or 0
+    if vanillaLevel > 0 then
+        local drawHeight = nativeDrawXpBoostMap(listbox, y, skillEntry, alt)
+        drawExtraBars(listbox, y, vanillaLevel, extraLevel, skillData.reducedLevel)
+        return drawHeight
+    end
+
+    local dy = (listbox.itemheight - listbox.fontHgt) / 2
+    local hc = getCore():getGoodHighlitedColor()
+    drawSkillLabel(listbox, y, skillEntry, dy, hc)
+    drawExtraBars(listbox, y, 0, extraLevel, skillData.reducedLevel)
+    return drawXpBoostBorder(listbox, y)
+end
+
+local function drawXpBoostMap(listbox, y, skillEntry, alt)
+    local skillData = skillEntry.item
+    if skillData == nil then return nativeDrawXpBoostMap(listbox, y, skillEntry, alt) end
+
+    local showMultiplier = qolEnabled("ShowXPMultiplier_Enabled")
+    local showLevels = qolEnabled("ShowSkillLevels_Enabled")
+    if showMultiplier or showLevels then return drawVisibleXpBoost(listbox, y, skillEntry, showMultiplier) end
+    if skillData.extraLevel == nil then return nativeDrawXpBoostMap(listbox, y, skillEntry, alt) end
+    return drawAdditionalXpBoost(listbox, y, skillEntry, alt)
+end
+CharacterCreationProfession.drawXpBoostMap = drawXpBoostMap
+
 local function collectXpBoostLevels(self)
     local xpLevels = {}
-    for _, selectedItem in pairs(self.listboxTraitSelected and self.listboxTraitSelected.items or {}) do
-        addXpBoosts(xpLevels, selectedItem.item:getXpBoosts())
+    local listbox = self.listboxTraitSelected
+    local items = listbox and listbox.items
+    if items then
+        for index = 1, #items do
+            addXpBoosts(xpLevels, items[index].item:getXpBoosts())
+        end
     end
     if self.profession then addXpBoosts(xpLevels, self.profession:getXpBoosts()) end
     xpLevels[Perks.Fitness] = (xpLevels[Perks.Fitness] or 0) + 5
@@ -875,7 +1037,8 @@ local function configuredSkill(state, entry)
 end
 
 local function addConfiguredSkills(state)
-    for _, entry in ipairs(state.standardPerks) do
+    for index = 1, #state.standardPerks do
+        local entry = state.standardPerks[index]
         local status, label, skill = configuredSkill(state, entry)
         if status then
             state.xpLevels[entry.perk] = nil
@@ -890,7 +1053,8 @@ local function addConfiguredSkills(state)
 end
 
 local function addBaseSkills(state)
-    for _, entry in ipairs(state.standardPerks) do
+    for index = 1, #state.standardPerks do
+        local entry = state.standardPerks[index]
         if not state.addedPerks[entry.perk] then
             local level = clampXpLevel(state.xpLevels[entry.perk] or 0)
             if level > 0 then
@@ -909,7 +1073,6 @@ local function addBaseSkills(state)
 end
 
 local function addOtherSkillsGroup(state, entry, groupConfig)
-    if not entry then return end
     local label, skill = skillItem({
         perk = entry.perk,
         level = 0,
@@ -924,7 +1087,7 @@ end
 
 local function addCraftSkills(state)
     if not state.skillGroups.hasCraftSkills or not state.traitFlags[CharacterTrait.CRAFTY] then return end
-    addOtherSkillsGroup(state, standardEntry("Woodwork"), {
+    addOtherSkillsGroup(state, requiredStandardEntry("Woodwork"), {
         textKey = "Sandbox_CharacterCreationCustomizer_OtherSkillsCraft",
         group = "Crafting",
         flags = { [CharacterTrait.CRAFTY] = true },
@@ -935,7 +1098,7 @@ end
 
 local function addWeaponSkills(state)
     if not state.skillGroups.hasWeaponSkills or not state.traitFlags[CharacterTrait.PACIFIST] then return end
-    addOtherSkillsGroup(state, standardEntry("Aiming"), {
+    addOtherSkillsGroup(state, requiredStandardEntry("Aiming"), {
         textKey = "Sandbox_CharacterCreationCustomizer_OtherSkillsWeapons",
         flags = {
             [CharacterTrait.PACIFIST] = true,
@@ -949,7 +1112,9 @@ end
 
 local function addGeneralSkills(state)
     if not state.skillGroups.hasOtherSkills then return end
-    addOtherSkillsGroup(state, standardEntry("Maintenance") or state.standardPerks[1], {
+    local entry = standardEntry("Maintenance") or state.standardPerks[1]
+    if not entry then error("No standard perks available") end
+    addOtherSkillsGroup(state, entry, {
         textKey = "Sandbox_CharacterCreationCustomizer_OtherSkills",
         flags = state.traitFlags,
         order = 3,
@@ -975,7 +1140,7 @@ local function sortXpBoosts(state)
     end)
 end
 
-CharacterCreationProfession.checkXPBoost = function(self)
+function CharacterCreationProfession:checkXPBoost()
     self.listboxXpBoost:clear()
     local xpState = {
         listbox = self.listboxXpBoost,
@@ -996,12 +1161,10 @@ CharacterCreationProfession.checkXPBoost = function(self)
 end
 
 local nativeCreate = CharacterCreationProfession.create
-CharacterCreationProfession.create = function(self)
+function CharacterCreationProfession:create()
     M.apply()
     local creationResult = nativeCreate(self)
-    if self.listboxXpBoost then
-        self:checkXPBoost()
-    end
+    self:checkXPBoost()
     return creationResult
 end
 
@@ -1014,7 +1177,10 @@ local function refreshProfessionList(self)
     self:populateProfessionList(self.listboxProf)
     if not selectedProfessionKey then return end
 
-    for index, professionEntry in ipairs(self.listboxProf.items or {}) do
+    local professionItems = self.listboxProf.items
+    if not professionItems then return end
+    for index = 1, #professionItems do
+        local professionEntry = professionItems[index]
         if M.professionKey(professionEntry.item) == selectedProfessionKey then
             self.listboxProf.selected = index
             self.profession = professionEntry.item
@@ -1023,9 +1189,7 @@ local function refreshProfessionList(self)
     end
 end
 
-local function reconcileLiveConfiguration(self)
-    refreshProfessionList(self)
-    freeSources(self)
+local function clearAppliedProfession(self)
     local previousGrants = self.characterCreationCustomizerAppliedGrantedTraits
     local previousProfession = self.profession
     local previousKey = self.characterCreationCustomizerAppliedGrantedProfessionKey
@@ -1034,23 +1198,34 @@ local function reconcileLiveConfiguration(self)
     removeGrantedProfessionTraits(self, previousGrants, previousKey or (previousProfession and M.professionKey(previousProfession)))
     self.characterCreationCustomizerAppliedGrantedTraits = nil
     self.characterCreationCustomizerAppliedGrantedProfessionKey = nil
+end
+
+local function selectFallbackProfession(self)
+    local fallback = M.fallbackProfession()
+    if not self.profession or M.professionEnabled(self.profession) or self.profession == fallback then return true end
+    if not fallback then error("No profession is available for character creation") end
+    self:onSelectProf(fallback)
+    return false
+end
+
+local function applyCurrentProfession(self)
+    if not self.profession then return end
+    local grants = M.professionGrantedTraits(self.profession)
+    addGrantedProfessionTraits(self, self.profession, grants)
+    self.characterCreationCustomizerAppliedGrantedTraits = grants
+    self.characterCreationCustomizerAppliedGrantedProfessionKey = M.professionKey(self.profession)
+    self.cost = M.professionCost(self.profession)
+end
+
+local function reconcileLiveConfiguration(self)
+    refreshProfessionList(self)
+    freeSources(self)
+    clearAppliedProfession(self)
     refreshSelectedTraitDefinitions(self)
     removeDisabledSelectedTraits(self)
 
-    local fallback = M.fallbackProfession()
-    if self.profession and not M.professionEnabled(self.profession)
-        and self.profession ~= fallback and fallback then
-        self:onSelectProf(fallback)
-        return
-    end
-
-    if self.profession then
-        local grants = M.professionGrantedTraits(self.profession)
-        addGrantedProfessionTraits(self, self.profession, grants)
-        self.characterCreationCustomizerAppliedGrantedTraits = grants
-        self.characterCreationCustomizerAppliedGrantedProfessionKey = M.professionKey(self.profession)
-        self.cost = M.professionCost(self.profession)
-    end
+    if not selectFallbackProfession(self) then return end
+    applyCurrentProfession(self)
 
     removeUnbuyableSelectedTraits(self)
     recalculatePointToSpend(self)
@@ -1059,18 +1234,16 @@ local function reconcileLiveConfiguration(self)
 end
 
 local function customizerConfigSignature()
+    local fingerprint = M.configurationFingerprint()
+    if fingerprint ~= nil then return fingerprint end
+
     local values = { M.configurationSignature() }
 
     local professions = CharacterProfessionDefinition.getProfessions()
     for i = 0, professions:size() - 1 do
         local profession = professions:get(i)
         values[#values + 1] = "profession:" .. M.professionKey(profession) .. ":"
-            .. tostring(M.professionEnabled(profession)) .. ":"
-            .. tostring(M.professionCost(profession))
-    end
-
-    for _, entry in ipairs(M.getStandardPerks()) do
-        values[#values + 1] = "standard:" .. entry.key .. ":" .. tostring(M.standardValue(entry))
+            .. tostring(M.professionEnabled(profession))
     end
 
     values[#values + 1] = "qol:levels:" .. tostring(M.optionValue("QOL", "ShowSkillLevels_Enabled"))
@@ -1081,18 +1254,14 @@ local function customizerConfigSignature()
     return table.concat(values, "|")
 end
 
-CharacterCreationProfession.setVisible = function(self, visible, joypadData)
+function CharacterCreationProfession:setVisible(visible, joypadData)
     if visible then
         M.apply()
-        if self.listboxTrait and self.listboxBadTrait and self.listboxTraitSelected then
-            reconcileLiveConfiguration(self)
-        else
-            refreshProfessionList(self)
-        end
+        reconcileLiveConfiguration(self)
         self.characterCreationCustomizerConfigSignature = customizerConfigSignature()
     end
     local visibilityResult = nativeSetVisible(self, visible, joypadData)
-    if visible and self.listboxXpBoost then
+    if visible then
         self:checkXPBoost()
     end
     return visibilityResult
@@ -1100,15 +1269,13 @@ end
 
 local nativeUpdate = CharacterCreationProfession.update
 
-CharacterCreationProfession.update = function(self)
+function CharacterCreationProfession:update()
     local updateResult = nativeUpdate(self)
-    if self.listboxTrait and self.listboxBadTrait and self.listboxTraitSelected then
-        local signature = customizerConfigSignature()
-        if signature ~= self.characterCreationCustomizerConfigSignature then
-            self.characterCreationCustomizerConfigSignature = signature
-            M.apply()
-            reconcileLiveConfiguration(self)
-        end
+    local signature = customizerConfigSignature()
+    if signature ~= self.characterCreationCustomizerConfigSignature then
+        self.characterCreationCustomizerConfigSignature = signature
+        M.apply()
+        reconcileLiveConfiguration(self)
     end
     return updateResult
 end
@@ -1125,13 +1292,12 @@ end
 
 local function settingGroup(setting)
     local section, key = settingParts(setting)
-    if section == "QOL" then return "QOL" end
+    local fixedGroup = rawget(fixedSettingGroups, section)
+    if fixedGroup then return fixedGroup end
     if section == "Standard" then
         local entry = standardEntry(key)
         return entry and entry.group
     end
-    if section == "Professions" then return "Professions" end
-    if section == "NonBuyableTraits" then return "NonBuyableTraits" end
     if section == "Traits" then
         M.rememberTraits()
         local definition = M.originalTraitDefinitionsByShortKey[key]
@@ -1146,12 +1312,8 @@ local function settingRank(setting)
 end
 
 local function titleText(group)
-    if group == "QOL" then
-        return getText("Sandbox_Title_QOL")
-    end
-    if group == "PositiveTraits" or group == "NegativeTraits" or group == "NonBuyableTraits" or group == "Professions" then
-        return getText("Sandbox_Title_" .. group)
-    end
+    local titleKey = rawget(sandboxTitleKeys, group)
+    if titleKey then return getText(titleKey) end
     group = tostring(group):gsub("^Perks%.", "")
     if group == "Farming" then
         group = "FarmingCategory"
@@ -1186,8 +1348,8 @@ local function professionRank(key)
             if aUnemployed or bUnemployed then return aUnemployed and not bUnemployed end
             return not string.sort(a:getUIName(), b:getUIName())
         end)
-        for rank, profession in ipairs(professions) do
-            professionRanks[M.professionKey(profession)] = rank
+        for rank = 1, #professions do
+            professionRanks[M.professionKey(professions[rank])] = rank
         end
     end
     return professionRanks[key] or 100000
@@ -1216,7 +1378,8 @@ end
 
 local function hasCustomizerSettings(page)
     if not page or not page.settings then return false end
-    for _, setting in ipairs(page.settings) do
+    for index = 1, #page.settings do
+        local setting = page.settings[index]
         if settingParts(setting) then return true end
     end
     return false
@@ -1254,15 +1417,15 @@ end
 
 local function settingsOrder(page)
     local order = {}
-    for index, setting in ipairs(page.settings) do
-        order[index] = setting
+    for index = 1, #page.settings do
+        order[index] = page.settings[index]
     end
     return order
 end
 
 local function settingsOrderChanged(settings, previousOrder)
-    for index, setting in ipairs(settings) do
-        if previousOrder[index] ~= setting then return true end
+    for index = 1, #settings do
+        if previousOrder[index] ~= settings[index] then return true end
     end
     return false
 end
@@ -1276,6 +1439,7 @@ end
 local function updateSettingMetadata(setting, previousGroup, previousKey)
     local group = settingGroup(setting)
     local section, key, part = settingParts(setting)
+    local isStandard = section == "Standard"
     local changed = false
     local tooltipKey = tooltipKeyFor(section, key, part)
     if tooltipKey then
@@ -1284,13 +1448,13 @@ local function updateSettingMetadata(setting, previousGroup, previousKey)
 
     local title = settingTitles[setting.name]
         or (group and group ~= previousGroup and group or nil)
-    local subtitle = isSubtitleSetting(section, key, part) and key ~= previousKey and settingLabel(setting) or nil
-    local standardTitle = section == "Standard" and title or nil
-    local standardLabel = section == "Standard" and part == "InitialLevel" and settingLabel(setting) or nil
+    local subtitle = not isStandard and isSubtitleSetting(section, key, part) and key ~= previousKey and settingLabel(setting) or nil
+    local standardTitle = isStandard and title or nil
+    local standardLabel = isStandard and part == "InitialLevel" and settingLabel(setting) or nil
 
-    if section == "Standard" or section == "Professions" then
+    if isStandard or section == "Professions" then
         changed = updateSettingValue(changed, setting, "title", nil)
-        if section == "Standard" then
+        if isStandard then
             changed = updateSettingValue(changed, setting, "translatedName", standardLabel)
             subtitle = nil
         end
@@ -1305,9 +1469,8 @@ end
 
 local function addTitles(page)
     if not page or not page.settings then return false end
-    M.rememberTraits()
-
     if not hasCustomizerSettings(page) then return false end
+    M.rememberTraits()
 
     local oldOrder = settingsOrder(page)
     table.sort(page.settings, compareSettings)
@@ -1315,7 +1478,8 @@ local function addTitles(page)
 
     local previousGroup
     local previousKey
-    for _, setting in ipairs(page.settings) do
+    for index = 1, #page.settings do
+        local setting = page.settings[index]
         local settingChanged
         settingChanged, previousGroup, previousKey = updateSettingMetadata(setting, previousGroup, previousKey)
         changed = settingChanged or changed
@@ -1341,7 +1505,8 @@ end
 
 local function syncPanelTooltips(panel, page)
     if not panel or not page or not page.settings then return end
-    for _, setting in ipairs(page.settings) do
+    for index = 1, #page.settings do
+        local setting = page.settings[index]
         local section, key, part = settingParts(setting)
         local tooltipKey = tooltipKeyFor(section, key, part)
         if tooltipKey then
@@ -1417,8 +1582,9 @@ end
 
 local function seedPanelSettings(page, states)
     if not page or not page.settings then return end
-    local options = getSandboxOptions and getSandboxOptions()
-    for _, setting in ipairs(page.settings) do
+    local options = getSandboxOptions()
+    for index = 1, #page.settings do
+        local setting = page.settings[index]
         local state = states[setting.name]
         if state then
             if state.text ~= nil then
@@ -1426,17 +1592,17 @@ local function seedPanelSettings(page, states)
             elseif state.selected ~= nil then
                 setting.default = state.selected
             end
-        elseif options then
+        else
             local option = options:getOptionByName(setting.name)
-            if option then
-                local optionType = option:getType()
-                if optionType == "integer" or optionType == "double" then
-                    setting.text = option:getValueAsString()
-                elseif optionType == "string" or optionType == "text" then
-                    setting.text = option:getValue()
-                elseif optionType == "boolean" then
-                    setting.default = option:getValue()
-                end
+            if not option then error("Missing sandbox option: " .. setting.name) end
+            local configOption = option:asConfigOption()
+            local optionType = configOption:getType()
+            if optionType == "integer" or optionType == "double" then
+                setting.text = configOption:getValueAsString()
+            elseif optionType == "string" or optionType == "text" then
+                setting.text = configOption:getValueAsObject()
+            elseif optionType == "boolean" then
+                setting.default = configOption:getValueAsObject()
             end
         end
     end
@@ -1465,7 +1631,8 @@ local function addStandardTitles(panel, page)
     local titleHeight = getTextManager():getFontFromEnum(UIFont.Large):getLineHeight() + 6
     local addedHeight = 0
 
-    for _, setting in ipairs(page.settings) do
+    for index = 1, #page.settings do
+        local setting = page.settings[index]
         if setting.standardTitle then
             local row = panel.labels[setting.name]
             if row then
@@ -1491,7 +1658,8 @@ local function addSandboxSubtitles(panel, page)
     local subtitleSpacing = 8
     local addedHeight = 0
 
-    for _, setting in ipairs(page.settings) do
+    for index = 1, #page.settings do
+        local setting = page.settings[index]
         local section, key, part = settingParts(setting)
         if key and isSubtitleSetting(section, key, part) and setting.subtitle then
             local row = panel.labels[setting.name]
@@ -1514,35 +1682,50 @@ end
 
 local sandboxPanelHooked = false
 local hostPanelHooked = false
+local rebuiltSandboxScreen
+local rebuiltSandboxListbox
+local rebuiltSandboxFingerprint
+local rebuiltHostPageEdit
+local rebuiltHostListbox
+local rebuiltHostFingerprint
 
-local function withValidCustomizerIntegers(owner, category, options, callback)
-    local restored = {}
+local function filteredSettingsOptions(owner, category, options)
     local controls = owner and owner.controls
     controls = category and controls and controls[category] or controls
-    if controls and options then
-        for i = 1, options:getNumOptions() do
-            local option = options:getOptionByIndex(i - 1)
-            local control = option and controls[option:getName()]
-            if option and control and option:getType() == "integer"
-                and option:getName():match("^CharacterCreationCustomizer%.") then
+    local validOptions = {}
+    local optionCount = options:getNumOptions()
+    for index = 0, optionCount - 1 do
+        local option = options:getOptionByIndex(index)
+        local optionName = option:getName()
+        local control = controls and controls[optionName]
+        local invalidInteger = false
+        if control and optionName:match("^CharacterCreationCustomizer%.") then
+            local configOption = option:asConfigOption()
+            if configOption:getType() == "integer" then
                 local text = control.getText and control:getText()
-                if text ~= nil and (text == "" or text == "-" or not option:isValidString(text)) then
-                    restored[#restored + 1] = { control = control, text = text }
-                    control:setText(option:getValueAsString())
-                end
+                invalidInteger = text ~= nil and (text == "" or text == "-" or not configOption:isValidString(text))
             end
         end
+        if not invalidInteger then
+            validOptions[#validOptions + 1] = option
+        end
     end
-
-    local callbackSucceeded, callbackResult = pcall(callback)
-    for _, state in ipairs(restored) do
-        state.control:setText(state.text)
-    end
-    if not callbackSucceeded then error(callbackResult) end
-    return callbackResult
+    return {
+        getNumOptions = function()
+            return #validOptions
+        end,
+        getOptionByIndex = function(_, index)
+            return validOptions[index + 1]
+        end,
+    }
 end
 
-local function decorateSandboxPanel(panel, page)
+local function filteredSettingsFromUI(owner, category, options, callback)
+    local filteredOptions = filteredSettingsOptions(owner, category, options)
+    return callback(filteredOptions)
+end
+
+local function decorateSettingsPanel(panel, page)
     syncPanelTooltips(panel, page)
     addStandardTitles(panel, page)
     addSandboxSubtitles(panel, page)
@@ -1551,22 +1734,19 @@ end
 
 local function installSandboxPanelHook()
     if sandboxPanelHooked or not SandboxOptionsScreen then return end
-    local original = SandboxOptionsScreen.createPanel
-    if not original then return end
-
+    local originalCreatePanel = SandboxOptionsScreen.createPanel
     local originalSettingsFromUI = SandboxOptionsScreen.settingsFromUI
-    if originalSettingsFromUI then
-        SandboxOptionsScreen.settingsFromUI = function(self, options)
-            return withValidCustomizerIntegers(self, nil, options, function()
-                return originalSettingsFromUI(self, options)
-            end)
-        end
+
+    function SandboxOptionsScreen:settingsFromUI(options)
+        return filteredSettingsFromUI(self, nil, options, function(filteredOptions)
+            return originalSettingsFromUI(self, filteredOptions)
+        end)
     end
 
-    SandboxOptionsScreen.createPanel = function(self, page)
+    function SandboxOptionsScreen:createPanel(page)
         seedPanelSettings(page, {})
         addTitles(page)
-        return decorateSandboxPanel(original(self, page), page)
+        return decorateSettingsPanel(originalCreatePanel(self, page), page)
     end
 
     sandboxPanelHooked = true
@@ -1577,30 +1757,32 @@ local function installHostPanelHook()
     local screen = ServerSettingsScreen and ServerSettingsScreen.instance
     local pageEdit = screen and screen.pageEdit
     if not pageEdit then return end
-    local original = pageEdit.createPanel
-    if not original then return end
+    local pageEditMethods = getmetatable(pageEdit).__index
+    local originalCreatePanel = pageEditMethods.createPanel
+    if not originalCreatePanel then return end
+    local originalSettingsFromUI = pageEditMethods.settingsFromUIAux
 
-    local originalSettingsFromUI = pageEdit.settingsFromUIAux
     if originalSettingsFromUI then
-        pageEdit.settingsFromUIAux = function(self, category, options)
-            return withValidCustomizerIntegers(self, category, options, function()
-                return originalSettingsFromUI(self, category, options)
+        rawset(pageEdit, "settingsFromUIAux", function(owner, category, options)
+            return filteredSettingsFromUI(owner, category, options, function(filteredOptions)
+                return originalSettingsFromUI(owner, category, filteredOptions)
             end)
-        end
+        end)
     end
 
-    pageEdit.createPanel = function(self, category, page)
+    rawset(pageEdit, "createPanel", function(owner, category, page)
         seedPanelSettings(page, {})
         addTitles(page)
-        return decorateSandboxPanel(original(self, category, page), page)
-    end
+        return decorateSettingsPanel(originalCreatePanel(owner, category, page), page)
+    end)
 
     hostPanelHooked = true
 end
 
 local function rebuildSettingsPanels(owner, listbox, createPanel)
-    for _, item in ipairs(listbox.items) do
-        local itemData = item.item
+    for index = 1, #listbox.items do
+        local listItem = listbox.items[index]
+        local itemData = listItem.item
         local page = itemData and itemData.page
         local changed = addTitles(page)
         if changed or (hasCustomizerSettings(page) and itemData and itemData.panel and not itemData.panel.subtitles) then
@@ -1628,25 +1810,46 @@ end
 local function rebuildSandboxOptionsPage()
     local screen = SandboxOptionsScreen and SandboxOptionsScreen.instance
     if not screen or not screen.listbox then return end
+    local fingerprint = M.configurationFingerprint()
+    if screen == rebuiltSandboxScreen
+        and screen.listbox == rebuiltSandboxListbox
+        and fingerprint ~= nil
+        and fingerprint == rebuiltSandboxFingerprint then
+        return
+    end
 
     rebuildSettingsPanels(screen, screen.listbox, function(page)
         return screen:createPanel(page)
     end)
+    rebuiltSandboxScreen = screen
+    rebuiltSandboxListbox = screen.listbox
+    rebuiltSandboxFingerprint = fingerprint
 end
 
 local function rebuildHostSettingsPage()
     local screen = ServerSettingsScreen and ServerSettingsScreen.instance
     local pageEdit = screen and screen.pageEdit
-    if not pageEdit or not pageEdit.listbox then return end
+    local listbox = pageEdit and rawget(pageEdit, "listbox")
+    if not pageEdit or not listbox then return end
+    local fingerprint = M.configurationFingerprint()
+    if pageEdit == rebuiltHostPageEdit
+        and listbox == rebuiltHostListbox
+        and fingerprint ~= nil
+        and fingerprint == rebuiltHostFingerprint then
+        return
+    end
     installHostPanelHook()
+    local createPanel = rawget(pageEdit, "createPanel")
 
-    rebuildSettingsPanels(pageEdit, pageEdit.listbox, function(page)
-        return pageEdit:createPanel({ name = "Sandbox" }, page)
+    rebuildSettingsPanels(pageEdit, listbox, function(page)
+        return createPanel(pageEdit, { name = "Sandbox" }, page)
     end)
+    rebuiltHostPageEdit = pageEdit
+    rebuiltHostListbox = listbox
+    rebuiltHostFingerprint = fingerprint
 end
 
 local function initialize()
-    M.apply()
     installSandboxPanelHook()
     installHostPanelHook()
     rebuildSandboxOptionsPage()

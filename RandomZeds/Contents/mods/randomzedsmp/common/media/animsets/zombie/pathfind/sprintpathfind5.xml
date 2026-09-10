@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<animNode x_extends="sprintPathfind.xml">
+<animNode x_extends="sprintpathfind.xml">
 	<m_Name>sprintPathfind5</m_Name>
 	<m_AnimName>Zombie_Sprint</m_AnimName>
 	<m_Conditions x_name="570ad3dd-dde4-466b-a474-947e3f853624">

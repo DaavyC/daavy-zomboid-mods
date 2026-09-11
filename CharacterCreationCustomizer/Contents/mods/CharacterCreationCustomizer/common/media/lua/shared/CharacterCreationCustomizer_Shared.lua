@@ -203,7 +203,7 @@ function M.optionValue(section, key)
     local options = getSandboxOptions()
     local option = options:getOptionByName(optionName)
     if not option then
-        if optionalOptionMissing(options, section, key) then return end
+        if optionalOptionMissing(options, section, key) then return nil end
         error("Missing sandbox option: " .. optionName)
     end
     return option:asConfigOption():getValueAsObject()

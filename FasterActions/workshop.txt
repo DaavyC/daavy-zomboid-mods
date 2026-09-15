@@ -1,0 +1,23 @@
+version=1
+title=Faster Actions
+description=[h1]Faster Actions [B42.20][/h1]
+description=Change how long actions take with separate speed settings for each category.
+description=
+description=[h2]Features[/h2]
+description=[list]
+description=[*]Set a different speed for each category: crafting, building, mechanic, welding, ripping, sawing, carving, knapping, cleaning, tailoring, equip, inventory, and other actions. Building, mechanic, equip, and inventory speeds require the Synapse API in multiplayer.
+description=[*]Use separate speed settings for actions inside safehouses.
+description=[*]Choose speeds from 0.25x to 10x. Use -1 for instant actions.
+description=[*]Enable Instant hood to open vehicle hoods instantly.
+description=[*]Enable Instant map to open the world map instantly.
+description=[*]Progress bars follow the selected action speed. (Requires Synapse API)
+description=[/list]
+description=
+description=[h2]Synapse API[/h2]
+description=The optional [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3793697487]Synapse API[/url] Java mod enables Building, Mechanic, Equip, and Inventory speed in multiplayer. It also makes progress bars follow the selected speed.
+description=
+description=[h2]Support[/h2]
+description=Join the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url] for help and feedback.
+description=[url=https://ko-fi.com/C1I7209LY][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
+tags=Build 42;Balance;Multiplayer;QoL
+visibility=public

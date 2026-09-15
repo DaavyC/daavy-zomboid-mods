@@ -1,0 +1,249 @@
+VERSION = 1,
+
+option FasterActions.InstantHood {
+    type = boolean,
+    default = false,
+    page = FasterActions,
+    translation = FasterActions_InstantHood,
+}
+
+option FasterActions.InstantMap {
+    type = boolean,
+    default = false,
+    page = FasterActions,
+    translation = FasterActions_InstantMap,
+}
+
+option FasterActions.CraftingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_CraftingMultiplier,
+}
+
+option FasterActions.BuildingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_BuildingMultiplier,
+}
+
+option FasterActions.MechanicMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_MechanicMultiplier,
+}
+
+option FasterActions.WeldingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_WeldingMultiplier,
+}
+
+option FasterActions.RippingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_RippingMultiplier,
+}
+
+option FasterActions.SawingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SawingMultiplier,
+}
+
+option FasterActions.CarvingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_CarvingMultiplier,
+}
+
+option FasterActions.KnappingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_KnappingMultiplier,
+}
+
+option FasterActions.CleaningMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_CleaningMultiplier,
+}
+
+option FasterActions.TailoringMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_TailoringMultiplier,
+}
+
+option FasterActions.EquipMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_EquipMultiplier,
+}
+
+option FasterActions.InventoryMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_InventoryMultiplier,
+}
+
+option FasterActions.OtherMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_OtherMultiplier,
+}
+
+option FasterActions.SafehouseCraftingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseCraftingMultiplier,
+}
+
+option FasterActions.SafehouseBuildingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseBuildingMultiplier,
+}
+
+option FasterActions.SafehouseMechanicMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseMechanicMultiplier,
+}
+
+option FasterActions.SafehouseWeldingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseWeldingMultiplier,
+}
+
+option FasterActions.SafehouseRippingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseRippingMultiplier,
+}
+
+option FasterActions.SafehouseSawingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseSawingMultiplier,
+}
+
+option FasterActions.SafehouseCarvingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseCarvingMultiplier,
+}
+
+option FasterActions.SafehouseKnappingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseKnappingMultiplier,
+}
+
+option FasterActions.SafehouseCleaningMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseCleaningMultiplier,
+}
+
+option FasterActions.SafehouseTailoringMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseTailoringMultiplier,
+}
+
+option FasterActions.SafehouseEquipMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseEquipMultiplier,
+}
+
+option FasterActions.SafehouseInventoryMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseInventoryMultiplier,
+}
+
+option FasterActions.SafehouseOtherMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseOtherMultiplier,
+}

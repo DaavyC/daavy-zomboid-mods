@@ -17,7 +17,6 @@ local MAX_SPRINTER_REFRESHES_PER_CALL = 32
 local SPRINTER_SPEED_TOLERANCE = 0.005
 local EXCLUDED_TAG = "RandomZedsExcluded"
 local NATIVE_OPTION_NAMES = table.newarray("Sight", "Hearing")
-local DEBUG_OPTION_NAME = "RandomZedsMain.Debug"
 local MIN_SPRINTER_MULTIPLIER = 0.5
 local MAX_SPRINTER_MULTIPLIER = 1.5
 local pendingSprinterAnimationRefreshes = setmetatable({}, { __mode = "k" })
@@ -126,9 +125,7 @@ function RandomZeds.isExcluded(zombie)
 end
 
 function RandomZeds.isDebugEnabled()
-    local options = getSandboxOptions and getSandboxOptions()
-    local option = options and options:getOptionByName(DEBUG_OPTION_NAME)
-    return option and option:getValue() == true
+    return getCore():getDebug()
 end
 
 function RandomZeds.debug(message)
@@ -208,12 +205,13 @@ local function getSynapseApi()
     if not synapse then
         return nil
     end
-    local api = synapse.API
-    if not api or type(api.getApiVersion) ~= "function"
-            or type(api.applyZombieState) ~= "function" then
+    local apiRoot = synapse.API
+    local api = apiRoot and (apiRoot.RandomZeds or apiRoot)
+    if not apiRoot or type(apiRoot.getApiVersion) ~= "function"
+            or not api or type(api.applyZombieState) ~= "function" then
         return nil
     end
-    if api.getApiVersion() ~= 1 then return nil end
+    if apiRoot.getApiVersion() ~= 1 then return nil end
     synapseApi = api
     synapseApiAvailable = true
     return api

@@ -1,11 +1,6 @@
 # Codex
 AGENTS.md
 .tools
-.emmyrc.json
-
-# IDE
-.zed
 
 # Ignore (mods that I don't want to commit but are in my local mod folder)
-ModTemplate
 ManageContainersPatch

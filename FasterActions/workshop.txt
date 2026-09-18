@@ -1,4 +1,5 @@
 version=1
+id=3803796255
 title=Faster Actions
 description=[h1]Faster Actions [B42.20][/h1]
 description=Change how long actions take with separate speed settings for each category.

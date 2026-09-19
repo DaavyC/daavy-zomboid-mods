@@ -21,13 +21,6 @@ option CharacterCreationCustomizer.QOL_ShowProfessionPoints_Enabled {
     translation = CharacterCreationCustomizer_QOL_ShowProfessionPoints,
 }
 
-option CharacterCreationCustomizer.Debug {
-    type = boolean,
-    default = false,
-    page = CharacterCreationCustomizer_QOL,
-    translation = CharacterCreationCustomizer_Debug,
-}
-
 option CharacterCreationCustomizer.NonBuyableTraits_axeman_Buyable {
     type = boolean,
     default = false,

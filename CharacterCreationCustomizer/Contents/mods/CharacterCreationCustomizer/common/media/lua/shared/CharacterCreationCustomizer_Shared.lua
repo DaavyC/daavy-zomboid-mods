@@ -3,7 +3,6 @@ if existingCustomizer then return existingCustomizer end
 
 local M = {}
 rawset(_G, "CharacterCreationCustomizer", M)
-local DEBUG_OPTION_NAME = "CharacterCreationCustomizer.Debug"
 local PROFESSION_OPTION_SUFFIXES = { "Disable", "Cost", "GrantedTraits", "GrantedItems" }
 local standardPerks
 local configurationFingerprintTable
@@ -123,8 +122,7 @@ M.originalProfessionDefinitions = {}
 M.originalProfessionGrants = {}
 
 function M.isDebugEnabled()
-    local option = getSandboxOptions():getOptionByName(DEBUG_OPTION_NAME)
-    return option:asConfigOption():getValueAsObject() == true
+    return getDebug()
 end
 
 function M.debug(message)

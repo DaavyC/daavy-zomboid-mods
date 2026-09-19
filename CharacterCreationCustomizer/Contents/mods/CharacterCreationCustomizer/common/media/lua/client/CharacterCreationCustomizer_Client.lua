@@ -81,10 +81,6 @@ local settingTooltipKeys = {
     },
 }
 
-local settingTitles = {
-    ["CharacterCreationCustomizer.Debug"] = "CharacterCreationCustomizer_Advanced",
-}
-
 local traitItemStates = setmetatable({}, { __mode = "k" })
 
 local function traitItemState(item)
@@ -1446,8 +1442,7 @@ local function updateSettingMetadata(setting, previousGroup, previousKey)
         changed = updateSettingValue(changed, setting, "tooltip", composeTooltip(setting, getText(tooltipKey)))
     end
 
-    local title = settingTitles[setting.name]
-        or (group and group ~= previousGroup and group or nil)
+    local title = group and group ~= previousGroup and group or nil
     local subtitle = not isStandard and isSubtitleSetting(section, key, part) and key ~= previousKey and settingLabel(setting) or nil
     local standardTitle = isStandard and title or nil
     local standardLabel = isStandard and part == "InitialLevel" and settingLabel(setting) or nil

@@ -4,6 +4,6 @@ poster=poster.png
 id=AdminCharacterRestore
 description=Admin-only multiplayer restores that apply a dead character's progress to a new living character. The mod never revives characters or restores inventory, clothing, position, or health.
 author=Daavy
-modversion=1.0.3
+modversion=1.0.4
 pzversion=42
 versionMin=42.20

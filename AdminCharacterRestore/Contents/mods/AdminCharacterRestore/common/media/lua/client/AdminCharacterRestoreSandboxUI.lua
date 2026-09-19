@@ -3,8 +3,7 @@ require "AdminCharacterRestoreShared"
 local ACR = AdminCharacterRestore
 
 local TITLE_BY_OPTION = {
-    ["AdminCharacterRestore.SnapshotIntervalHours"] = "AdminCharacterRestore_Snapshots",
-    ["AdminCharacterRestore.Debug"] = "AdminCharacterRestore_Advanced"
+    ["AdminCharacterRestore.SnapshotIntervalHours"] = "AdminCharacterRestore_Snapshots"
 }
 
 local function copyPage(page)

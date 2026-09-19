@@ -7,7 +7,6 @@ ACR.DATA_VERSION = 2
 
 local SNAPSHOT_INTERVAL_OPTION = "AdminCharacterRestore.SnapshotIntervalHours"
 local MAX_SNAPSHOTS_OPTION = "AdminCharacterRestore.MaxSnapshotsPerPlayer"
-local DEBUG_OPTION = "AdminCharacterRestore.Debug"
 local DEFAULT_SNAPSHOT_INTERVAL_HOURS = 2
 local DEFAULT_MAX_SNAPSHOTS = 5
 local MIN_SNAPSHOT_INTERVAL_HOURS = 1
@@ -43,7 +42,7 @@ function ACR.getMaxSnapshotsPerPlayer()
 end
 
 function ACR.isDebugEnabled()
-    return readSandboxOption(DEBUG_OPTION) == true
+    return getDebug()
 end
 
 function ACR.debug(message)

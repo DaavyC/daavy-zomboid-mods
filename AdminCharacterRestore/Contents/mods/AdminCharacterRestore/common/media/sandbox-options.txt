@@ -17,10 +17,3 @@ option AdminCharacterRestore.MaxSnapshotsPerPlayer {
     page = AdminCharacterRestore,
     translation = AdminCharacterRestore_MaxSnapshotsPerPlayer,
 }
-
-option AdminCharacterRestore.Debug {
-    type = boolean,
-    default = false,
-    page = AdminCharacterRestore,
-    translation = AdminCharacterRestore_Debug,
-}

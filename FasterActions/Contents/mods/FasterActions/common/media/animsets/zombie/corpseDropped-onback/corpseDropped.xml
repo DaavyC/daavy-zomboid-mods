@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+	<m_Name>corpseDropped</m_Name>
+	<m_AnimName>Bob_LaidDown_OnBack</m_AnimName>
+	<m_Looped>false</m_Looped>
+	<m_BlendTime>0.20</m_BlendTime>
+	<m_EarlyTransitionOut>true</m_EarlyTransitionOut>
+	<m_SpeedScale>FasterActionsCorpseSpeed161</m_SpeedScale>
+	<m_SyncTrackingEnabled>false</m_SyncTrackingEnabled>
+	<m_Events x_name="05712973-c04e-4254-b859-1d727493ef8a">
+		<m_EventName>SetVariable</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>fallOnFront=FALSE</m_ParameterValue>
+	</m_Events>
+</animNode>

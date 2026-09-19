@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+	<m_Name>onFrontThrownIntoContainer</m_Name>
+	<m_AnimName>Bob_Body_ThrownIntoContainer2</m_AnimName>
+	<m_DeferredBoneName>Bip01</m_DeferredBoneName>
+	<m_deferredBoneAxis>Z</m_deferredBoneAxis>
+	<m_useDeferedRotation>true</m_useDeferedRotation>
+	<m_Looped>false</m_Looped>
+	<m_BlendTime>0.20</m_BlendTime>
+	<m_EarlyTransitionOut>true</m_EarlyTransitionOut>
+	<m_SpeedScale>FasterActionsCorpseSpeed08</m_SpeedScale>
+	<m_SyncTrackingEnabled>false</m_SyncTrackingEnabled>
+	<m_Events x_name="FlagWhileAlive(grappledThrownOutWindow)">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>grappledThrownIntoContainer</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="0e7be2ca-73d0-43b2-b2f2-3b8a6e11d7d6">
+		<m_EventName>SetVariable</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>fallOnFront=true</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="84adcfe0-af6f-40e2-a7a4-0e5c1e0969cb">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_TimePc>0.65</m_TimePc>
+		<m_ParameterValue>ClimbContainerStarted</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="037ed3d6-7cd0-4620-8538-a2252a1de597">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_TimePc>0.95</m_TimePc>
+		<m_ParameterValue>isRendered=false</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="1241180f-f405-495a-bd41-ae66391993a8">
+		<m_EventName>PlaySound</m_EventName>
+		<m_TimePc>0.12</m_TimePc>
+		<m_ParameterValue>CorpseThrowIntoContainer</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="4a410967-5029-4df1-b608-d9626273e844">
+		<m_EventName>PlaySound</m_EventName>
+		<m_TimePc>0.82</m_TimePc>
+		<m_ParameterValue>CorpseLandInContainer</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="c8ed2ab9-54e6-414b-b987-2d36b182d568">
+		<m_EventName>DepositInContainer</m_EventName>
+		<m_Time>End</m_Time>
+		<m_ParameterValue></m_ParameterValue>
+	</m_Events>
+</animNode>

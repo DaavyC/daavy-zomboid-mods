@@ -4,6 +4,6 @@ poster=poster.png
 id=FasterActions
 author=Daavy
 description=Change the duration of timed actions with separate settings for each category.
-modversion=1.0.0
+modversion=1.1.0
 pzversion=42
 versionMin=42.20

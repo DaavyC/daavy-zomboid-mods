@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+	<m_Name>legsOnFrontThrowOverFence</m_Name>
+	<m_Priority>4</m_Priority>
+	<m_AnimName>Bob_ThrowBody_OutOFWindowTrans02</m_AnimName>
+	<m_MatchingGrappledAnimNode>legsOnFrontThrownOverFence</m_MatchingGrappledAnimNode>
+	<m_GrappleOffsetForward>0.75</m_GrappleOffsetForward>
+	<m_GrappleTweenInTime>1</m_GrappleTweenInTime>
+	<m_GrapplerOffsetBehaviour>Grappled_TweenOutToNone</m_GrapplerOffsetBehaviour>
+	<m_DeferredBoneName>Bip01</m_DeferredBoneName>
+	<m_deferredBoneAxis>Z</m_deferredBoneAxis>
+	<m_Looped>false</m_Looped>
+	<m_BlendTime>0.20</m_BlendTime>
+	<m_SpeedScale>FasterActionsCorpseSpeed08</m_SpeedScale>
+	<m_maxTorsoTwist>0.00</m_maxTorsoTwist>
+	<m_SyncTrackingEnabled>false</m_SyncTrackingEnabled>
+	<m_Conditions x_name="bIsGrappling">
+		<m_Name>bIsGrappling</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>true</m_Value>
+	</m_Conditions>
+	<m_Conditions x_name="bDoContinueGrapple">
+		<m_Name>bDoContinueGrapple</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>false</m_Value>
+	</m_Conditions>
+	<m_Conditions x_name="sharedGrappleType">
+		<m_Name>sharedGrappleType</m_Name>
+		<m_Type>STRING</m_Type>
+		<m_Value>BwdDragLegsOnFront</m_Value>
+	</m_Conditions>
+	<m_Conditions x_name="$GrappledTarget.bOnFloor">
+		<m_Name>$GrappledTarget.bOnFloor</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>false</m_Value>
+	</m_Conditions>
+	<m_Events x_name="FlagWhileAlive(isAnimatingBackwards)">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>isAnimatingBackwards</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="FlagWhileAlive($GrappledTarget.grappledThrownOutWindow)">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>$GrappledTarget.grappledThrownOverFence</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="FlagWhileAlive(BlockMovement)">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>BlockMovement</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="SetSharedGrappleType(BwdDragHead)">
+		<m_EventName>SetSharedGrappleType</m_EventName>
+		<m_Time>End</m_Time>
+		<m_ParameterValue>BwdDragHead</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="5dce4d49-e110-40c6-9f41-cf3568be38e4">
+		<m_EventName>SetVariable</m_EventName>
+		<m_Time>End</m_Time>
+		<m_ParameterValue>$GrappledTarget.fallOnFront=false</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="7040a32d-42ef-4b4e-90d9-02389c2562a0">
+		<m_EventName>PlayerVoiceSound</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>CorpseHighEffort</m_ParameterValue>
+	</m_Events>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Spine1</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Neck</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_BackPack</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Prop1</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Prop2</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Spine</boneName>
+		<weight>0.40</weight>
+		<includeDescendants>false</includeDescendants>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01</boneName>
+		<weight>0.20</weight>
+	</m_SubStateBoneWeights>
+</animNode>

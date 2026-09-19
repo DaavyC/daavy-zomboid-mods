@@ -4,6 +4,17 @@ local INSTANT_MULTIPLIER = -1.0
 local INSTANT_DURATION = 0.01
 local OPTION_PREFIX = "FasterActions."
 local SAFEHOUSE_OPTION_PREFIX = OPTION_PREFIX .. "Safehouse"
+local SAFEHOUSE_ENABLED_OPTION = OPTION_PREFIX .. "SafehouseEnabled"
+local CORPSE_DRAGGING_SPEED_OPTION = OPTION_PREFIX .. "CorpseDraggingSpeedMultiplier"
+local CORPSE_DRAGGING_SPEED_08_VARIABLE = "FasterActionsCorpseSpeed08"
+local CORPSE_DRAGGING_SPEED_12_VARIABLE = "FasterActionsCorpseSpeed12"
+local CORPSE_DRAGGING_SPEED_161_VARIABLE = "FasterActionsCorpseSpeed161"
+local CORPSE_DRAGGING_SPEED_VARIABLE = "FasterActionsCorpseDragSpeed"
+local CORPSE_DRAGGING_MIN_MULTIPLIER = 0.25
+local CORPSE_DRAGGING_MAX_MULTIPLIER = 10.0
+local CORPSE_DRAGGING_SPEED_TOLERANCE = 0.005
+local initializedCorpseDraggingPlayers = setmetatable({}, { __mode = "k" })
+local activeCorpseDraggingTargets = setmetatable({}, { __mode = "k" })
 local SERVER_MECHANIC_DURATION_MARKER = "FasterActionsMechanicDurationAdjusted"
 local SAFEHOUSE_ACTION_MARKER = "FasterActionsSafehouseActive"
 local ADJUSTED_DURATION_INPUT_MARKER = "FasterActionsAdjustedDurationInput"
@@ -65,6 +76,106 @@ local function debugLog(message)
     if getCore():getDebug() then
         print("[FasterActions] " .. message)
     end
+end
+
+local function normalizeCorpseDraggingMultiplier(multiplier)
+    if type(multiplier) ~= "number" or multiplier ~= multiplier then
+        return 1.0
+    end
+    return math.max(CORPSE_DRAGGING_MIN_MULTIPLIER,
+        math.min(CORPSE_DRAGGING_MAX_MULTIPLIER, multiplier))
+end
+
+local function getCorpseDraggingMultiplier()
+    local option = getSandboxOptions():getOptionByName(CORPSE_DRAGGING_SPEED_OPTION)
+    if not option then
+        return 1.0
+    end
+    local multiplier = tonumber(option:asConfigOption():getValueAsObject())
+    return normalizeCorpseDraggingMultiplier(multiplier)
+end
+
+local function setCorpseAnimationSpeed(character, variableName, speed)
+    character:setVariable(variableName, speed)
+end
+
+local function setCorpseTargetAnimationSpeeds(target, multiplier)
+    local speed08 = 0.8 * multiplier
+    local speed161 = 1.61 * multiplier
+    local currentSpeed08 = target:getVariableFloat(CORPSE_DRAGGING_SPEED_08_VARIABLE, -1.0)
+    local currentSpeed161 = target:getVariableFloat(CORPSE_DRAGGING_SPEED_161_VARIABLE, -1.0)
+    if math.abs(currentSpeed08 - speed08) <= CORPSE_DRAGGING_SPEED_TOLERANCE
+            and math.abs(currentSpeed161 - speed161) <= CORPSE_DRAGGING_SPEED_TOLERANCE then
+        return
+    end
+    setCorpseAnimationSpeed(target, CORPSE_DRAGGING_SPEED_08_VARIABLE, speed08)
+    setCorpseAnimationSpeed(target, CORPSE_DRAGGING_SPEED_161_VARIABLE, speed161)
+end
+
+local function applyCorpseDraggingAnimationSpeeds(player, target, multiplier)
+    setCorpseAnimationSpeed(player, CORPSE_DRAGGING_SPEED_08_VARIABLE, 0.8 * multiplier)
+    setCorpseAnimationSpeed(player, CORPSE_DRAGGING_SPEED_12_VARIABLE, 1.2 * multiplier)
+    local dragBaseSpeed = target:isSkeleton() and 1.2 or 0.8
+    setCorpseAnimationSpeed(player, CORPSE_DRAGGING_SPEED_VARIABLE, dragBaseSpeed * multiplier)
+    setCorpseTargetAnimationSpeeds(target, multiplier)
+end
+
+local function getCorpseDraggingTarget(player)
+    if not player:isDraggingCorpse() then
+        return nil
+    end
+    local target = player:getGrapplingTarget()
+    if target == nil or not instanceof(target, "IsoZombie") then
+        return nil
+    end
+    return target
+end
+
+local function setVanillaCorpseDraggingAnimationSpeeds(player)
+    setCorpseAnimationSpeed(player, CORPSE_DRAGGING_SPEED_08_VARIABLE, 0.8)
+    setCorpseAnimationSpeed(player, CORPSE_DRAGGING_SPEED_12_VARIABLE, 1.2)
+    setCorpseAnimationSpeed(player, CORPSE_DRAGGING_SPEED_VARIABLE, 0.8)
+end
+
+local function initializeCorpseDraggingAnimationSpeeds(player)
+    if initializedCorpseDraggingPlayers[player] then
+        return
+    end
+    setVanillaCorpseDraggingAnimationSpeeds(player)
+    initializedCorpseDraggingPlayers[player] = true
+end
+
+local function resetCorpseDraggingAnimationSpeeds(player)
+    setVanillaCorpseDraggingAnimationSpeeds(player)
+end
+
+local function updateCorpseDraggingAnimationSpeeds(player)
+    initializeCorpseDraggingAnimationSpeeds(player)
+    local target = getCorpseDraggingTarget(player)
+    if target == nil then
+        if activeCorpseDraggingTargets[player] ~= nil then
+            resetCorpseDraggingAnimationSpeeds(player)
+        end
+        activeCorpseDraggingTargets[player] = nil
+        return
+    end
+    if activeCorpseDraggingTargets[player] == target then
+        return
+    end
+    applyCorpseDraggingAnimationSpeeds(player, target, getCorpseDraggingMultiplier())
+    activeCorpseDraggingTargets[player] = target
+end
+
+local function updateRemoteCorpseDraggingAnimationSpeeds(target)
+    if not target:isReanimatedForGrappleOnly() or not target:isBeingGrappled() then
+        return
+    end
+    local player = target:getGrappledBy()
+    if player == nil or not instanceof(player, "IsoPlayer") then
+        return
+    end
+    local playerSpeed = player:getVariableFloat(CORPSE_DRAGGING_SPEED_08_VARIABLE, 0.8)
+    setCorpseTargetAnimationSpeeds(target, normalizeCorpseDraggingMultiplier(playerSpeed / 0.8))
 end
 
 local CATEGORY_PATTERNS = {
@@ -395,7 +506,8 @@ local function captureSafehouseState(action)
 end
 
 local function getCategoryMultiplier(category, action)
-    local optionPrefix = isActionInSafehouse(action) and SAFEHOUSE_OPTION_PREFIX or OPTION_PREFIX
+    local useSafehouseSettings = isActionInSafehouse(action) and isFeatureEnabled(SAFEHOUSE_ENABLED_OPTION)
+    local optionPrefix = useSafehouseSettings and SAFEHOUSE_OPTION_PREFIX or OPTION_PREFIX
     local option = getSandboxOptions():getOptionByName(optionPrefix .. category .. "Multiplier")
     if not option then
         return 1.0
@@ -539,3 +651,8 @@ end
 
 installInstantHoodHook()
 installAdjustMaxTimeHook()
+addVariableToSyncList(CORPSE_DRAGGING_SPEED_08_VARIABLE)
+addVariableToSyncList(CORPSE_DRAGGING_SPEED_12_VARIABLE)
+addVariableToSyncList(CORPSE_DRAGGING_SPEED_VARIABLE)
+Events.OnPlayerUpdate.Add(updateCorpseDraggingAnimationSpeeds)
+Events.OnZombieUpdate.Add(updateRemoteCorpseDraggingAnimationSpeeds)

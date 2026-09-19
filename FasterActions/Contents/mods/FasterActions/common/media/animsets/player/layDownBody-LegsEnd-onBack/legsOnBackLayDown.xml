@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+	<m_Name>legsOnBackLayDown</m_Name>
+	<m_Priority>4</m_Priority>
+	<m_AnimName>Bob_LayDown_Person_OnBackLegs</m_AnimName>
+	<m_MatchingGrappledAnimNode>GrappledBwdDragLegsLayDownOnBack</m_MatchingGrappledAnimNode>
+	<m_GrappleOffsetForward>-0.3</m_GrappleOffsetForward>
+	<m_GrappleOffsetYaw>180</m_GrappleOffsetYaw>
+	<m_GrapplerOffsetBehaviour>None</m_GrapplerOffsetBehaviour>
+	<m_DeferredBoneName>Bip01</m_DeferredBoneName>
+	<m_deferredBoneAxis>Z</m_deferredBoneAxis>
+	<m_Looped>false</m_Looped>
+	<m_BlendTime>0.20</m_BlendTime>
+	<m_SpeedScale>FasterActionsCorpseSpeed12</m_SpeedScale>
+	<m_maxTorsoTwist>0.00</m_maxTorsoTwist>
+	<m_SyncTrackingEnabled>false</m_SyncTrackingEnabled>
+	<m_Conditions x_name="bIsGrappling">
+		<m_Name>bIsGrappling</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>true</m_Value>
+	</m_Conditions>
+	<m_Conditions x_name="bDoContinueGrapple">
+		<m_Name>bDoContinueGrapple</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>false</m_Value>
+	</m_Conditions>
+	<m_Conditions x_name="sharedGrappleType">
+		<m_Name>sharedGrappleType</m_Name>
+		<m_Type>STRING</m_Type>
+		<m_Value>BwdDragLegs</m_Value>
+	</m_Conditions>
+	<m_Conditions x_name="$GrappledTarget.bOnFloor">
+		<m_Name>$GrappledTarget.bOnFloor</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>false</m_Value>
+	</m_Conditions>
+	<m_Events x_name="FlagWhileAlive(isAnimatingBackwards)">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>isAnimatingBackwards</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="GrapplerRandomGrunt">
+		<m_EventName>GrapplerRandomGrunt</m_EventName>
+		<m_Time>End</m_Time>
+		<m_ParameterValue>SighSad,SighReliefed,SighBored</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="GrapplerLetGo">
+		<m_EventName>GrapplerLetGo</m_EventName>
+		<m_Time>End</m_Time>
+		<m_ParameterValue>LayDownOnBack</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="b457f970-3833-4358-bab4-fdd9b540ffb1">
+		<m_EventName>PlaySound</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>CorpseDropByLegs</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="473d5d18-fc30-467f-b83b-21a65adc29e6">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>BlockMovement</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="f697c62e-8155-4d57-9475-b9facc81ca7d">
+		<m_EventName>PlayerVoiceSound</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>CorpseLowEffort</m_ParameterValue>
+	</m_Events>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Spine1</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Neck</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_BackPack</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Prop1</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Prop2</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Spine</boneName>
+		<weight>0.40</weight>
+		<includeDescendants>false</includeDescendants>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01</boneName>
+		<weight>0.20</weight>
+	</m_SubStateBoneWeights>
+</animNode>

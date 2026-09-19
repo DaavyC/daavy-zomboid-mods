@@ -12,6 +12,7 @@ local TITLE_BY_OPTION = {
     ["FasterActions.EquipMultiplier"] = "FasterActions_ActionCategories",
     ["FasterActions.InventoryMultiplier"] = "FasterActions_ActionCategories",
     ["FasterActions.OtherMultiplier"] = "FasterActions_ActionCategories",
+    ["FasterActions.SafehouseEnabled"] = "FasterActions_Safehouse",
     ["FasterActions.SafehouseCraftingMultiplier"] = "FasterActions_Safehouse",
     ["FasterActions.SafehouseBuildingMultiplier"] = "FasterActions_Safehouse",
     ["FasterActions.SafehouseMechanicMultiplier"] = "FasterActions_Safehouse",
@@ -26,7 +27,8 @@ local TITLE_BY_OPTION = {
     ["FasterActions.SafehouseInventoryMultiplier"] = "FasterActions_Safehouse",
     ["FasterActions.SafehouseOtherMultiplier"] = "FasterActions_Safehouse",
     ["FasterActions.InstantHood"] = "FasterActions_QualityOfLife",
-    ["FasterActions.InstantMap"] = "FasterActions_QualityOfLife"
+    ["FasterActions.InstantMap"] = "FasterActions_QualityOfLife",
+    ["FasterActions.CorpseDraggingSpeedMultiplier"] = "FasterActions_QualityOfLife"
 }
 
 local function getTitle(setting)

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+	<m_Name>legsOnFrontThrownOverFence</m_Name>
+	<m_AnimName>Bob_Body_ThrownOutWindowTrans</m_AnimName>
+	<m_DeferredBoneName>Bip01</m_DeferredBoneName>
+	<m_deferredBoneAxis>Z</m_deferredBoneAxis>
+	<m_Looped>false</m_Looped>
+	<m_BlendTime>0.20</m_BlendTime>
+	<m_EarlyTransitionOut>true</m_EarlyTransitionOut>
+	<m_SpeedScale>FasterActionsCorpseSpeed08</m_SpeedScale>
+	<m_SyncTrackingEnabled>false</m_SyncTrackingEnabled>
+	<m_Events x_name="FlagWhileAlive(grappledThrownOutWindow)">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>grappledThrownOverFence</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="f4e80bae-2f5b-40b2-849e-e8bd66420224">
+		<m_EventName>SetVariable</m_EventName>
+		<m_Time>End</m_Time>
+		<m_ParameterValue>fallOnFront=false</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="5dc7b715-5f3e-4014-b004-f64eced6ca8d">
+		<m_EventName>PlaySound</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>CorpseAdjustGrip</m_ParameterValue>
+	</m_Events>
+</animNode>

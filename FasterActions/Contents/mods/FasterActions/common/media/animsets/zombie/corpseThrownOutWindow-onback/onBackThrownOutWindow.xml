@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+	<m_Name>onBackThrownOutWindow</m_Name>
+	<m_AnimName>Bob_Body_ThrownOutWindow</m_AnimName>
+	<m_DeferredBoneName>Bip01</m_DeferredBoneName>
+	<m_deferredBoneAxis>Z</m_deferredBoneAxis>
+	<m_useDeferedRotation>true</m_useDeferedRotation>
+	<m_Looped>false</m_Looped>
+	<m_BlendTime>0.20</m_BlendTime>
+	<m_EarlyTransitionOut>true</m_EarlyTransitionOut>
+	<m_SpeedScale>FasterActionsCorpseSpeed08</m_SpeedScale>
+	<m_SyncTrackingEnabled>false</m_SyncTrackingEnabled>
+	<m_Events x_name="FlagWhileAlive(grappledThrownOutWindow)">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>grappledThrownOutWindow</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="5abfb337-9c30-4b13-960a-de540cffcae3">
+		<m_EventName>SetVariable</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>fallOnFront=FALSE</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="9194f2b8-48a8-4719-b421-9e6e5e541bc2">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>ClimbWindowStarted</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="8cdf692d-801d-4208-98f7-6dcad753297c">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_TimePc>0.65</m_TimePc>
+		<m_ParameterValue>TransitioningThroughWindow</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="8eb2e076-d4aa-43f8-954a-8dbf3369c626">
+		<m_EventName>PlaySound</m_EventName>
+		<m_TimePc>0.12</m_TimePc>
+		<m_ParameterValue>CorpseThrowOutWindow</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="d9fd6cdf-ef03-4daa-8611-0c1b1b297ca1">
+		<m_EventName>PlaySound</m_EventName>
+		<m_TimePc>0.82</m_TimePc>
+		<m_ParameterValue>CorpseLand</m_ParameterValue>
+	</m_Events>
+</animNode>

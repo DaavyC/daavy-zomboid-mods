@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+	<m_Name>onBackPickUp</m_Name>
+	<m_Priority>4</m_Priority>
+	<m_ConditionPriority>10</m_ConditionPriority>
+	<m_AnimName>Bob_Cont_DragOut</m_AnimName>
+	<m_MatchingGrappledAnimNode>GrappledBwdPickUpFromContainer</m_MatchingGrappledAnimNode>
+	<m_GrappleOffsetForward>0.3</m_GrappleOffsetForward>
+	<m_GrappleTweenInTime>0.5</m_GrappleTweenInTime>
+	<m_Looped>false</m_Looped>
+	<m_BlendTime>0.20</m_BlendTime>
+	<m_SpeedScale>FasterActionsCorpseSpeed08</m_SpeedScale>
+	<m_maxTorsoTwist>0.00</m_maxTorsoTwist>
+	<m_SyncTrackingEnabled>false</m_SyncTrackingEnabled>
+	<m_Conditions x_name="bIsGrappling">
+		<m_Name>bIsGrappling</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>true</m_Value>
+	</m_Conditions>
+	<m_Conditions x_name="bDoContinueGrapple">
+		<m_Name>bDoContinueGrapple</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>true</m_Value>
+	</m_Conditions>
+	<m_Events x_name="FlagWhileAlive(isAnimatingBackwards)">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>isAnimatingBackwards</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="FlagWhileAlive(BlockMovement)">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>BlockMovement</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="SetSharedGrappleType">
+		<m_EventName>SetSharedGrappleType</m_EventName>
+		<m_Time>End</m_Time>
+		<m_ParameterValue>BwdDragHead</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="$GrappledTarget.bOnFloor=false">
+		<m_EventName>SetVariable</m_EventName>
+		<m_Time>End</m_Time>
+		<m_ParameterValue>$GrappledTarget.bOnFloor=false</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="3aaa4a9e-026e-4e85-97fe-d742f25a719b">
+		<m_EventName>PlaySound</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>CorpseGrabByArms</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="673957b9-68a9-4d91-bc4f-db6f78430c93">
+		<m_EventName>PlayerVoiceSound</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>CorpseHighEffort</m_ParameterValue>
+	</m_Events>
+	<m_Transitions>
+		<m_Target>GrappleBwdDragWalk</m_Target>
+		<m_blendInTime>0.1</m_blendInTime>
+	</m_Transitions>
+	<m_Transitions>
+		<m_Target>GrappleBwdDragIdle</m_Target>
+		<m_blendInTime>0.1</m_blendInTime>
+	</m_Transitions>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Spine1</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Neck</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_BackPack</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Prop1</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Prop2</boneName>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01_Spine</boneName>
+		<weight>0.40</weight>
+		<includeDescendants>false</includeDescendants>
+	</m_SubStateBoneWeights>
+	<m_SubStateBoneWeights>
+		<boneName>Bip01</boneName>
+		<weight>0.20</weight>
+	</m_SubStateBoneWeights>
+</animNode>
+

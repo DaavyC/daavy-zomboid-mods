@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+	<m_Name>GrappledBwdPickUpFromContainer</m_Name>
+	<m_AnimName>Bob_Cont_DraggedOut</m_AnimName>
+	<m_Looped>false</m_Looped>
+	<m_BlendTime>0.20</m_BlendTime>
+	<m_EarlyTransitionOut>true</m_EarlyTransitionOut>
+	<m_SpeedScale>FasterActionsCorpseSpeed08</m_SpeedScale>
+	<m_SyncTrackingEnabled>false</m_SyncTrackingEnabled>
+	<m_Conditions x_name="03db21c2-20eb-4232-91b3-7ff092f2825f">
+		<m_Name>bBeingGrappled</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>true</m_Value>
+	</m_Conditions>
+	<m_Conditions x_name="2f4aae00-43a4-409f-9caf-6e322c2ff40d">
+		<m_Name>sharedGrappleAnimNode</m_Name>
+		<m_Type>STRING</m_Type>
+		<m_Value>$this</m_Value>
+	</m_Conditions>
+	<m_Events x_name="18a507a5-67b1-4596-9eb6-32658366386e">
+		<m_EventName>FlagWhileAlive</m_EventName>
+		<m_Time>Start</m_Time>
+		<m_ParameterValue>isRendered=false</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="0f5c6d77-5ad0-4636-b429-026d83e5f73f">
+		<m_EventName>SetVariable</m_EventName>
+		<m_TimePc>0.3</m_TimePc>
+		<m_ParameterValue>isRendered=true</m_ParameterValue>
+	</m_Events>
+</animNode>

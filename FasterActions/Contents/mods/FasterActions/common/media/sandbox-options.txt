@@ -32,6 +32,15 @@ option FasterActions.CraftingMultiplier {
     translation = FasterActions_CraftingMultiplier,
 }
 
+option FasterActions.BlacksmithingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_BlacksmithingMultiplier,
+}
+
 option FasterActions.BuildingMultiplier {
     type = double,
     min = -1.0,
@@ -39,6 +48,15 @@ option FasterActions.BuildingMultiplier {
     default = 1.0,
     page = FasterActions,
     translation = FasterActions_BuildingMultiplier,
+}
+
+option FasterActions.WoodcuttingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_WoodcuttingMultiplier,
 }
 
 option FasterActions.MechanicMultiplier {
@@ -156,6 +174,15 @@ option FasterActions.SafehouseCraftingMultiplier {
     translation = FasterActions_SafehouseCraftingMultiplier,
 }
 
+option FasterActions.SafehouseBlacksmithingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseBlacksmithingMultiplier,
+}
+
 option FasterActions.SafehouseBuildingMultiplier {
     type = double,
     min = -1.0,
@@ -163,6 +190,15 @@ option FasterActions.SafehouseBuildingMultiplier {
     default = 1.0,
     page = FasterActions,
     translation = FasterActions_SafehouseBuildingMultiplier,
+}
+
+option FasterActions.SafehouseWoodcuttingMultiplier {
+    type = double,
+    min = -1.0,
+    max = 10.0,
+    default = 1.0,
+    page = FasterActions,
+    translation = FasterActions_SafehouseWoodcuttingMultiplier,
 }
 
 option FasterActions.SafehouseMechanicMultiplier {
@@ -262,4 +298,11 @@ option FasterActions.SafehouseOtherMultiplier {
     default = 1.0,
     page = FasterActions,
     translation = FasterActions_SafehouseOtherMultiplier,
+}
+
+option FasterActions.Debug {
+    type = boolean,
+    default = false,
+    page = FasterActions,
+    translation = FasterActions_Debug,
 }

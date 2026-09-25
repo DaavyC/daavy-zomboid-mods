@@ -2,8 +2,12 @@ local MIN_MULTIPLIER = 0.25
 local MAX_MULTIPLIER = 10.0
 local INSTANT_MULTIPLIER = -1.0
 local INSTANT_DURATION = 0.01
+local WOODCUTTING_BASE_EVENT_INTERVAL = 1500
 local OPTION_PREFIX = "FasterActions."
 local SAFEHOUSE_OPTION_PREFIX = OPTION_PREFIX .. "Safehouse"
+local DEBUG_SANDBOX_SECTION = "FasterActions"
+local print = print
+local SANDBOX_OPTIONS = getSandboxOptions()
 local SAFEHOUSE_ENABLED_OPTION = OPTION_PREFIX .. "SafehouseEnabled"
 local CORPSE_DRAGGING_SPEED_OPTION = OPTION_PREFIX .. "CorpseDraggingSpeedMultiplier"
 local CORPSE_DRAGGING_SPEED_08_VARIABLE = "FasterActionsCorpseSpeed08"
@@ -23,7 +27,11 @@ local ADJUSTED_DURATION_SAFEHOUSE_MARKER = "FasterActionsAdjustedDurationSafehou
 local VISUAL_DURATION_MARKER = "FasterActionsVisualDuration"
 local INSTANT_HOOD_OPTION = OPTION_PREFIX .. "InstantHood"
 local INSTANT_MAP_OPTION = OPTION_PREFIX .. "InstantMap"
-local TAILORING_RECIPE_PATTERNS = { "Clothing", "Trousers", "Tailor", "Sew" }
+local WOODCUTTING_MULTIPLIER_MARKER = "FasterActionsWoodcuttingMultiplier"
+local WOODCUTTING_HIT_REMAINDER_MARKER = "FasterActionsWoodcuttingHitRemainder"
+local TAILORING_RECIPE_PATTERNS = table.newarray(
+    "Clothing", "Trousers", "Tailor", "Sew"
+)
 local RIPPING_ACTION_SCRIPTS = { RipClothing = true, CutClothing = true }
 local SAWING_ACTION_SCRIPTS = {
     SawLogs = true,
@@ -62,7 +70,7 @@ local EQUIP_ACTION_TYPES = {
     ISAttachItemHotbar = true,
     ISDetachItemHotbar = true
 }
-local EQUIP_ACTION_PATTERNS = {
+local EQUIP_ACTION_PATTERNS = table.newarray(
     "Equip",
     "Equipment",
     "Unequip",
@@ -70,12 +78,18 @@ local EQUIP_ACTION_PATTERNS = {
     "ClothingExtra",
     "AttachItem",
     "DetachItem"
-}
+)
 
-local function debugLog(message)
-    if getCore():getDebug() then
-        print("[FasterActions] " .. message)
+local function isDebugEnabled()
+    local settings = SandboxVars and SandboxVars[DEBUG_SANDBOX_SECTION]
+    return settings ~= nil and settings.Debug == true
+end
+
+local function debugLog(...)
+    if not isDebugEnabled() then
+        return
     end
+    print("[FasterActions][Debug]", ...)
 end
 
 local function normalizeCorpseDraggingMultiplier(multiplier)
@@ -87,7 +101,7 @@ local function normalizeCorpseDraggingMultiplier(multiplier)
 end
 
 local function getCorpseDraggingMultiplier()
-    local option = getSandboxOptions():getOptionByName(CORPSE_DRAGGING_SPEED_OPTION)
+    local option = SANDBOX_OPTIONS:getOptionByName(CORPSE_DRAGGING_SPEED_OPTION)
     if not option then
         return 1.0
     end
@@ -110,6 +124,7 @@ local function setCorpseTargetAnimationSpeeds(target, multiplier)
     end
     setCorpseAnimationSpeed(target, CORPSE_DRAGGING_SPEED_08_VARIABLE, speed08)
     setCorpseAnimationSpeed(target, CORPSE_DRAGGING_SPEED_161_VARIABLE, speed161)
+    debugLog("Updated corpse animation speeds", speed08, speed161)
 end
 
 local function applyCorpseDraggingAnimationSpeeds(player, target, multiplier)
@@ -143,6 +158,7 @@ local function initializeCorpseDraggingAnimationSpeeds(player)
     end
     setVanillaCorpseDraggingAnimationSpeeds(player)
     initializedCorpseDraggingPlayers[player] = true
+    debugLog("Initialized corpse dragging animation speeds")
 end
 
 local function resetCorpseDraggingAnimationSpeeds(player)
@@ -155,6 +171,7 @@ local function updateCorpseDraggingAnimationSpeeds(player)
     if target == nil then
         if activeCorpseDraggingTargets[player] ~= nil then
             resetCorpseDraggingAnimationSpeeds(player)
+            debugLog("Reset corpse dragging animation speeds")
         end
         activeCorpseDraggingTargets[player] = nil
         return
@@ -162,8 +179,10 @@ local function updateCorpseDraggingAnimationSpeeds(player)
     if activeCorpseDraggingTargets[player] == target then
         return
     end
-    applyCorpseDraggingAnimationSpeeds(player, target, getCorpseDraggingMultiplier())
+    local multiplier = getCorpseDraggingMultiplier()
+    applyCorpseDraggingAnimationSpeeds(player, target, multiplier)
     activeCorpseDraggingTargets[player] = target
+    debugLog("Applied corpse dragging animation speeds", multiplier)
 end
 
 local function updateRemoteCorpseDraggingAnimationSpeeds(target)
@@ -178,12 +197,12 @@ local function updateRemoteCorpseDraggingAnimationSpeeds(target)
     setCorpseTargetAnimationSpeeds(target, normalizeCorpseDraggingMultiplier(playerSpeed / 0.8))
 end
 
-local CATEGORY_PATTERNS = {
-    { name = "Welding", patterns = { "Weld", "Welding" } },
-    { name = "Crafting", patterns = { "Craft", "Recipe", "Research" } },
+local CATEGORY_PATTERNS = table.newarray(
+    { name = "Welding", patterns = table.newarray("Weld", "Welding") },
+    { name = "Crafting", patterns = table.newarray("Craft", "Recipe", "Research") },
     {
         name = "Building",
-        patterns = {
+        patterns = table.newarray(
             "Build",
             "Barricade",
             "Dismantle",
@@ -197,11 +216,11 @@ local CATEGORY_PATTERNS = {
             "Bury",
             "FillGrave",
             "TakeBricks"
-        }
+        )
     },
     {
         name = "Cleaning",
-        patterns = {
+        patterns = table.newarray(
             "CleanBlood",
             "CleanGraffiti",
             "WashClothing",
@@ -211,13 +230,13 @@ local CATEGORY_PATTERNS = {
             "ClothingDryer",
             "ClothingWasher",
             "ComboWasherDryer"
-        }
+        )
     },
-    { name = "Tailoring", patterns = { "Tailor", "Tailoring" } },
+    { name = "Tailoring", patterns = table.newarray("Tailor", "Tailoring") },
     { name = "Equip", patterns = EQUIP_ACTION_PATTERNS },
     {
         name = "Inventory",
-        patterns = {
+        patterns = table.newarray(
             "Inventory",
             "Transfer",
             "Grab",
@@ -232,9 +251,9 @@ local CATEGORY_PATTERNS = {
             "Consolidate",
             "AddFluid",
             "DispenserBottle"
-        }
+        )
     }
-}
+)
 
 local INVENTORY_ACTION_TYPES = {
     ISInventoryTransferAction = true,
@@ -332,6 +351,14 @@ local function isRecipeCategoryAction(action, category)
     return getCraftRecipeCategory(action) == category
 end
 
+local function isBlacksmithingAction(action)
+    return isRecipeCategoryAction(action, "Blacksmithing")
+end
+
+local function isWoodcuttingAction(action)
+    return getActionType(action) == "ISChopTreeAction"
+end
+
 local function isTailoringAction(action)
     local actionType = getActionType(action)
     if actionType == "ISRemovePatch" or actionType == "ISRepairClothing" then
@@ -347,8 +374,8 @@ local function isTailoringAction(action)
         return false
     end
 
-    for _, pattern in ipairs(TAILORING_RECIPE_PATTERNS) do
-        if matchesPattern(recipeName, pattern) then
+    for index = 1, #TAILORING_RECIPE_PATTERNS do
+        if matchesPattern(recipeName, TAILORING_RECIPE_PATTERNS[index]) then
             return true
         end
     end
@@ -366,8 +393,8 @@ local function isEquipAction(action)
     end
 
     local actionType = getActionType(action)
-    for _, pattern in ipairs(EQUIP_ACTION_PATTERNS) do
-        if matchesPattern(actionType, pattern) then
+    for index = 1, #EQUIP_ACTION_PATTERNS do
+        if matchesPattern(actionType, EQUIP_ACTION_PATTERNS[index]) then
             return true
         end
     end
@@ -391,7 +418,7 @@ local function isCraftingAction(action)
     return isListedAction(action, CRAFTING_ACTION_TYPES)
 end
 
-local CATEGORY_CHECKS = {
+local CATEGORY_CHECKS = table.newarray(
     { name = "Equip", matches = isEquipAction },
     { name = "Inventory", matches = isInventoryAction },
     { name = "Mechanic", matches = isMechanicAction },
@@ -399,15 +426,17 @@ local CATEGORY_CHECKS = {
     { name = "Welding", matches = isWeldingAction },
     { name = "Ripping", matches = isRippingAction },
     { name = "Sawing", matches = isSawingAction },
+    { name = "Blacksmithing", matches = isBlacksmithingAction },
     { name = "Carving", matches = function(action) return isRecipeCategoryAction(action, "Carving") end },
     { name = "Knapping", matches = function(action) return isRecipeCategoryAction(action, "Knapping") end },
     { name = "Tailoring", matches = isTailoringAction },
+    { name = "Woodcutting", matches = isWoodcuttingAction },
     { name = "Building", matches = isBuildingAction },
     { name = "Crafting", matches = isCraftingAction }
-}
+)
 
 local function isFeatureEnabled(optionName)
-    local option = getSandboxOptions():getOptionByName(optionName)
+    local option = SANDBOX_OPTIONS:getOptionByName(optionName)
     return option ~= nil and option:asConfigOption():getValueAsObject() == true
 end
 
@@ -429,7 +458,8 @@ local function isInstantMapAction(action)
 end
 
 local function getCategory(action)
-    for _, category in ipairs(CATEGORY_CHECKS) do
+    for index = 1, #CATEGORY_CHECKS do
+        local category = CATEGORY_CHECKS[index]
         if category.matches(action) then
             return category.name
         end
@@ -440,9 +470,11 @@ local function getCategory(action)
         return "Other"
     end
 
-    for _, category in ipairs(CATEGORY_PATTERNS) do
-        for _, pattern in ipairs(category.patterns) do
-            if matchesPattern(actionType, pattern) then
+    for categoryIndex = 1, #CATEGORY_PATTERNS do
+        local category = CATEGORY_PATTERNS[categoryIndex]
+        local patterns = category.patterns
+        for patternIndex = 1, #patterns do
+            if matchesPattern(actionType, patterns[patternIndex]) then
                 return category.name
             end
         end
@@ -508,7 +540,7 @@ end
 local function getCategoryMultiplier(category, action)
     local useSafehouseSettings = isActionInSafehouse(action) and isFeatureEnabled(SAFEHOUSE_ENABLED_OPTION)
     local optionPrefix = useSafehouseSettings and SAFEHOUSE_OPTION_PREFIX or OPTION_PREFIX
-    local option = getSandboxOptions():getOptionByName(optionPrefix .. category .. "Multiplier")
+    local option = SANDBOX_OPTIONS:getOptionByName(optionPrefix .. category .. "Multiplier")
     if not option then
         return 1.0
     end
@@ -606,6 +638,7 @@ local function installInstantHoodHook()
         self:FasterActionsOriginalStart()
         if isInstantHoodAction(self) then
             self.action:setTime(0)
+            debugLog("Opened vehicle hood instantly", getActionType(self))
         end
     end
 end
@@ -621,27 +654,23 @@ local function installAdjustMaxTimeHook()
 
     ISBaseTimedAction.FasterActionsOriginalAdjustMaxTime = ISBaseTimedAction.adjustMaxTime
     function ISBaseTimedAction:adjustMaxTime(maxTime)
-        local actionType = getActionType(self) or "<unknown>"
         local cachedDuration = getCachedAdjustedDuration(self, maxTime)
         if cachedDuration ~= nil then
-            debugLog("[LuaDuration] type=" .. tostring(actionType) .. " path=cache input="
-                .. tostring(maxTime) .. " output=" .. tostring(cachedDuration))
+            debugLog("Action duration cache hit", getActionType(self), maxTime, cachedDuration)
             return cachedDuration
         end
 
         local adjustedMaxTime = self:FasterActionsOriginalAdjustMaxTime(maxTime)
         if not isFinalDurationAdjustment(self, maxTime) then
-            debugLog("[LuaDuration] type=" .. tostring(actionType) .. " path=intermediate input="
-                .. tostring(maxTime) .. " output=" .. tostring(adjustedMaxTime))
+            debugLog("Intermediate action duration", getActionType(self), maxTime, adjustedMaxTime)
             return adjustedMaxTime
         end
 
         local category = getCategory(self)
         local multiplier = getCategoryMultiplier(category, self)
         local scaledDuration = scaleActionDuration(self, adjustedMaxTime, category, multiplier)
-        debugLog("[LuaDuration] type=" .. tostring(actionType) .. " category=" .. category
-            .. " multiplier=" .. tostring(multiplier) .. " input=" .. tostring(maxTime)
-            .. " vanilla=" .. tostring(adjustedMaxTime) .. " output=" .. tostring(scaledDuration))
+        debugLog("Adjusted action duration", getActionType(self), category, multiplier,
+            maxTime, adjustedMaxTime, scaledDuration)
         self[ADJUSTED_DURATION_INPUT_MARKER] = maxTime
         self[ADJUSTED_DURATION_OUTPUT_MARKER] = scaledDuration
         self[ADJUSTED_DURATION_SAFEHOUSE_MARKER] = isActionInSafehouse(self)
@@ -649,10 +678,157 @@ local function installAdjustMaxTimeHook()
     end
 end
 
+local function getWoodcuttingMultiplier(action)
+    return getCategoryMultiplier("Woodcutting", action)
+end
+
+local function isWoodcuttingTreePresent(action)
+    local tree = action.tree
+    return tree ~= nil and tree:getObjectIndex() >= 0
+end
+
+local function completeWoodcuttingAction(action)
+    debugLog("Completing tree chopping action because the tree is unavailable")
+    if isServer() then
+        action.netAction:forceComplete()
+        return
+    end
+    action:forceComplete()
+end
+
+local function applyInstantWoodcuttingHit(action, event, parameter)
+    if not isWoodcuttingTreePresent(action) then
+        completeWoodcuttingAction(action)
+        return
+    end
+    action.tree:setHealth(1)
+    debugLog("Applying instant tree hit")
+    action:FasterActionsOriginalAnimEvent(event, parameter)
+end
+
+local function initializeWoodcuttingAction(action)
+    action[WOODCUTTING_MULTIPLIER_MARKER] = getCategoryMultiplier("Woodcutting", action)
+    action[WOODCUTTING_HIT_REMAINDER_MARKER] = 0
+end
+
+local function installWoodcuttingStartHook()
+    ISChopTreeAction.FasterActionsOriginalStart = ISChopTreeAction.start
+    function ISChopTreeAction:start()
+        initializeWoodcuttingAction(self)
+        self:FasterActionsOriginalStart()
+        debugLog("Started tree chopping action", self[WOODCUTTING_MULTIPLIER_MARKER])
+
+        if self[WOODCUTTING_MULTIPLIER_MARKER] == INSTANT_MULTIPLIER
+                and not isClient() and not isServer() then
+            applyInstantWoodcuttingHit(self, "ChopTree", nil)
+        end
+    end
+end
+
+local function scheduleServerWoodcuttingHits(action, multiplier)
+    action.axe = action.character:getPrimaryHandItem()
+    if not action.axe or not isWoodcuttingTreePresent(action) then
+        completeWoodcuttingAction(action)
+        return
+    end
+
+    if multiplier == INSTANT_MULTIPLIER then
+        action.tree:setHealth(1)
+        debugLog("Scheduled instant tree hit")
+        emulateAnimEventOnce(action.netAction, 1, "ChopTree", nil)
+        return
+    end
+
+    local interval = math.max(1, math.floor(WOODCUTTING_BASE_EVENT_INTERVAL / multiplier + 0.5))
+    debugLog("Scheduled tree hit", multiplier, interval)
+    emulateAnimEvent(action.netAction, interval, "ChopTree", nil)
+end
+
+local function installWoodcuttingServerStartHook()
+    ISChopTreeAction.FasterActionsOriginalServerStart = ISChopTreeAction.serverStart
+    function ISChopTreeAction:serverStart()
+        local multiplier = getWoodcuttingMultiplier(self)
+        self[WOODCUTTING_MULTIPLIER_MARKER] = multiplier
+        debugLog("Started server tree chopping action", multiplier)
+        if multiplier == 1.0 then
+            return self:FasterActionsOriginalServerStart()
+        end
+
+        scheduleServerWoodcuttingHits(self, multiplier)
+    end
+end
+
+local function replayWoodcuttingHits(action, event, parameter, hitCount)
+    debugLog("Replaying tree hit events", hitCount)
+    for hitIndex = 1, hitCount do
+        if not isWoodcuttingTreePresent(action) then
+            completeWoodcuttingAction(action)
+            return
+        end
+        action:FasterActionsOriginalAnimEvent(event, parameter)
+        if not isWoodcuttingTreePresent(action) then
+            return
+        end
+    end
+end
+
+local function applyWoodcuttingAnimationSpeed(action, event, parameter, multiplier)
+    if multiplier == INSTANT_MULTIPLIER then
+        return applyInstantWoodcuttingHit(action, event, parameter)
+    end
+
+    local accumulatedHits = (action[WOODCUTTING_HIT_REMAINDER_MARKER] or 0) + multiplier
+    local hitCount = math.floor(accumulatedHits)
+    action[WOODCUTTING_HIT_REMAINDER_MARKER] = accumulatedHits - hitCount
+    replayWoodcuttingHits(action, event, parameter, hitCount)
+end
+
+local function processWoodcuttingAnimationEvent(action, event, parameter, multiplier)
+    debugLog("Processing tree chop animation event", multiplier)
+    if multiplier == 1.0 or not action.axe then
+        return action:FasterActionsOriginalAnimEvent(event, parameter)
+    end
+
+    if not isWoodcuttingTreePresent(action) then
+        completeWoodcuttingAction(action)
+        return
+    end
+
+    if isServer() then
+        return action:FasterActionsOriginalAnimEvent(event, parameter)
+    end
+
+    applyWoodcuttingAnimationSpeed(action, event, parameter, multiplier)
+end
+
+local function installWoodcuttingAnimEventHook()
+    ISChopTreeAction.FasterActionsOriginalAnimEvent = ISChopTreeAction.animEvent
+    function ISChopTreeAction:animEvent(event, parameter)
+        if event ~= "ChopTree" or isClient() then
+            return self:FasterActionsOriginalAnimEvent(event, parameter)
+        end
+
+        local multiplier = self[WOODCUTTING_MULTIPLIER_MARKER]
+        if multiplier == nil then
+            multiplier = getWoodcuttingMultiplier(self)
+        end
+        return processWoodcuttingAnimationEvent(self, event, parameter, multiplier)
+    end
+end
+
+local function installWoodcuttingHooks()
+    require "TimedActions/ISChopTreeAction"
+    installWoodcuttingStartHook()
+    installWoodcuttingServerStartHook()
+    installWoodcuttingAnimEventHook()
+end
+
 installInstantHoodHook()
 installAdjustMaxTimeHook()
+installWoodcuttingHooks()
 addVariableToSyncList(CORPSE_DRAGGING_SPEED_08_VARIABLE)
 addVariableToSyncList(CORPSE_DRAGGING_SPEED_12_VARIABLE)
 addVariableToSyncList(CORPSE_DRAGGING_SPEED_VARIABLE)
 Events.OnPlayerUpdate.Add(updateCorpseDraggingAnimationSpeeds)
 Events.OnZombieUpdate.Add(updateRemoteCorpseDraggingAnimationSpeeds)
+debugLog("Installed shared action hooks")

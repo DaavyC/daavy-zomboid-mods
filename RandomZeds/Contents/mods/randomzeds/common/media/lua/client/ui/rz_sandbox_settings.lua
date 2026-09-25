@@ -11,6 +11,7 @@ local TITLE_BY_OPTION = {
     ["RandomZeds.SummerDayStart"] = "RandomZeds_Summer",
     ["RandomZeds.AutumnDayStart"] = "RandomZeds_Autumn",
     ["RandomZeds.WinterDayStart"] = "RandomZeds_Winter",
+    ["RandomZeds.Debug"] = "RandomZeds_Advanced",
 }
 
 local SUBTITLE_BY_OPTION = {
@@ -86,12 +87,10 @@ local function copyPage(page)
     pageCopy.settings = table.newarray()
     local synapseAvailable = RandomZeds.hasSynapseFeatureSupport()
     local settings = page.settings
-    if settings then
-        for index = 1, #settings do
-            local setting = settings[index]
-            if synapseAvailable or not isSynapseFeatureOption(setting) then
-                pageCopy.settings[#pageCopy.settings + 1] = copyTable(setting)
-            end
+    for index = 1, #settings do
+        local setting = settings[index]
+        if synapseAvailable or not isSynapseFeatureOption(setting) then
+            pageCopy.settings[#pageCopy.settings + 1] = copyTable(setting)
         end
     end
     return pageCopy
@@ -120,8 +119,9 @@ local function shiftPanelChildren(panel, y, amount)
     local children = panel:getChildrenInOrder()
     for index = 1, #children do
         local child = children[index]
-        if child:getY() >= y then
-            child:setY(child:getY() + amount)
+        local childY = child:getY()
+        if childY >= y then
+            child:setY(childY + amount)
         end
     end
 end
@@ -232,8 +232,9 @@ local function centerInGameSettings(panel, page)
     end
     if labelWidth == 0 or controlWidth == 0 then return panel end
 
+    local panelWidth = panel:getWidth()
     local contentWidth = labelWidth + IN_GAME_SETTINGS_SPACING + controlWidth
-    local contentX = (panel:getWidth() - contentWidth) / 2
+    local contentX = (panelWidth - contentWidth) / 2
     for index = 1, #settings do
         local setting = settings[index]
         local label = setting and panel.labels[setting.name]
@@ -248,7 +249,7 @@ local function centerInGameSettings(panel, page)
     if headers then
         for index = 1, #headers do
             local header = headers[index]
-            header:setX((panel:getWidth() - header:getWidth()) / 2)
+            header:setX((panelWidth - header:getWidth()) / 2)
         end
     end
 
@@ -267,19 +268,11 @@ local function customizeTitleAndSubtitle(setting)
     setting.randomZedsSubtitle = getSubtitle(setting)
 end
 
-local function sandboxPageNeedsCustomization(setting)
-    return sandboxSettingNeedsCustomization(setting)
-end
-
-local function customizeSandboxSetting(setting)
-    customizeTitleAndSubtitle(setting)
-end
-
 local function createSandboxPage(page)
     return customizePage(
         page,
-        sandboxPageNeedsCustomization,
-        customizeSandboxSetting
+        sandboxSettingNeedsCustomization,
+        customizeTitleAndSubtitle
     )
 end
 

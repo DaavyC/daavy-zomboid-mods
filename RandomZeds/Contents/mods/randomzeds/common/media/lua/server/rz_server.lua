@@ -9,7 +9,6 @@ local function createProtection(mode)
     local PROTECTION_RADIUS = 50
     local PROTECTION_RADIUS_SQUARED = PROTECTION_RADIUS * PROTECTION_RADIUS
     local PROTECTED_CHUNK_RADIUS = math.ceil(PROTECTION_RADIUS / 8)
-    local crawlerProtectionEnabled = isMultiplayer()
     local protectedChunks = {}
     local protectedChunkCounts = {}
     local playerProtectedChunks = {}
@@ -129,7 +128,6 @@ local function createProtection(mode)
     end
 
     isCrawlerProtected = function(zombie)
-        if not crawlerProtectionEnabled then return false end
         local square = zombie and zombie:getSquare()
         local chunkKey = getChunkKeyFromSquare(square)
         if chunkKey == nil or protectedChunks[chunkKey] ~= true then
@@ -208,10 +206,11 @@ local SPRINTER_CHECK_COOLDOWN_MS = 1000
 local PENDING_STATE_TIMEOUT_MS = 60000
 local PENDING_STAND_UP_TIMEOUT_MS = 30000
 local PENDING_REROLL_CHECK_INTERVAL_MS = 1000
-
 local lastEffectiveMode
 local lastEffectiveSignature
 local lastEffectiveConfig
+local profileGeneration = 0
+local profiledZombieGenerations = setmetatable({}, { __mode = "k" })
 local pendingStandUps = {}
 local pendingZombieCreates = {}
 local pendingCrawlerRerollCheckRequired = false
@@ -303,13 +302,9 @@ local function readPendingState(modData)
 end
 
 local function queueStandUpRetry(zombie)
-    local deadline = pendingStandUps[zombie]
-    if deadline == nil then
+    if pendingStandUps[zombie] == nil then
         pendingStandUps[zombie] = getTimestampMs() + PENDING_STAND_UP_TIMEOUT_MS
-        return
     end
-    pendingStandUps[zombie] = tonumber(deadline)
-        or getTimestampMs() + PENDING_STAND_UP_TIMEOUT_MS
 end
 
 local function discardPendingRerolls()
@@ -401,17 +396,6 @@ local function isSameZombieState(modData, state)
 end
 
 local function repairSameStateSprinter(zombie, state, modData)
-    if RandomZeds.dispatchZombieState(zombie, state) then
-        RandomZeds.reconcileSprinterMotion(zombie)
-        if state.baseSpeed ~= nil then
-            modData[SPRINTER_BASE_SPEED_TAG] = state.baseSpeed
-        end
-        clearPendingReroll(modData)
-        if mode.deferStateConfirmation then mode.deferStateConfirmation(zombie, state) end
-        pendingStandUps[zombie] = nil
-        return
-    end
-
     RandomZeds.applyZombieSpeedType(zombie, state.speedType, state.multiplier)
     if not RandomZeds.isZombieSpeedTypeApplied(
             zombie, state.speedType) then
@@ -420,23 +404,17 @@ local function repairSameStateSprinter(zombie, state, modData)
 
     RandomZeds.reconcileSprinterMotion(zombie)
     clearPendingReroll(modData)
-    if mode.deferStateConfirmation then mode.deferStateConfirmation(zombie, state) end
+    if mode.queueServerState then mode.queueServerState(zombie, state) end
     pendingStandUps[zombie] = nil
 end
 
-local function writeAppliedZombieState(zombie, modData, state, synapseEnabled)
-    if not synapseEnabled then
-        zombie:setHealth(state.health)
-    end
+local function writeAppliedZombieState(zombie, modData, state)
+    zombie:setHealth(state.health)
     modData[PERIOD_TAG] = state.period
     modData[SPEED_TAG] = state.speedType
     modData[SPRINTER_MULTIPLIER_TAG] = state.multiplier
-    if synapseEnabled then
-        if state.speedType == "sprinter" and state.baseSpeed ~= nil then
-            modData[SPRINTER_BASE_SPEED_TAG] = state.baseSpeed
-        elseif state.speedType ~= "sprinter" then
-            modData[SPRINTER_BASE_SPEED_TAG] = nil
-        end
+    if state.speedType ~= "sprinter" then
+        modData[SPRINTER_BASE_SPEED_TAG] = nil
     end
     modData[HEALTH_TAG] = state.health
     modData[SIGHT_TAG] = state.sight
@@ -449,44 +427,23 @@ local function writeAppliedZombieState(zombie, modData, state, synapseEnabled)
 end
 
 local function applyFreshZombieState(zombie, modData, state)
-    local synapseApplied = RandomZeds.dispatchZombieState(zombie, state)
-    if synapseApplied then
-        writeAppliedZombieState(zombie, modData, state, true)
-        return true
-    end
-
     RandomZeds.applyZombieNativeStats(zombie, state.sight, state.hearing)
     RandomZeds.applyZombieFeatureState(zombie, state)
     if not RandomZeds.applyZombieSpeedType(zombie, state.speedType, state.multiplier) then
         return false
     end
-    writeAppliedZombieState(zombie, modData, state, false)
+    writeAppliedZombieState(zombie, modData, state)
     return true
 end
 
 local function applySameZombieState(zombie, modData, state)
     if not isSameZombieState(modData, state) then return false end
 
-    if RandomZeds.dispatchZombieState(zombie, state) then
-        if state.speedType == "sprinter" then
-            RandomZeds.reconcileSprinterMotion(zombie)
-            if state.baseSpeed ~= nil then
-                modData[SPRINTER_BASE_SPEED_TAG] = state.baseSpeed
-            end
-        end
-        clearPendingReroll(modData)
-        pendingStandUps[zombie] = nil
-        return true
-    end
-
     local typeApplied = RandomZeds.isZombieSpeedTypeApplied(
         zombie, state.speedType)
     if typeApplied then
         if state.speedType == "sprinter" then
-            if not isMultiplayer() and RandomZeds.hasSynapseFeatureSupport() then
-                RandomZeds.applyZombieSpeedType(
-                    zombie, "sprinter", state.multiplier)
-            elseif mode.applySprinterAnimationSpeed then
+            if mode.applySprinterAnimationSpeed then
                 mode.applySprinterAnimationSpeed(zombie, state.multiplier)
             end
             RandomZeds.reconcileSprinterMotion(zombie)
@@ -513,22 +470,42 @@ local function applyValidatedZombieState(zombie, state)
     if not modData then return false end
     local gettingUp = zombie:getCurrentActionContextStateName() == "getup"
 
-    if gettingUp or (state.speedType ~= "crawler"
+    local blockedByCrawling = state.speedType ~= "crawler"
             and zombie:isCrawling()
-            and not RandomZeds.hasSynapseFeatureSupport()) then
+    if gettingUp or blockedByCrawling then
+        RandomZeds.debugLog(
+            "Deferring zombie state",
+            "type", state.speedType,
+            "getting up", gettingUp,
+            "blocked by crawling", blockedByCrawling
+        )
         deferBlockedZombieState(zombie, state, gettingUp)
         return
     end
 
-    if applySameZombieState(zombie, modData, state) then return end
+    if applySameZombieState(zombie, modData, state) then
+        RandomZeds.debugLog("Zombie state already applied", state.speedType)
+        return
+    end
     if not applyFreshZombieState(zombie, modData, state) then
+        RandomZeds.debugLog("Zombie state application failed", state.speedType)
         return false
     end
     if not RandomZeds.isZombieSpeedTypeApplied(zombie, state.speedType) then
+        RandomZeds.debugLog(
+            "Zombie speed type not confirmed; queuing retry",
+            state.speedType
+        )
         deferUnappliedZombieState(zombie, state)
         return
     end
-    if mode.deferStateConfirmation then mode.deferStateConfirmation(zombie, state) end
+    RandomZeds.debugLog(
+        "Zombie state applied",
+        "type", state.speedType,
+        "period", state.period,
+        "multiplier", state.multiplier
+    )
+    if mode.queueServerState then mode.queueServerState(zombie, state) end
     pendingStandUps[zombie] = nil
 end
 
@@ -557,6 +534,12 @@ local function rollZombieState(config, period, allowCrawler)
         multiplier = rollSprinterMultiplier(config, speedType),
     }
     addRolledProfileState(state, config, speedType)
+    RandomZeds.debugLog(
+        "Rolled zombie state",
+        "type", state.speedType,
+        "period", state.period,
+        "multiplier", state.multiplier
+    )
     return state
 end
 
@@ -580,8 +563,35 @@ end
 local function queueCrawlerReroll(zombie, config, period)
     if RandomZeds.isExcluded(zombie) then return end
 
-    queuePendingState(zombie, rollZombieState(config, period, true))
+    local state = rollZombieState(config, period, true)
+    queuePendingState(zombie, state)
     pendingCrawlerRerollCheckRequired = true
+end
+
+local function markZombieProfileApplied(zombie)
+    profiledZombieGenerations[zombie] = profileGeneration
+end
+
+local function applyUnprofiledZombie(zombie, modData)
+    if not zombie or profiledZombieGenerations[zombie] == profileGeneration then
+        return false
+    end
+    if not modData or not zombie:getCurrentSquare() then return false end
+    if zombie:isDead() or RandomZeds.isExcluded(zombie, modData) then
+        markZombieProfileApplied(zombie)
+        return true
+    end
+
+    markZombieProfileApplied(zombie)
+    local crawlerProtected = protection.isCrawlerProtected(zombie)
+    if crawlerProtected
+            and (zombie:isCrawling() or modData[SPEED_TAG] == "crawler") then
+        queueCrawlerReroll(zombie, lastEffectiveConfig, lastEffectiveMode)
+    else
+        applyZombieType(
+            zombie, lastEffectiveConfig, lastEffectiveMode, not crawlerProtected)
+    end
+    return true
 end
 
 local function applyPendingZombieState(zombie, modData)
@@ -644,20 +654,11 @@ local function correctSprinterState(zombie)
     local typeApplied = RandomZeds.isZombieSpeedTypeApplied(
         zombie, "sprinter")
     if typeApplied then
-        if not RandomZeds.hasSynapseFeatureSupport() then
-            if mode.applySprinterAnimationSpeed then mode.applySprinterAnimationSpeed(zombie, state.multiplier) end
+        if mode.applySprinterAnimationSpeed then
+            mode.applySprinterAnimationSpeed(zombie, state.multiplier)
         end
         RandomZeds.reconcileSprinterMotion(zombie)
         return false
-    end
-
-    if RandomZeds.dispatchZombieState(zombie, state) then
-        RandomZeds.reconcileSprinterMotion(zombie)
-        if state.baseSpeed ~= nil then
-            modData[SPRINTER_BASE_SPEED_TAG] = state.baseSpeed
-        end
-        if mode.deferStateConfirmation then mode.deferStateConfirmation(zombie, state) end
-        return true
     end
 
     RandomZeds.applyZombieSpeedType(zombie, "sprinter", state.multiplier)
@@ -666,7 +667,7 @@ local function correctSprinterState(zombie)
         return false
     end
 
-    if mode.deferStateConfirmation then mode.deferStateConfirmation(zombie, state) end
+    if mode.queueServerState then mode.queueServerState(zombie, state) end
     return true
 end
 
@@ -690,7 +691,6 @@ local function verifySprinterStates()
 
     local now = getTimestampMs()
 
-    local corrected = false
     RandomZeds.forEachLoadedZombieWithinBudget(
         sprinterCheckCursor,
         SPRINTER_RECONCILE_BUDGET_MS,
@@ -705,15 +705,19 @@ local function verifySprinterStates()
                     and not protection.isCrawlerProtected(zombie) then
                 applyUnprotectedPendingReroll(zombie, modData)
             end
-            if verifyLoadedSprinter(zombie, now, modData) then
-                corrected = true
-            end
+            verifyLoadedSprinter(zombie, now, modData)
         end
     )
 
-    if corrected then
-        if mode.flushServerStates then mode.flushServerStates() end
-    end
+end
+
+local function reconcileUnprofiledZombies()
+    if lastEffectiveMode == DISABLED_PERIOD or not lastEffectiveConfig then return end
+
+    RandomZeds.forEachLoadedZombie(function(zombie)
+        local modData = zombie and zombie:getModData()
+        applyUnprofiledZombie(zombie, modData)
+    end)
 end
 
 local function reconcileCell(cell, period, config)
@@ -735,6 +739,7 @@ local function reconcileCell(cell, period, config)
                 else
                     applyZombieType(zombie, config, period, not crawlerProtected)
                 end
+                markZombieProfileApplied(zombie)
             end
         end
     end
@@ -757,7 +762,6 @@ local function processPendingRerollCandidate(zombie, pending)
         pendingCrawlerRerollCheckRequired = true
     elseif modData[PENDING_PERIOD_TAG] ~= lastEffectiveMode then
         applyUnprotectedPendingReroll(zombie, modData)
-        if mode.flushServerStates then mode.flushServerStates() end
     else
         pending[#pending + 1] = zombie
     end
@@ -775,11 +779,12 @@ local function applyPendingRerolls()
         processPendingRerollCandidate(zombie, pending)
     end)
 
-    if #pending == 0 then return end
-    if mode.advanceRerollRevision then mode.advanceRerollRevision() end
-    for index = 1, #pending do
-        local zombie = pending[index]
-        applyUnprotectedPendingReroll(zombie, zombie:getModData())
+    if #pending > 0 then
+        if mode.advanceRerollRevision then mode.advanceRerollRevision() end
+        for index = 1, #pending do
+            local zombie = pending[index]
+            applyUnprotectedPendingReroll(zombie, zombie:getModData())
+        end
     end
     if mode.flushServerStates then mode.flushServerStates() end
 end
@@ -804,6 +809,7 @@ local function processPendingZombieCreates()
         elseif zombie:getSquare() then
             applyZombieType(
                 zombie, nil, nil, mode.pendingZombieCrawlerAllowed)
+            markZombieProfileApplied(zombie)
             pendingZombieCreates[zombie] = nil
         end
     end
@@ -837,6 +843,13 @@ local function processPendingStandUps()
 end
 
 local function applyEffectiveProfile(period, config, signature)
+    profileGeneration = profileGeneration + 1
+    RandomZeds.debugLog(
+        "Applying profile",
+        "period", period,
+        "generation", profileGeneration,
+        "enabled", config ~= nil
+    )
     if not config then
         discardPendingRerolls()
         lastEffectiveMode = period
@@ -856,7 +869,9 @@ end
 local function updateEffectiveState()
     RandomZeds.forceVanillaPerceptionDefaults()
     local period, config, signature = Config.getEffectiveProfile()
-    if period ~= lastEffectiveMode or signature ~= lastEffectiveSignature then
+    local changed = period ~= lastEffectiveMode
+        or signature ~= lastEffectiveSignature
+    if changed then
         applyEffectiveProfile(period, config, signature)
     end
 
@@ -893,8 +908,14 @@ local function onZombieCreate(zombie)
         else
             applyZombieType(zombie, lastEffectiveConfig, lastEffectiveMode)
         end
+        RandomZeds.debugLog(
+            "Zombie created and profiled",
+            "type", modData and modData[SPEED_TAG]
+        )
+        markZombieProfileApplied(zombie)
         return
     end
+    RandomZeds.debugLog("Zombie created without profile or square; queued")
     pendingZombieCreates[zombie] = getTimestampMs() + PENDING_STATE_TIMEOUT_MS
 end
 
@@ -902,9 +923,6 @@ local function processPendingZombieWork()
     if lastEffectiveMode == DISABLED_PERIOD then return end
     if RandomZeds.hasPendingEntries(pendingZombieCreates) then
         processPendingZombieCreates()
-    end
-    if mode.processPendingServerStates then
-        mode.processPendingServerStates()
     end
     if RandomZeds.hasPendingEntries(pendingStandUps) then
         processPendingStandUps()
@@ -934,13 +952,6 @@ local function processScheduledZombieWork()
     RandomZeds.refreshSprinterAnimationSpeeds()
 end
 
-local function processScheduledWork()
-    if mode.processNetworkStateWork then
-        mode.processNetworkStateWork()
-    end
-    processScheduledZombieWork()
-end
-
 local function initialize()
     if initialized then return end
 
@@ -950,8 +961,12 @@ local function initialize()
     Events.OnWeatherPeriodStart.Add(updateEffectiveState)
     Events.OnWeatherPeriodStage.Add(updateEffectiveState)
     Events.OnWeatherPeriodComplete.Add(onWeatherPeriodComplete)
-    Events.OnTick.Add(processScheduledWork)
+    Events.OnTick.Add(processScheduledZombieWork)
     Events.EveryOneMinute.Add(updateEffectiveState)
+    Events.EveryOneMinute.Add(reconcileUnprofiledZombies)
+    if mode.processPendingServerStates then
+        Events.EveryOneMinute.Add(mode.processPendingServerStates)
+    end
     Events.EveryOneMinute.Add(protection.refreshProtectedChunks)
     protection.refreshProtectedChunks()
     updateEffectiveState()

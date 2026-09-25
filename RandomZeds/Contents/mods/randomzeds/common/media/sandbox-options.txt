@@ -93,6 +93,13 @@ option RandomZedsMain.WinterNightStart {
     translation = RandomZeds_WinterNightStart,
 }
 
+option RandomZedsMain.Debug {
+    type = boolean,
+    default = false,
+    page = RandomZedsMain,
+    translation = RandomZeds_Debug,
+}
+
 option RandomZeds.CrawlerChance {
     type = double,
     min = 0,

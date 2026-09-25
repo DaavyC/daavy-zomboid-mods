@@ -1,6 +1,7 @@
 local RandomZeds = require "rz_shared"
 
 local Offline = {
+    applySprinterAnimationSpeed = RandomZeds.applySprinterAnimationSpeed,
     pendingZombieCrawlerAllowed = true,
 }
 
@@ -15,14 +16,8 @@ function Offline.forEachPlayer(callback)
     return true
 end
 
-function Offline.applySprinterAnimationSpeed(zombie, multiplier)
-    RandomZeds.applySprinterAnimationSpeed(zombie, multiplier)
-end
-
 function Offline.shouldDeferPendingZombie(zombie, isCrawlerProtected)
-    if not zombie:getSquare() or not isCrawlerProtected(zombie) then
-        return false
-    end
+    if not isCrawlerProtected(zombie) then return false end
     local modData = zombie:getModData()
     return zombie:isCrawling() or modData[SPEED_TAG] == "crawler"
 end

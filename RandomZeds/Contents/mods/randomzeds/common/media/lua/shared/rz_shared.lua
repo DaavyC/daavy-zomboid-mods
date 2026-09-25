@@ -1,4 +1,6 @@
 local RandomZeds = {}
+local print = print
+local DEBUG_SANDBOX_SECTION = "RandomZedsMain"
 local SPEED_TYPE_IDS = {
     sprinter = 1,
     fastShambler = 2,
@@ -23,6 +25,16 @@ RandomZeds.SPEED_TAG = SPEED_TAG
 RandomZeds.MIN_SPRINTER_MULTIPLIER = MIN_SPRINTER_MULTIPLIER
 RandomZeds.MAX_SPRINTER_MULTIPLIER = MAX_SPRINTER_MULTIPLIER
 RandomZeds.hasPendingEntries = hasPendingEntries
+
+function RandomZeds.isDebugEnabled()
+    local settings = SandboxVars and SandboxVars[DEBUG_SANDBOX_SECTION]
+    return settings ~= nil and settings.Debug == true
+end
+
+function RandomZeds.debugLog(...)
+    if not RandomZeds.isDebugEnabled() then return end
+    print("[RandomZeds][Debug]", ...)
+end
 
 function RandomZeds.requireNumber(numericInput, _description)
     local number = tonumber(numericInput)
@@ -161,6 +173,19 @@ local pendingSprinterAnimationRefreshes = setmetatable({}, { __mode = "k" })
 local synapseApi
 local synapseApiAvailable = false
 
+local function getSynapseApi()
+    if synapseApiAvailable then return synapseApi end
+    local apiRoot = _G.Synapse and _G.Synapse.API
+    local api = apiRoot and (apiRoot.RandomZeds or apiRoot)
+    if not apiRoot or type(apiRoot.getApiVersion) ~= "function"
+            or not api or type(api.applyZombieFeatures) ~= "function"
+            or type(api.applyZombieSenses) ~= "function" then return nil end
+    if apiRoot.getApiVersion() ~= 2 then return nil end
+    synapseApi = api
+    synapseApiAvailable = true
+    return api
+end
+
 local function clearSprinterAnimationRefresh(zombie)
     zombie:setVariable(SPRINTER_SPEED_REFRESH_VARIABLE, false)
     pendingSprinterAnimationRefreshes[zombie] = nil
@@ -176,13 +201,6 @@ function RandomZeds.forceVanillaPerceptionDefaults()
     return sight ~= nil and hearing ~= nil
 end
 
-local function restoreNativeOptionValues(nativeOptions, previousNativeValues)
-    for index = 1, #nativeOptions do
-        local option = nativeOptions[index]
-        option:setValue(previousNativeValues[index])
-    end
-end
-
 function RandomZeds.applyZombieNativeStats(zombie, sight, hearing)
     local nativeStatValues = table.newarray(
         RandomZeds.requireIntegerRange(sight, "zombie sight", 1, 3),
@@ -192,6 +210,11 @@ function RandomZeds.applyZombieNativeStats(zombie, sight, hearing)
         return false
     end
     if not zombie then return false end
+    local api = getSynapseApi()
+    if api and nativeStatValues[1] and nativeStatValues[2] then
+        api.applyZombieSenses(zombie, nativeStatValues[1], nativeStatValues[2])
+        return true
+    end
     if nativeStatValues[1] == 2 and nativeStatValues[2] == 2 then
         return true
     end
@@ -217,41 +240,15 @@ function RandomZeds.applyZombieNativeStats(zombie, sight, hearing)
         end
     end
     zombie:DoZombieStats()
-    restoreNativeOptionValues(nativeOptions, previousNativeValues)
+    for index = 1, #nativeOptions do
+        local option = nativeOptions[index]
+        option:setValue(previousNativeValues[index])
+    end
     return true
-end
-
-local function getSynapseApi()
-    if synapseApiAvailable then
-        return synapseApi
-    end
-    local synapse = _G.Synapse
-    if not synapse then
-        return nil
-    end
-    local apiRoot = synapse.API
-    local api = apiRoot and (apiRoot.RandomZeds or apiRoot)
-    if not apiRoot or type(apiRoot.getApiVersion) ~= "function"
-            or not api or type(api.applyZombieState) ~= "function" then
-        return nil
-    end
-    if apiRoot.getApiVersion() ~= 1 then return nil end
-    synapseApi = api
-    synapseApiAvailable = true
-    return api
 end
 
 function RandomZeds.hasSynapseFeatureSupport()
     return getSynapseApi() ~= nil
-end
-
-function RandomZeds.dispatchZombieState(zombie, zombieState)
-    if not RandomZeds.hasSynapseFeatureSupport() then return false end
-    if not isMultiplayer() and type(zombieState) == "table"
-            and zombieState.speedType == "sprinter" then
-        return false
-    end
-    return RandomZeds.applySynapseZombieState(zombie, zombieState)
 end
 
 function RandomZeds.applyZombieFeatures(
@@ -276,14 +273,11 @@ function RandomZeds.applyZombieFeatures(
     return true
 end
 
-local function getSprinterBaseSpeed(zombie, providedBaseSpeed, modData)
+local function getSprinterBaseSpeed(zombie, modData)
     if not zombie then return nil end
     modData = modData or zombie:getModData()
     if not modData then return nil end
-    local baseSpeed = providedBaseSpeed
-    if baseSpeed == nil then
-        baseSpeed = modData[SPRINTER_BASE_SPEED_TAG]
-    end
+    local baseSpeed = modData[SPRINTER_BASE_SPEED_TAG]
     if baseSpeed == nil then
         baseSpeed = RandomZeds.requireNumber(
             zombie:getSpeedMod(), "sprinter base speed")
@@ -298,56 +292,6 @@ local function getSprinterBaseSpeed(zombie, providedBaseSpeed, modData)
     return baseSpeed
 end
 
-local function makeSynapseZombieState(zombie, zombieState)
-    local synapseState = {
-        speedType = zombieState.speedType,
-        health = zombieState.health,
-        sight = zombieState.sight,
-        hearing = zombieState.hearing,
-    }
-    if zombieState.cognition ~= nil then
-        synapseState.cognition = zombieState.cognition
-        synapseState.strength = zombieState.strength
-        synapseState.memory = zombieState.memory
-    end
-    if zombieState.speedType == "sprinter" then
-        local baseSpeed = getSprinterBaseSpeed(
-            zombie, zombieState.baseSpeed)
-        if not baseSpeed then return nil end
-        zombieState.baseSpeed = baseSpeed
-        synapseState.speedMod = baseSpeed * zombieState.multiplier
-        synapseState.animationVariable = SPRINTER_SPEED_SCALE_VARIABLE
-        synapseState.animationSpeedScale = 0.8 * zombieState.multiplier
-    end
-    return synapseState
-end
-
-function RandomZeds.applySynapseZombieState(zombie, zombieState)
-    if not zombie or type(zombieState) ~= "table" then return false end
-    local api = getSynapseApi()
-    if not api then return false end
-    if not RandomZeds.requireSpeedTypeId(zombieState.speedType) then return false end
-    if not RandomZeds.requireSprinterMultiplier(
-        zombieState.multiplier, "zombie state multiplier")
-    then return false end
-    if not RandomZeds.requireRange(
-        zombieState.health, "zombie state health", 0.5, 3.8)
-    then return false end
-    if not RandomZeds.requireIntegerRange(
-        zombieState.sight, "zombie state sight", 1, 3)
-    then return false end
-    if not RandomZeds.requireIntegerRange(
-        zombieState.hearing, "zombie state hearing", 1, 3)
-    then return false end
-    if not RandomZeds.validateOptionalFeatureState(zombieState, "Zombie state") then
-        return false
-    end
-    local state = makeSynapseZombieState(zombie, zombieState)
-    if not state then return false end
-    api.applyZombieState(zombie, state)
-    return true
-end
-
 function RandomZeds.applyZombieFeatureState(zombie, state)
     if not zombie then return false end
     if not RandomZeds.validateOptionalFeatureState(state, "Zombie feature state") then
@@ -356,7 +300,6 @@ function RandomZeds.applyZombieFeatureState(zombie, state)
     if not RandomZeds.hasFeatureState(state) then
         return true
     end
-    if not RandomZeds.hasSynapseFeatureSupport() then return false end
     return RandomZeds.applyZombieFeatures(
         zombie, state.cognition, state.strength, state.memory)
 end
@@ -554,13 +497,6 @@ function RandomZeds.applySprinterAnimationSpeed(zombie, multiplier)
     if not validMultiplier and not isMultiplayer() then return false end
     multiplier = validMultiplier or 1.0
     local speedScale = 0.8 * multiplier
-    local api = getSynapseApi()
-    if api and type(api.applyAnimationSpeed) == "function" then
-        api.applyAnimationSpeed(
-            zombie, SPRINTER_SPEED_SCALE_VARIABLE, speedScale)
-        clearSprinterAnimationRefresh(zombie)
-        return true
-    end
     local currentSpeedScale = zombie:getVariableFloat(
         SPRINTER_SPEED_SCALE_VARIABLE, 0.0)
     if math.abs(currentSpeedScale - speedScale)
@@ -580,7 +516,7 @@ function RandomZeds.applySprinterSpeed(zombie, multiplier)
         multiplier, "sprinter speed multiplier") or 1.0
     local modData = zombie:getModData()
     if not modData then return false end
-    local baseSpeed = getSprinterBaseSpeed(zombie, nil, modData)
+    local baseSpeed = getSprinterBaseSpeed(zombie, modData)
     if not baseSpeed then
         baseSpeed = tonumber(zombie:getSpeedMod()) or 1.0
         if baseSpeed <= 0 then baseSpeed = 1.0 end
@@ -605,6 +541,24 @@ function RandomZeds.applySprinterSpeed(zombie, multiplier)
     modData[SPEED_TAG] = "sprinter"
     modData[SPRINTER_MULTIPLIER_TAG] = multiplier
     modData[SPRINTER_BASE_SPEED_TAG] = baseSpeed
+    RandomZeds.debugLog(
+        "Sprinter speed applied",
+        "multiplier", multiplier,
+        "base speed", baseSpeed,
+        "expected speed", expectedSpeed,
+        "native type valid before repair", nativeTypeValid,
+        "remote", remote
+    )
+    if RandomZeds.isDebugEnabled() then
+        RandomZeds.debugLog(
+            "Sprinter result",
+            "speed type", zombie:getSpeedType(),
+            "speed mod", zombie:getSpeedMod(),
+            "walk type", zombie:getWalkType(),
+            "crawling", zombie:isCrawling(),
+            "can walk", zombie:isCanWalk()
+        )
+    end
     return true
 end
 
@@ -642,15 +596,14 @@ function RandomZeds.setCrawlerState(zombie, crawling)
     return true
 end
 
-function RandomZeds.reinitializeOfflineSprinterMotion(zombie, multiplier)
-    if not zombie then return false end
-    RandomZeds.setCrawlerState(zombie, false)
-    zombie:doSprinter()
-    return RandomZeds.applySprinterSpeed(zombie, multiplier)
-end
-
 function RandomZeds.applyZombieSpeedType(zombie, speedType, multiplier)
     if not zombie or not SPEED_TYPE_IDS[speedType] then return false end
+
+    RandomZeds.debugLog(
+        "Applying zombie speed type",
+        "type", speedType,
+        "multiplier", multiplier
+    )
 
     if speedType ~= "sprinter" then
         clearSprinterAnimationRefresh(zombie)
@@ -661,18 +614,13 @@ function RandomZeds.applyZombieSpeedType(zombie, speedType, multiplier)
         return true
     end
 
+    RandomZeds.setCrawlerState(zombie, false)
     if speedType == "sprinter" then
-        if not isMultiplayer() and RandomZeds.hasSynapseFeatureSupport() then
-            return RandomZeds.reinitializeOfflineSprinterMotion(
-                zombie, multiplier)
-        end
-        RandomZeds.setCrawlerState(zombie, false)
         return RandomZeds.applySprinterSpeed(zombie, multiplier)
-    elseif speedType == "fastShambler" then
-        RandomZeds.setCrawlerState(zombie, false)
+    end
+    if speedType == "fastShambler" then
         zombie:doFastShambler()
     else
-        RandomZeds.setCrawlerState(zombie, false)
         zombie:doShambler()
     end
     return true

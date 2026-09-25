@@ -6,15 +6,13 @@ local COMMAND_MODULE = "RandomZeds"
 local STATE_COMMAND = "ZombieState"
 local SPRINTER_BASE_SPEED_TAG = "RandomZedsSprinterBaseSpeed"
 local REROLL_TAG = "RandomZedsReroll"
-local STATE_BATCH_SIZE = 16
-local INITIAL_STATE_BUDGET_MS = 3
-local STATE_CONFIRMATION_BUDGET_MS = 3
-local PENDING_STATE_TIMEOUT_MS = 60000
+local SERVER_COMMAND_BUFFER_CAPACITY_BYTES = 1000000
+local SERVER_STATE_FIELDS = table.newarray(
+    "period", "speedType", "multiplier", "baseSpeed", "health", "sight",
+    "hearing", "cognition", "strength", "memory", "reroll", "id")
 local rerollRevision = 0
 local queuedServerStates = table.newarray()
 local pendingServerStates = {}
-local pendingStateConfirmations = {}
-local serverTick = 0
 
 function Online.forEachPlayer(callback)
     local players = getOnlinePlayers()
@@ -32,21 +30,46 @@ end
 
 function Online.resetStateSync()
     pendingServerStates = {}
-    pendingStateConfirmations = {}
     queuedServerStates = table.newarray()
-    serverTick = 0
+end
+
+local function getEncodedStateSize(state)
+    local byteCount = 4
+    for fieldIndex = 1, #SERVER_STATE_FIELDS do
+        local field = SERVER_STATE_FIELDS[fieldIndex]
+        local value = state[field]
+        if value ~= nil then
+            byteCount = byteCount + 4 + #field
+            local valueType = type(value)
+            if valueType == "number" then
+                byteCount = byteCount + 8
+            elseif valueType == "string" then
+                byteCount = byteCount + 2 + #value
+            elseif valueType == "boolean" then
+                byteCount = byteCount + 1
+            else
+                error("Unsupported zombie state network value: " .. field)
+            end
+        end
+    end
+    return byteCount
 end
 
 local function queueIdentifiedServerState(zombie, state, onlineID)
-    if RandomZeds.isExcluded(zombie) then return end
-
     zombie:transmitModData()
     state.id = onlineID
     queuedServerStates[#queuedServerStates + 1] = state
+    RandomZeds.debugLog(
+        "Queued server state",
+        "id", onlineID,
+        "type", state.speedType,
+        "queue size", #queuedServerStates
+    )
 end
 
-local function queueServerState(zombie, state)
+function Online.queueServerState(zombie, state)
     if RandomZeds.isExcluded(zombie) then return end
+    pendingServerStates[zombie] = nil
 
     local onlineID = zombie:getOnlineID()
     local modData = zombie:getModData()
@@ -71,13 +94,23 @@ local function queueServerState(zombie, state)
     }
 
     if not RandomZeds.isValidOnlineID(onlineID) then
-        synchronizedState.expiresAt = getTimestampMs() + PENDING_STATE_TIMEOUT_MS
         pendingServerStates[zombie] = synchronizedState
         return
     end
 
-    pendingServerStates[zombie] = nil
     queueIdentifiedServerState(zombie, synchronizedState, onlineID)
+end
+
+local function getEmptyStatePacketSize()
+    return 3 + 2 + #COMMAND_MODULE + 2 + #STATE_COMMAND + 1 + 4
+        + 1 + 2 + #"states" + 1 + 4
+end
+
+local function sendServerStateBatch(states)
+    if #states > 0 then
+        RandomZeds.debugLog("Sending server state packet", "count", #states)
+        sendServerCommand(COMMAND_MODULE, STATE_COMMAND, { states = states })
+    end
 end
 
 function Online.flushServerStates()
@@ -85,86 +118,48 @@ function Online.flushServerStates()
     local queuedCount = #queuedStates
     if queuedCount == 0 then return end
 
-    for first = 1, queuedCount, STATE_BATCH_SIZE do
-        local states = {}
-        local last = math.min(first + STATE_BATCH_SIZE - 1, queuedCount)
-        for index = first, last do
-            states[#states + 1] = queuedStates[index]
+    local states = {}
+    local packetSize = getEmptyStatePacketSize()
+    for stateIndex = 1, queuedCount do
+        local state = queuedStates[stateIndex]
+        local encodedEntrySize = 10 + getEncodedStateSize(state)
+        if #states > 0
+                and packetSize + encodedEntrySize
+                    > SERVER_COMMAND_BUFFER_CAPACITY_BYTES then
+            sendServerStateBatch(states)
+            states = {}
+            packetSize = getEmptyStatePacketSize()
         end
-        sendServerCommand(COMMAND_MODULE, STATE_COMMAND, { states = states })
+        if packetSize + encodedEntrySize
+                > SERVER_COMMAND_BUFFER_CAPACITY_BYTES then
+            error("A zombie state exceeds the server command buffer capacity")
+        end
+        states[#states + 1] = state
+        packetSize = packetSize + encodedEntrySize
     end
 
+    sendServerStateBatch(states)
     queuedServerStates = table.newarray()
 end
 
-function Online.deferStateConfirmation(zombie, state)
-    local modData = zombie:getModData()
-    if not modData then return false end
-    if state.reroll == nil then
-        state.reroll = tonumber(modData[REROLL_TAG]) or rerollRevision
-    end
-    state.readyTick = serverTick + 1
-    state.expiresAt = getTimestampMs() + PENDING_STATE_TIMEOUT_MS
-    pendingStateConfirmations[zombie] = state
-    return true
-end
-
-local function processPendingStateConfirmations()
-    local getTimestamp = getTimestampMs
-    local now = getTimestamp()
-    local deadline = now + STATE_CONFIRMATION_BUDGET_MS
-    local visited = 0
-    for zombie, state in pairs(pendingStateConfirmations) do
-        if visited > 0 and getTimestamp() >= deadline then break end
-        visited = visited + 1
-        if not zombie:getCurrentSquare() or zombie:isDead()
-                or RandomZeds.isExcluded(zombie)
-                or now >= state.expiresAt then
-            pendingStateConfirmations[zombie] = nil
-        elseif serverTick >= state.readyTick and zombie:getSquare()
-                and zombie:getCurrentActionContextStateName() ~= "getup"
-                and (state.speedType == "crawler" or not zombie:isCrawling()) then
-            if RandomZeds.isZombieSpeedTypeApplied(
-                    zombie, state.speedType) then
-                if state.speedType == "sprinter" then
-                    RandomZeds.reconcileSprinterMotion(zombie)
-                end
-                pendingStateConfirmations[zombie] = nil
-                queueServerState(zombie, state)
-            end
-        end
-    end
-end
-
 function Online.processPendingServerStates()
-    local visited = 0
-    local getTimestamp = getTimestampMs
-    local now = getTimestamp()
-    local deadline = now + INITIAL_STATE_BUDGET_MS
     for zombie, state in pairs(pendingServerStates) do
-        if visited > 0 and getTimestamp() >= deadline then break end
-        visited = visited + 1
         local onlineID = zombie:getOnlineID()
-        if not state or not zombie:getCurrentSquare()
-                or zombie:isDead() or RandomZeds.isExcluded(zombie)
-                or (state.expiresAt and now >= state.expiresAt) then
+        if not state or not zombie:getCurrentSquare() or zombie:isDead()
+                or RandomZeds.isExcluded(zombie)
+                or not RandomZeds.isValidOnlineID(onlineID) then
             pendingServerStates[zombie] = nil
-        elseif RandomZeds.isValidOnlineID(onlineID) then
+        else
             pendingServerStates[zombie] = nil
             queueIdentifiedServerState(zombie, state, onlineID)
         end
     end
+
+    Online.flushServerStates()
 end
 
-function Online.processNetworkStateWork()
-    serverTick = serverTick + 1
-
-    if RandomZeds.hasPendingEntries(pendingStateConfirmations) then
-        processPendingStateConfirmations()
-    end
-    if #queuedServerStates > 0 then
-        Online.flushServerStates()
-    end
+local function discardPendingServerState(zombie)
+    pendingServerStates[zombie] = nil
 end
 
 function Online.advanceRerollRevision()
@@ -174,5 +169,7 @@ end
 function Online.persistRerollRevision(modData)
     modData[REROLL_TAG] = rerollRevision
 end
+
+Events.OnZombieDead.Add(discardPendingServerState)
 
 return Online

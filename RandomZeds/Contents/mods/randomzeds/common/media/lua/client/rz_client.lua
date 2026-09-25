@@ -1,4 +1,4 @@
-require "ui/sandbox_settings"
+require "ui/rz_sandbox_settings"
 
 if not isClient() then return end
 
@@ -20,110 +20,21 @@ local CLIENT_PERIOD_VARIABLE = "RandomZedsClientPeriod"
 local CLIENT_REROLL_VARIABLE = "RandomZedsClientReroll"
 local COMMAND_MODULE = "RandomZeds"
 local STATE_COMMAND = "ZombieState"
-local STATE_RETRY_MS = 100
-local STATE_PENDING_TIMEOUT_MS = 60000
-local STATE_CONFIRM_STABLE_CHECKS = 2
-local RECONCILE_BUDGET_MS = 4
-local DIRTY_ZOMBIE_RETRY_MS = 100
-local FALLBACK_SCAN_INTERVAL_MS = 1000
-local SPRINTER_CHECK_COOLDOWN_MS = 1000
-local ANIMATION_REFRESH_WINDOW_MS = 250
-local SPRINTER_WATCHDOG_STALL_MS = 750
-local SPRINTER_WATCHDOG_COOLDOWN_MS = 2000
-local pendingStates = {}
 local authoritativeStates = {}
-local latestRevisions = {}
-local pendingOrder = table.newarray()
-local pendingQueued = {}
-local pendingCursor = 1
-local dirtyZombies = table.newarray()
-local dirtyQueued = setmetatable({}, { __mode = "k" })
-local dirtyRetryAt = setmetatable({}, { __mode = "k" })
-local dirtyCursor = 1
-local loadedZombieCursor = { index = 0 }
 local loadedZombiesByOnlineID = setmetatable({}, { __mode = "v" })
-local knownZombieIDs = {}
-local sprinterCheckCooldowns = setmetatable({}, { __mode = "k" })
-local applicationStates = setmetatable({}, { __mode = "k" })
-local watchdogStates = {}
-local clientTick = 0
-local initialScanPending = true
-local nextFallbackScanAt = 0
 
 local function resetZombieTracking()
-    pendingStates = {}
-    pendingQueued = {}
-    pendingOrder = table.newarray()
-    pendingCursor = 1
-    dirtyZombies = table.newarray()
-    dirtyQueued = setmetatable({}, { __mode = "k" })
-    dirtyRetryAt = setmetatable({}, { __mode = "k" })
-    dirtyCursor = 1
-    loadedZombiesByOnlineID = setmetatable({}, { __mode = "v" })
-    knownZombieIDs = {}
-    watchdogStates = {}
-end
-
-local function resetClientState()
-    resetZombieTracking()
     authoritativeStates = {}
-    latestRevisions = {}
-    loadedZombieCursor = { index = 0 }
-    sprinterCheckCooldowns = setmetatable({}, { __mode = "k" })
-    applicationStates = setmetatable({}, { __mode = "k" })
-    clientTick = 0
-    initialScanPending = true
-    nextFallbackScanAt = 0
-end
-
-local function queueZombieRefresh(zombie)
-    if not zombie or dirtyQueued[zombie] then return end
-    dirtyQueued[zombie] = true
-    dirtyZombies[#dirtyZombies + 1] = zombie
+    loadedZombiesByOnlineID = setmetatable({}, { __mode = "v" })
 end
 
 local function discardZombie(zombie)
     if not zombie then return end
-    dirtyQueued[zombie] = nil
-    dirtyRetryAt[zombie] = nil
-    sprinterCheckCooldowns[zombie] = nil
-    applicationStates[zombie] = nil
     local onlineID = tonumber(zombie:getOnlineID())
     if onlineID then
         loadedZombiesByOnlineID[onlineID] = nil
-        pendingStates[onlineID] = nil
-        pendingQueued[onlineID] = nil
         authoritativeStates[onlineID] = nil
-        knownZombieIDs[onlineID] = nil
-        watchdogStates[onlineID] = nil
     end
-end
-
-local function clearUnavailableZombieQueues()
-    resetZombieTracking()
-end
-
-local function clearQueuesWhenNoLoadedZombies()
-    if #dirtyZombies == 0 and #pendingOrder == 0 then return end
-    local cell = getCell()
-    local zombies = cell and cell:getZombieList()
-    if zombies and zombies:size() > 0 then return end
-    clearUnavailableZombieQueues()
-end
-
-local function markApplication(zombie, now)
-    applicationStates[zombie] = {
-        tick = clientTick,
-        appliedAt = now,
-    }
-end
-
-local function isApplicationPending(zombie, now)
-    local application = applicationStates[zombie]
-    if not application then return false end
-    return clientTick <= application.tick
-        or now - application.appliedAt
-            < ANIMATION_REFRESH_WINDOW_MS
 end
 
 local function validateClientState(state)
@@ -309,22 +220,7 @@ local function makeModDataState(zombie, modData)
     return state
 end
 
-local function isLoadedStateRefreshDue(zombie, now)
-    local cooldownAt = sprinterCheckCooldowns[zombie]
-    if cooldownAt == nil then
-        cooldownAt = 0
-    else
-        cooldownAt = tonumber(cooldownAt) or 0
-    end
-    return now >= cooldownAt
-end
-
-local function scheduleLoadedStateRefresh(zombie, now)
-    sprinterCheckCooldowns[zombie] = now + SPRINTER_CHECK_COOLDOWN_MS
-end
-
 local function applyFreshClientStateValues(zombie, state)
-    if RandomZeds.dispatchZombieState(zombie, state) then return true end
     RandomZeds.applyZombieNativeStats(zombie, state.sight, state.hearing)
     RandomZeds.applyZombieFeatureState(zombie, state)
     if not applyClientSpeedType(
@@ -337,7 +233,6 @@ local function applyFreshClientStateValues(zombie, state)
 end
 
 local function reapplyClientStateValues(zombie, state)
-    if RandomZeds.dispatchZombieState(zombie, state) then return true end
     return applyClientSpeedType(
         zombie, state.speedType, tonumber(state.multiplier) or 1.0)
 end
@@ -352,7 +247,6 @@ local function applyValidatedClientState(zombie, state, modData)
         return true
     end
 
-    local now = getTimestampMs()
     local appliedValues
     if alreadyApplied then
         appliedValues = reapplyClientStateValues(zombie, state)
@@ -371,7 +265,6 @@ local function applyValidatedClientState(zombie, state, modData)
         RandomZeds.reconcileSprinterMotion(zombie)
     end
     local applied = RandomZeds.isZombieSpeedTypeApplied(zombie, speedType)
-    if applied and not alreadyApplied then markApplication(zombie, now) end
     return applied
 end
 
@@ -385,43 +278,6 @@ local function applyClientState(zombie, state, modData)
         return false
     end
     return applyValidatedClientState(zombie, state, modData)
-end
-
-local function removePendingState(onlineID)
-    pendingStates[onlineID] = nil
-    pendingQueued[onlineID] = nil
-    knownZombieIDs[onlineID] = nil
-end
-
-local function reconcilePendingState(zombie, state, now)
-    local onlineID = tonumber(zombie:getOnlineID())
-    local modData = zombie:getModData()
-    if RandomZeds.isExcluded(zombie, modData) or zombie:isDead() then
-        removePendingState(onlineID)
-        return true
-    end
-    if state.expiresAt and now >= state.expiresAt then
-        removePendingState(onlineID)
-        return true
-    end
-    if not zombie:getCurrentSquare()
-            or isBlocked(zombie, state.speedType) then
-        return false
-    end
-    if now < (state.retryAfter or 0) then return false end
-
-    local nextRetryAfter = now + STATE_RETRY_MS
-    if applyValidatedClientState(zombie, state, modData) then
-        state.stableChecks = (state.stableChecks or 0) + 1
-    else
-        state.stableChecks = 0
-    end
-    state.retryAfter = nextRetryAfter
-    if state.stableChecks >= STATE_CONFIRM_STABLE_CHECKS then
-        removePendingState(onlineID)
-        return true
-    end
-    return false
 end
 
 local function getCachedZombie(onlineID)
@@ -439,254 +295,66 @@ local function cacheLoadedZombie(zombie)
     local onlineID = zombie and tonumber(zombie:getOnlineID())
     if not RandomZeds.isValidOnlineID(onlineID) then return nil end
     loadedZombiesByOnlineID[onlineID] = zombie
-    knownZombieIDs[onlineID] = true
     return onlineID
 end
 
-local function processPendingStates(deadline)
-    local total = #pendingOrder
-    local visited = 0
-    local getTimestamp = getTimestampMs
-    while total > 0 and visited < total do
-        local now = getTimestamp()
-        if now >= deadline then break end
-        if pendingCursor > total then pendingCursor = 1 end
-        local onlineID = pendingOrder[pendingCursor]
-        pendingCursor = pendingCursor + 1
-        visited = visited + 1
-        local state = pendingStates[onlineID]
-        if pendingQueued[onlineID] then
-            if not state then
-                removePendingState(onlineID)
-            else
-                if state.expiresAt and now >= state.expiresAt then
-                    removePendingState(onlineID)
-                elseif now >= (state.retryAfter or 0) then
-                    local zombie = getCachedZombie(onlineID)
-                    if zombie then
-                        reconcilePendingState(zombie, state, now)
-                    elseif knownZombieIDs[onlineID] then
-                        removePendingState(onlineID)
-                    end
-                end
-            end
-        end
-    end
-
-    if total > 1024 or (pendingCursor > total and visited > 0) then
-        local compacted = table.newarray()
-        for index = 1, total do
-            local onlineID = pendingOrder[index]
-            if pendingQueued[onlineID] then
-                compacted[#compacted + 1] = onlineID
-            end
-        end
-        pendingOrder = compacted
-        pendingCursor = 1
-    end
-end
-
-local function getZombiePosition(zombie)
-    return tonumber(zombie:getX()), tonumber(zombie:getY())
-end
-
-local function updateSprinterWatchdog(zombie, state, now)
-    local onlineID = tonumber(zombie:getOnlineID())
-    if not RandomZeds.isValidOnlineID(onlineID)
-            or state.speedType ~= "sprinter"
-            or isBlocked(zombie, state.speedType) or zombie:isDead()
-            or not RandomZeds.isSprinterMotionExpected(zombie)
-            or isApplicationPending(zombie, now) then
-        if onlineID then watchdogStates[onlineID] = nil end
-        return
-    end
-
-    local x, y = getZombiePosition(zombie)
-    if not x or not y then return end
-    local record = watchdogStates[onlineID]
-    if not record then
-        watchdogStates[onlineID] = {
-            x = x,
-            y = y,
-            stationarySince = now,
-            lastRecoveryAt = -math.huge,
-        }
-        return
-    end
-    if record.x ~= x or record.y ~= y then
-        record.x = x
-        record.y = y
-        record.stationarySince = now
-        return
-    end
-    if now - record.stationarySince < SPRINTER_WATCHDOG_STALL_MS
-            or now - record.lastRecoveryAt < SPRINTER_WATCHDOG_COOLDOWN_MS then
-        return
-    end
-    record.lastRecoveryAt = now
-    record.stationarySince = now
-    if not RandomZeds.dispatchZombieState(zombie, state) then
-        RandomZeds.applySprinterAnimationSpeed(zombie, state.multiplier)
-    end
-end
-
-local function refreshAuthoritativeZombieState(zombie, state, now, modData)
-    if isBlocked(zombie, state.speedType) then return end
-
-    local nativeApplied = RandomZeds.isZombieSpeedTypeApplied(
-        zombie, state.speedType)
-    local remoteSpeedIsScaled = isRemoteScaledSprinterState(
-        zombie, state, modData)
-    local clientStateApplied = isClientStateApplied(zombie, state, modData)
-    if clientStateApplied and (nativeApplied or remoteSpeedIsScaled) then
-        if state.speedType == "sprinter" then
-            RandomZeds.reconcileSprinterMotion(zombie)
-            updateSprinterWatchdog(zombie, state, now)
-        end
-        return
-    end
-    local refreshDue = isLoadedStateRefreshDue(zombie, now)
-    if not remoteSpeedIsScaled and not refreshDue then
-        return
-    end
-    if not remoteSpeedIsScaled then
-        scheduleLoadedStateRefresh(zombie, now)
-    end
-    applyValidatedClientState(zombie, state, modData)
-    if state.speedType == "sprinter" then
-        updateSprinterWatchdog(zombie, state, now)
-    end
-end
-
-local function refreshStoredZombieState(zombie, state, now, modData)
+local function refreshStoredZombieState(zombie, state, modData)
     if not state or isBlocked(zombie, state.speedType) then return end
 
-    local speedType = state.speedType
-    local nativeApplied = RandomZeds.isZombieSpeedTypeApplied(zombie, speedType)
-    if not isClientStateApplied(zombie, state, modData) or not nativeApplied then
-        local remoteSpeedIsScaled = isRemoteScaledSprinterState(
-            zombie, state, modData)
-        local refreshDue = isLoadedStateRefreshDue(zombie, now)
-        if speedType == "sprinter" and not remoteSpeedIsScaled
-                and not refreshDue then
-            return
-        end
-        if speedType == "sprinter" and not remoteSpeedIsScaled then
-            scheduleLoadedStateRefresh(zombie, now)
-        end
+    if not isClientStateApplied(zombie, state, modData)
+            or not isClientNativeStateApplied(zombie, state, modData) then
         applyClientState(zombie, state, modData)
     end
 end
 
-local function refreshLoadedZombieState(zombie, now, onlineID)
-    if onlineID and pendingQueued[onlineID] then return end
+local function refreshLoadedZombieState(zombie, onlineID)
     local modData = zombie:getModData()
-    if RandomZeds.isExcluded(zombie, modData) then return end
-    local state = onlineID and authoritativeStates[onlineID]
-    if state then
-        refreshAuthoritativeZombieState(zombie, state, now, modData)
+    if RandomZeds.isExcluded(zombie, modData) then
+        if onlineID then authoritativeStates[onlineID] = nil end
         return
     end
-    refreshStoredZombieState(
-        zombie, makeModDataState(zombie, modData), now, modData)
+
+    local state = onlineID and authoritativeStates[onlineID]
+    if state then
+        local stateRevision = tonumber(state.reroll) or 0
+        local storedRevision = tonumber(modData and modData[REROLL_TAG])
+        local appliedRevision = tonumber(
+            zombie:getVariableString(CLIENT_REROLL_VARIABLE))
+        if (storedRevision and storedRevision > stateRevision)
+                or (appliedRevision and appliedRevision > stateRevision) then
+            state = makeModDataState(zombie, modData)
+            if not state or not validateClientState(state) then return end
+            authoritativeStates[onlineID] = state
+        end
+    else
+        state = makeModDataState(zombie, modData)
+    end
+
+    if state and validateClientState(state) then
+        if onlineID then authoritativeStates[onlineID] = state end
+        refreshStoredZombieState(zombie, state, modData)
+    end
 end
 
-local function processLoadedZombie(zombie, deadline, now)
-    if not zombie or zombie:isDead() then
-        return nil, true
+local function processLoadedZombie(zombie)
+    if not zombie then return end
+    if zombie:isDead() then
+        discardZombie(zombie)
+        return
     end
     if not zombie:getCurrentSquare() then
-        return nil, true
+        return
     end
     local onlineID = cacheLoadedZombie(zombie)
-    if onlineID and pendingQueued[onlineID] then
-        local state = pendingStates[onlineID]
-        if state then reconcilePendingState(zombie, state, now) end
-        now = getTimestampMs()
-    end
-    if now < deadline and (not onlineID or not pendingQueued[onlineID]) then
-        refreshLoadedZombieState(zombie, now, onlineID)
-    end
-    return onlineID, onlineID ~= nil
+    refreshLoadedZombieState(zombie, onlineID)
 end
 
-local function processNextDirtyZombie(total, deadline, now)
-    if dirtyCursor > total then dirtyCursor = 1 end
-    local zombie = dirtyZombies[dirtyCursor]
-    dirtyCursor = dirtyCursor + 1
-    if not zombie or not dirtyQueued[zombie] then return end
-
-    local retryAt = dirtyRetryAt[zombie]
-    if retryAt and now < retryAt then return end
-    local _, resolved = processLoadedZombie(zombie, deadline, now)
-    if resolved then
-        dirtyQueued[zombie] = nil
-        dirtyRetryAt[zombie] = nil
-    else
-        dirtyRetryAt[zombie] = now + DIRTY_ZOMBIE_RETRY_MS
-    end
-end
-
-local function compactDirtyZombies(total, visited)
-    if dirtyCursor <= total or visited == 0 then return end
-    local compacted = table.newarray()
-    for index = 1, total do
-        local zombie = dirtyZombies[index]
-        if zombie and dirtyQueued[zombie] then
-            compacted[#compacted + 1] = zombie
-        end
-    end
-    dirtyZombies = compacted
-    dirtyCursor = 1
-end
-
-local function processDirtyZombies(deadline)
-    local total = #dirtyZombies
-    local visited = 0
-    local getTimestamp = getTimestampMs
-    while total > 0 and visited < total do
-        local now = getTimestamp()
-        if now >= deadline then break end
-        processNextDirtyZombie(total, deadline, now)
-        visited = visited + 1
-    end
-    compactDirtyZombies(total, visited)
-end
-
-local function processFallbackLoadedZombieScan(deadline)
-    local getTimestamp = getTimestampMs
-    local scanNow = getTimestamp()
-    if not initialScanPending and scanNow < nextFallbackScanAt then return end
-    if scanNow >= deadline then return end
-
-    local remaining = deadline - scanNow
-    local processed = RandomZeds.forEachLoadedZombieWithinBudget(
-        loadedZombieCursor,
-        remaining,
-        function(zombie, now) processLoadedZombie(zombie, deadline, now) end
-    )
-    if processed == 0 then
-        clearUnavailableZombieQueues()
-    end
-    if initialScanPending and loadedZombieCursor.index == 0 then
-        initialScanPending = false
-    end
-    if initialScanPending then
-        nextFallbackScanAt = 0
-    else
-        nextFallbackScanAt = getTimestamp() + FALLBACK_SCAN_INTERVAL_MS
-    end
-end
-
-local function refreshPendingStates()
-    clientTick = clientTick + 1
-    local getTimestamp = getTimestampMs
-    local now = getTimestamp()
-    local deadline = now + RECONCILE_BUDGET_MS
-    clearQueuesWhenNoLoadedZombies()
-    processDirtyZombies(deadline)
-    processFallbackLoadedZombieScan(deadline)
-    processPendingStates(deadline)
+local function refreshLoadedZombies()
+    loadedZombiesByOnlineID = setmetatable({}, { __mode = "v" })
+    RandomZeds.debugLog("Starting client zombie state reconciliation")
+    RandomZeds.forEachLoadedZombie(function(zombie)
+        processLoadedZombie(zombie)
+    end)
     RandomZeds.refreshSprinterAnimationSpeeds()
 end
 
@@ -702,29 +370,50 @@ local function validateServerStateIdentity(state)
     return onlineID, revision
 end
 
-local function receiveValidatedServerState(state, onlineID, revision, now)
-
-    local latestRevision = latestRevisions[onlineID]
-    if latestRevision and revision < latestRevision then return end
-
-    now = now or getTimestampMs()
-    latestRevisions[onlineID] = revision
-    authoritativeStates[onlineID] = state
-    state.expiresAt = now + STATE_PENDING_TIMEOUT_MS
-    state.stableChecks = 0
-    state.retryAfter = 0
-    pendingStates[onlineID] = state
-    if not pendingQueued[onlineID] then
-        pendingQueued[onlineID] = true
-        pendingOrder[#pendingOrder + 1] = onlineID
+local function receiveValidatedServerState(state, onlineID, revision)
+    local latestState = authoritativeStates[onlineID]
+    local latestRevision = latestState and tonumber(latestState.reroll)
+    local zombie = getCachedZombie(onlineID)
+    if zombie then
+        local modData = zombie:getModData()
+        local storedRevision = tonumber(modData and modData[REROLL_TAG])
+        local appliedRevision = tonumber(
+            zombie:getVariableString(CLIENT_REROLL_VARIABLE))
+        if storedRevision and (not latestRevision or storedRevision > latestRevision) then
+            latestRevision = storedRevision
+        end
+        if appliedRevision and (not latestRevision or appliedRevision > latestRevision) then
+            latestRevision = appliedRevision
+        end
     end
-end
+    if latestRevision and revision < latestRevision then
+        RandomZeds.debugLog(
+            "Ignored stale server state",
+            "id", onlineID,
+            "revision", revision,
+            "latest revision", latestRevision
+        )
+        return
+    end
 
-local function receiveServerState(state, now)
-    if not validateClientState(state) then return end
-    local onlineID, revision = validateServerStateIdentity(state)
-    if not onlineID then return end
-    receiveValidatedServerState(state, onlineID, revision, now)
+    authoritativeStates[onlineID] = state
+    if zombie then
+        local applied = applyClientState(zombie, state)
+        RandomZeds.debugLog(
+            "Received server state",
+            "id", onlineID,
+            "revision", revision,
+            "type", state.speedType,
+            "applied", applied
+        )
+    else
+        RandomZeds.debugLog(
+            "Stored server state for unloaded zombie",
+            "id", onlineID,
+            "revision", revision,
+            "type", state.speedType
+        )
+    end
 end
 
 local function onServerCommand(module, command, packet)
@@ -732,43 +421,48 @@ local function onServerCommand(module, command, packet)
     if type(packet) ~= "table" then return end
     if packet.states ~= nil then
         if type(packet.states) ~= "table" then return end
-        local now = getTimestampMs()
         local states = packet.states
+        RandomZeds.debugLog("Received server state packet", "count", #states)
         for index = 1, #states do
             local state = states[index]
             if validateClientState(state) then
                 local onlineID, revision = validateServerStateIdentity(state)
                 if onlineID then
-                    receiveValidatedServerState(state, onlineID, revision, now)
+                    receiveValidatedServerState(state, onlineID, revision)
                 end
             end
         end
     else
-        receiveServerState(packet, getTimestampMs())
+        if not validateClientState(packet) then return end
+        local onlineID, revision = validateServerStateIdentity(packet)
+        if onlineID then
+            receiveValidatedServerState(packet, onlineID, revision)
+        end
     end
 end
 
 local function onConnected()
-    resetClientState()
+    resetZombieTracking()
     RandomZeds.forceVanillaPerceptionDefaults()
 end
 
 local function onDisconnect()
-    resetClientState()
+    resetZombieTracking()
 end
 
-local function onZombieCreate(zombie)
-    queueZombieRefresh(zombie)
+local function onGameStart()
+    RandomZeds.forceVanillaPerceptionDefaults()
+    refreshLoadedZombies()
 end
 
 local function onZombieDead(zombie)
     discardZombie(zombie)
 end
 
-Events.OnTick.Add(refreshPendingStates)
+Events.EveryOneMinute.Add(refreshLoadedZombies)
 Events.OnServerCommand.Add(onServerCommand)
 Events.OnConnected.Add(onConnected)
 Events.OnDisconnect.Add(onDisconnect)
-Events.OnGameStart.Add(RandomZeds.forceVanillaPerceptionDefaults)
-Events.OnZombieCreate.Add(onZombieCreate)
+Events.OnGameStart.Add(onGameStart)
 Events.OnZombieDead.Add(onZombieDead)
+Events.OnZombieCreate.Add(processLoadedZombie)

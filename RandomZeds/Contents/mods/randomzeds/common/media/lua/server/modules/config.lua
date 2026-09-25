@@ -95,15 +95,13 @@ local SEASON_DEFAULTS = {
     Winter = { dayStart = 8, nightStart = 17 },
 }
 
-local function readOption(optionPrefix, name)
+local function readOption(options, optionPrefix, name)
     local fullName = optionPrefix .. "." .. name
-    local options = getSandboxOptions and getSandboxOptions()
     local option = options and options:getOptionByName(fullName)
     if not option then
         return nil
     end
-    local optionValue = option:getValue()
-    return optionValue
+    return option:getValue()
 end
 
 local function normalizeChances(chances, order, remainderTarget)
@@ -123,12 +121,13 @@ local function normalizeChances(chances, order, remainderTarget)
     return normalizedChances
 end
 
-local function readProfileChances(optionPrefix, prefix, profileName)
+local function readProfileChances(options, optionPrefix, prefix, profileName)
     local definition = PROFILE_DEFINITIONS[profileName]
     local chances = {}
     for index = 1, #definition.levels do
         local level = definition.levels[index]
         chances[level] = readOption(
+            options,
             optionPrefix,
             prefix .. definition.optionSuffixes[level]
         )
@@ -136,7 +135,7 @@ local function readProfileChances(optionPrefix, prefix, profileName)
     return normalizeChances(chances, definition.levels, definition.remainder)
 end
 
-local function readProfileTables(optionPrefix, profileNames)
+local function readProfileTables(options, optionPrefix, profileNames)
     local profiles = {}
     for index = 1, #profileNames do
         local profileName = profileNames[index]
@@ -149,26 +148,27 @@ local function readProfileTables(optionPrefix, profileNames)
         for profileIndex = 1, #profileNames do
             local profileName = profileNames[profileIndex]
             profiles[profileName][speedType] = readProfileChances(
-                optionPrefix, prefix, profileName)
+                options, optionPrefix, prefix, profileName)
         end
     end
     return profiles
 end
 
 local function readConfig(optionPrefix)
+    local options = getSandboxOptions and getSandboxOptions()
     local config = normalizeChances({
-        sprinter = readOption(optionPrefix, "SprinterChance"),
-        fastShambler = readOption(optionPrefix, "FastShamblerChance"),
-        shambler = readOption(optionPrefix, "ShamblerChance"),
-        crawler = readOption(optionPrefix, "CrawlerChance"),
+        sprinter = readOption(options, optionPrefix, "SprinterChance"),
+        fastShambler = readOption(options, optionPrefix, "FastShamblerChance"),
+        shambler = readOption(options, optionPrefix, "ShamblerChance"),
+        crawler = readOption(options, optionPrefix, "CrawlerChance"),
     }, SPEED_TYPES, "fastShambler")
 
     config.sprinterSpeedMultiplier = tonumber(
-        readOption(optionPrefix, "SprinterSpeedMultiplier")) or 1.0
+        readOption(options, optionPrefix, "SprinterSpeedMultiplier")) or 1.0
     config.sprinterSpeedVariationDecrease = tonumber(
-        readOption(optionPrefix, "SprinterSpeedVariationDecrease")) or 0
+        readOption(options, optionPrefix, "SprinterSpeedVariationDecrease")) or 0
     config.sprinterSpeedVariationIncrease = tonumber(
-        readOption(optionPrefix, "SprinterSpeedVariationIncrease")) or 0
+        readOption(options, optionPrefix, "SprinterSpeedVariationIncrease")) or 0
     config.featuresEnabled = RandomZeds.hasSynapseFeatureSupport()
     for index = 1, #ALL_PROFILE_NAMES do
         local profileName = ALL_PROFILE_NAMES[index]
@@ -178,8 +178,7 @@ local function readConfig(optionPrefix)
     if config.featuresEnabled then
         profileNames = ALL_PROFILE_NAMES
     end
-    local profileTables = readProfileTables(
-        optionPrefix, profileNames)
+    local profileTables = readProfileTables(options, optionPrefix, profileNames)
     for index = 1, #profileNames do
         local profileName = profileNames[index]
         config[profileName] = profileTables[profileName]
@@ -189,12 +188,12 @@ local function readConfig(optionPrefix)
 end
 
 local function readWeatherSettings()
-    local settings = {
-        rain = readOption(WEATHER_ID, "Rain") == true,
-        fog = readOption(WEATHER_ID, "Fog") == true,
-        snow = readOption(WEATHER_ID, "Snow") == true,
+    local options = getSandboxOptions and getSandboxOptions()
+    return {
+        rain = readOption(options, WEATHER_ID, "Rain") == true,
+        fog = readOption(options, WEATHER_ID, "Fog") == true,
+        snow = readOption(options, WEATHER_ID, "Snow") == true,
     }
-    return settings
 end
 
 local function getConfigSignature(config)
@@ -233,14 +232,13 @@ local function isWeatherActive(settings)
     end
     local climate = getClimateManager and getClimateManager()
     if not climate then return false end
-    local rain = climate:getPrecipitationIntensity() > 0
-    local fog = climate:getFogIntensity() > 0
-    local snow = climate:getSnowStrength() > 0
-    local active = false
-    if settings.rain and rain then active = true end
-    if settings.fog and fog then active = true end
-    if settings.snow and snow then active = true end
-    return active
+    if settings.rain and climate:getPrecipitationIntensity() > 0 then
+        return true
+    end
+    if settings.fog and climate:getFogIntensity() > 0 then
+        return true
+    end
+    return settings.snow and climate:getSnowStrength() > 0 or false
 end
 
 local function readSeasonStart(options, optionName, fallback)

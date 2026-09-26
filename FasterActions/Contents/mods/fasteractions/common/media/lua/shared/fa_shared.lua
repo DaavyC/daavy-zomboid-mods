@@ -678,6 +678,38 @@ local function installAdjustMaxTimeHook()
     end
 end
 
+local function adjustQueuedInventoryActionDuration(action)
+    if #action.queueList == 0 or action.maxTime == -1 then
+        return
+    end
+
+    local adjustedMaxTime = action:FasterActionsOriginalAdjustMaxTime(action.maxTime)
+    local multiplier = getCategoryMultiplier("Inventory", action)
+    local scaledDuration = scaleActionDuration(action, adjustedMaxTime, "Inventory", multiplier)
+    action.maxTime = scaledDuration
+    action.action:setTime(scaledDuration)
+    debugLog("Adjusted queued inventory action duration", multiplier, adjustedMaxTime, scaledDuration)
+end
+
+local function installSingleplayerInventoryQueueHook()
+    if isClient() or isServer() then
+        return
+    end
+
+    require "TimedActions/ISInventoryTransferAction"
+
+    local ISInventoryTransferAction = ISInventoryTransferAction
+    if ISInventoryTransferAction.FasterActionsOriginalPerform then
+        return
+    end
+
+    ISInventoryTransferAction.FasterActionsOriginalPerform = ISInventoryTransferAction.perform
+    function ISInventoryTransferAction:perform()
+        self:FasterActionsOriginalPerform()
+        adjustQueuedInventoryActionDuration(self)
+    end
+end
+
 local function getWoodcuttingMultiplier(action)
     return getCategoryMultiplier("Woodcutting", action)
 end
@@ -825,6 +857,7 @@ end
 
 installInstantHoodHook()
 installAdjustMaxTimeHook()
+Events.OnGameStart.Add(installSingleplayerInventoryQueueHook)
 installWoodcuttingHooks()
 addVariableToSyncList(CORPSE_DRAGGING_SPEED_08_VARIABLE)
 addVariableToSyncList(CORPSE_DRAGGING_SPEED_12_VARIABLE)

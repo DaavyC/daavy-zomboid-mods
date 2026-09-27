@@ -2,6 +2,7 @@ local Config = {}
 
 local RandomZeds = require "rz_shared"
 local SPEED_TYPES = RandomZeds.SPEED_TYPES
+local SPEED_VARIATION_STEP = RandomZeds.SPEED_VARIATION_STEP
 
 local DAY_ID = "RandomZeds"
 local NIGHT_ID = "RandomZedsNight"
@@ -154,6 +155,29 @@ local function readProfileTables(options, optionPrefix, profileNames)
     return profiles
 end
 
+local function readSpeedVariation(options, optionPrefix, optionName)
+    local presetIndex = tonumber(readOption(
+        options, optionPrefix, optionName)) or 1
+    return (presetIndex - 1) * SPEED_VARIATION_STEP
+end
+
+local function readSpeedSettings(options, optionPrefix)
+    local settings = {}
+    for index = 1, #SPEED_TYPES do
+        local speedType = SPEED_TYPES[index]
+        local prefix = speedType:gsub("^%l", string.upper)
+        settings[speedType] = {
+            multiplier = tonumber(readOption(
+                options, optionPrefix, prefix .. "SpeedMultiplier")) or 1.0,
+            variationDecrease = readSpeedVariation(
+                options, optionPrefix, prefix .. "SpeedVariationDecrease"),
+            variationIncrease = readSpeedVariation(
+                options, optionPrefix, prefix .. "SpeedVariationIncrease"),
+        }
+    end
+    return settings
+end
+
 local function readConfig(optionPrefix)
     local options = getSandboxOptions and getSandboxOptions()
     local config = normalizeChances({
@@ -163,12 +187,7 @@ local function readConfig(optionPrefix)
         crawler = readOption(options, optionPrefix, "CrawlerChance"),
     }, SPEED_TYPES, "fastShambler")
 
-    config.sprinterSpeedMultiplier = tonumber(
-        readOption(options, optionPrefix, "SprinterSpeedMultiplier")) or 1.0
-    config.sprinterSpeedVariationDecrease = tonumber(
-        readOption(options, optionPrefix, "SprinterSpeedVariationDecrease")) or 0
-    config.sprinterSpeedVariationIncrease = tonumber(
-        readOption(options, optionPrefix, "SprinterSpeedVariationIncrease")) or 0
+    config.speedSettings = readSpeedSettings(options, optionPrefix)
     config.featuresEnabled = RandomZeds.hasSynapseFeatureSupport()
     for index = 1, #ALL_PROFILE_NAMES do
         local profileName = ALL_PROFILE_NAMES[index]
@@ -203,9 +222,12 @@ local function getConfigSignature(config)
         local speedType = SPEED_TYPES[index]
         values[#values + 1] = config[speedType]
     end
-    values[#values + 1] = config.sprinterSpeedMultiplier
-    values[#values + 1] = config.sprinterSpeedVariationDecrease
-    values[#values + 1] = config.sprinterSpeedVariationIncrease
+    for index = 1, #SPEED_TYPES do
+        local settings = config.speedSettings[SPEED_TYPES[index]]
+        values[#values + 1] = settings.multiplier
+        values[#values + 1] = settings.variationDecrease
+        values[#values + 1] = settings.variationIncrease
+    end
 
     local profileNames = BASE_PROFILE_NAMES
     if config.featuresEnabled then profileNames = ALL_PROFILE_NAMES end

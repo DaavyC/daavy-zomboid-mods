@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <animNode>
-	<m_Name>defaultLunge</m_Name>
+	<m_Name>defaultWalktoward</m_Name>
 	<m_BlendTime>0.35</m_BlendTime>
 	<m_SpeedScale>0.80</m_SpeedScale>
-	<m_Conditions x_name="cc41ddf3-fe55-45e7-8eb9-ff20115712ee">
+	<m_randomAdvanceFraction>0.25</m_randomAdvanceFraction>
+	<m_Conditions x_name="c55dd4b9-92dc-44db-9d6c-d6545a97b56b">
 		<m_Name>intrees</m_Name>
 		<m_Type>BOOL</m_Type>
 		<m_Value>false</m_Value>

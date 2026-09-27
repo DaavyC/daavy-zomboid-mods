@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode x_extends="defaultLunge.xml">
+	<m_Name>lunge1</m_Name>
+	<m_AnimName>Zombie_Lunge</m_AnimName>
+	<m_SpeedScale>RandomZedsLungeSpeedScale1</m_SpeedScale>
+	<m_Events x_name="40c3933d-0d66-4896-b3dd-895612106b59">
+		<m_EventName>Footstep</m_EventName>
+		<m_TimePc>0.15</m_TimePc>
+		<m_ParameterValue>walk</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="b5f7b389-dab6-4d01-910b-0f6f9bf8afb6">
+		<m_EventName>Footstep</m_EventName>
+		<m_TimePc>0.6</m_TimePc>
+		<m_ParameterValue>walk</m_ParameterValue>
+	</m_Events>
+</animNode>

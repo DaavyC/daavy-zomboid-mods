@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode x_extends="default.xml">
+	<m_Name>pathfind2</m_Name>
+	<m_AnimName>Zombie_Walk2</m_AnimName>
+	<m_SpeedScale>RandomZedsFastShamblerSpeedScale2</m_SpeedScale>
+	<m_Conditions x_name="9893d84e-9b0d-4826-873f-782ac7ce9cda">
+		<m_Name>useRagdollVehicleCollison</m_Name>
+		<m_Type>BOOL</m_Type>
+		<m_Value>false</m_Value>
+	</m_Conditions>
+	<m_Conditions x_name="54995f5c-9735-46cb-ae38-4b0db0b2061f">
+		<m_Name>zombieWalkType</m_Name>
+		<m_Type>STRING</m_Type>
+		<m_Value>2</m_Value>
+	</m_Conditions>
+	<m_Events x_name="04a7bd73-0c48-450a-a815-d11c9820d596">
+		<m_EventName>Footstep</m_EventName>
+		<m_TimePc>0.15</m_TimePc>
+		<m_ParameterValue>walk</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="0f837699-e36b-48ef-9f6f-93338682dd8d">
+		<m_EventName>Footstep</m_EventName>
+		<m_TimePc>0.6</m_TimePc>
+		<m_ParameterValue>walk</m_ParameterValue>
+	</m_Events>
+</animNode>

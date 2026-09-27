@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode x_extends="defaultWalktoward.xml">
+	<m_Name>walktoward4</m_Name>
+	<m_AnimName>Zombie_Walk4</m_AnimName>
+	<m_SpeedScale>RandomZedsFastShamblerSpeedScale4</m_SpeedScale>
+	<m_Conditions x_name="e6d75199-76b4-4bb5-ba0c-37bd444dff49">
+		<m_Name>zombieWalkType</m_Name>
+		<m_Type>STRING</m_Type>
+		<m_Value>4</m_Value>
+	</m_Conditions>
+	<m_Events x_name="4faa114d-da41-43fa-9ec4-25cf9f216939">
+		<m_EventName>Footstep</m_EventName>
+		<m_TimePc>0.15</m_TimePc>
+		<m_ParameterValue>walk</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="7b7b85a9-1796-4926-843e-f71495cddc20">
+		<m_EventName>Footstep</m_EventName>
+		<m_TimePc>0.6</m_TimePc>
+		<m_ParameterValue>walk</m_ParameterValue>
+	</m_Events>
+</animNode>

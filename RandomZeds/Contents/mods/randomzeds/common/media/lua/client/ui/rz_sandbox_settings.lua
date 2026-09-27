@@ -6,7 +6,7 @@ local TITLE_BY_OPTION = {
     ["RandomZeds.CrawlerFragileChance"] = "RandomZeds_Crawlers",
     ["RandomZeds.ShamblerFragileChance"] = "RandomZeds_Shamblers",
     ["RandomZeds.FastShamblerFragileChance"] = "RandomZeds_FastShamblers",
-    ["RandomZeds.SprinterSpeedMultiplier"] = "RandomZeds_Sprinters",
+    ["RandomZeds.SprinterFragileChance"] = "RandomZeds_Sprinters",
     ["RandomZeds.SpringDayStart"] = "RandomZeds_Spring",
     ["RandomZeds.SummerDayStart"] = "RandomZeds_Summer",
     ["RandomZeds.AutumnDayStart"] = "RandomZeds_Autumn",
@@ -24,6 +24,9 @@ local SUBTITLE_BY_OPTION = {
     ["RandomZeds.FastShamblerFragileChance"] = "RandomZeds_Toughness",
     ["RandomZeds.FastShamblerSightEagleChance"] = "RandomZeds_Sight",
     ["RandomZeds.FastShamblerHearingPinpointChance"] = "RandomZeds_Hearing",
+    ["RandomZeds.CrawlerSpeedMultiplier"] = "RandomZeds_Speed",
+    ["RandomZeds.ShamblerSpeedMultiplier"] = "RandomZeds_Speed",
+    ["RandomZeds.FastShamblerSpeedMultiplier"] = "RandomZeds_Speed",
     ["RandomZeds.SprinterFragileChance"] = "RandomZeds_Toughness",
     ["RandomZeds.SprinterSightEagleChance"] = "RandomZeds_Sight",
     ["RandomZeds.SprinterHearingPinpointChance"] = "RandomZeds_Hearing",
@@ -67,6 +70,11 @@ end
 local function getSubtitle(setting)
     local normalizedName = normalizeSettingName(setting)
     return normalizedName and SUBTITLE_BY_OPTION[normalizedName]
+end
+
+local function isRandomZedsSetting(setting)
+    local normalizedName = normalizeSettingName(setting)
+    return normalizedName and normalizedName:match("^RandomZeds%.[^%.]+$") ~= nil
 end
 
 local function isRandomZedsPage(page)
@@ -171,7 +179,7 @@ local function addRandomZedsSubtitles(panel, page)
 end
 
 local function addRandomZedsTitle(panel, setting)
-    local title = setting and setting.title
+    local title = setting and setting.randomZedsTitle
     local row = setting and panel.labels[setting.name]
     if not title or not row then return 0 end
 
@@ -258,13 +266,18 @@ end
 
 local function sandboxSettingNeedsCustomization(setting)
     local title = getTitle(setting)
-    return (title and setting.title ~= title)
+    local randomZedsTitleMismatch = isRandomZedsSetting(setting)
+        and (setting.title ~= title or setting.randomZedsTitle ~= title)
+    return randomZedsTitleMismatch
         or setting.randomZedsSubtitle ~= getSubtitle(setting)
 end
 
 local function customizeTitleAndSubtitle(setting)
     local title = getTitle(setting)
-    if title then setting.title = title end
+    if isRandomZedsSetting(setting) then
+        setting.title = title
+        setting.randomZedsTitle = title
+    end
     setting.randomZedsSubtitle = getSubtitle(setting)
 end
 
@@ -274,6 +287,31 @@ local function createSandboxPage(page)
         sandboxSettingNeedsCustomization,
         customizeTitleAndSubtitle
     )
+end
+
+local function clearRandomZedsTitles(page)
+    if not page or not page.settings then return end
+
+    local settings = page.settings
+    for index = 1, #settings do
+        local setting = settings[index]
+        if isRandomZedsSetting(setting) then setting.title = nil end
+    end
+end
+
+local function normalizeInGameSandboxPageName(page)
+    if page and isRandomZedsPage(page)
+            and page.name == getText("Sandbox_Title_RandomZeds_SpeedTypeChance") then
+        page.name = getText("Sandbox_RandomZeds")
+    end
+end
+
+local function createInGameSandboxPage(page)
+    normalizeInGameSandboxPageName(page)
+    clearRandomZedsTitles(page)
+    local customPage = createSandboxPage(page)
+    clearRandomZedsTitles(customPage)
+    return customPage
 end
 
 local sandboxPanelHooked = false
@@ -357,7 +395,7 @@ local function installInGameSandboxOptionsHook()
 
     local originalCreatePanel = ISServerSandboxOptionsUI.createPanel
     ISServerSandboxOptionsUI.createPanel = function(self, page)
-        local customPage = createSandboxPage(page)
+        local customPage = createInGameSandboxPage(page)
         local panel = originalCreatePanel(self, customPage)
         addRandomZedsTitles(panel, customPage)
         addRandomZedsSubtitles(panel, customPage)

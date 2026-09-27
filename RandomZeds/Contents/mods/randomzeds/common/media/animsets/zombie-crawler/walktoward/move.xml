@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+	<m_Name>move</m_Name>
+	<m_AnimName>Zombie_Crawl</m_AnimName>
+	<m_BlendTime>0.20</m_BlendTime>
+	<m_SpeedScale>RandomZedsCrawlerSpeedScale</m_SpeedScale>
+	<m_Conditions x_name="fccdeae3-f345-4711-a0bd-d52f59b6a68e">
+		<m_Name>TurnDirection</m_Name>
+		<m_Type>STRING</m_Type>
+		<m_Value></m_Value>
+	</m_Conditions>
+</animNode>

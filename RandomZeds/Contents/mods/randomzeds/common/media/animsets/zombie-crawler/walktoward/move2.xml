@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode x_extends="move.xml">
+	<m_AnimName>Zombie_Crawl02</m_AnimName>
+	<m_SpeedScale>RandomZedsCrawlerSpeedScale</m_SpeedScale>
+	<m_Conditions x_name="0b1a8e0d-2b9a-44fd-83ff-580f1d6e3b96">
+		<m_Name>CrawlerType</m_Name>
+		<m_Type>EQU</m_Type>
+		<m_Value>2</m_Value>
+	</m_Conditions>
+</animNode>

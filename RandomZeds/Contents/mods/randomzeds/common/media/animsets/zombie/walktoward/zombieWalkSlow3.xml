@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode x_extends="slow.xml">
+	<m_Name>zombieWalkSlow3</m_Name>
+	<m_AnimName>Zombie_Walk5</m_AnimName>
+	<m_SpeedScale>RandomZedsShamblerSpeedScale3</m_SpeedScale>
+	<m_Conditions x_name="dd6f3e37-11c6-4442-ae42-bd94d5f8fd1d">
+		<m_Name>zombieWalkType</m_Name>
+		<m_Type>STRING</m_Type>
+		<m_Value>slow3</m_Value>
+	</m_Conditions>
+	<m_Events x_name="adad2464-b4d4-4598-aa34-4a4d3c0a9e55">
+		<m_EventName>Footstep</m_EventName>
+		<m_TimePc>0.15</m_TimePc>
+		<m_ParameterValue>walk</m_ParameterValue>
+	</m_Events>
+	<m_Events x_name="84f6b472-fcc5-4977-a143-75ae2c166185">
+		<m_EventName>Footstep</m_EventName>
+		<m_TimePc>0.6</m_TimePc>
+		<m_ParameterValue>walk</m_ParameterValue>
+	</m_Events>
+</animNode>

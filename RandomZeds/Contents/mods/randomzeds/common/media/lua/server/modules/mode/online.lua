@@ -5,14 +5,18 @@ local Online = {}
 local COMMAND_MODULE = "RandomZeds"
 local STATE_COMMAND = "ZombieState"
 local SPRINTER_BASE_SPEED_TAG = "RandomZedsSprinterBaseSpeed"
+local SPEED_BASE_SPEED_TAG = "RandomZedsSpeedBaseSpeed"
 local REROLL_TAG = "RandomZedsReroll"
 local SERVER_COMMAND_BUFFER_CAPACITY_BYTES = 1000000
+local PENDING_SERVER_STATE_CHECK_INTERVAL_MS = 1000
+local PENDING_SERVER_STATE_TIMEOUT_MS = 60000
 local SERVER_STATE_FIELDS = table.newarray(
     "period", "speedType", "multiplier", "baseSpeed", "health", "sight",
     "hearing", "cognition", "strength", "memory", "reroll", "id")
 local rerollRevision = 0
 local queuedServerStates = table.newarray()
 local pendingServerStates = {}
+local nextPendingServerStateCheckAt = 0
 
 function Online.forEachPlayer(callback)
     local players = getOnlinePlayers()
@@ -77,6 +81,8 @@ function Online.queueServerState(zombie, state)
     local baseSpeed
     if state.speedType == "sprinter" then
         baseSpeed = tonumber(modData[SPRINTER_BASE_SPEED_TAG])
+    else
+        baseSpeed = tonumber(modData[SPEED_BASE_SPEED_TAG])
     end
     local synchronizedState = {
         period = state.period,
@@ -94,7 +100,10 @@ function Online.queueServerState(zombie, state)
     }
 
     if not RandomZeds.isValidOnlineID(onlineID) then
-        pendingServerStates[zombie] = synchronizedState
+        pendingServerStates[zombie] = {
+            state = synchronizedState,
+            queuedAt = getTimestampMs(),
+        }
         return
     end
 
@@ -143,15 +152,24 @@ function Online.flushServerStates()
 end
 
 function Online.processPendingServerStates()
-    for zombie, state in pairs(pendingServerStates) do
-        local onlineID = zombie:getOnlineID()
-        if not state or not zombie:getCurrentSquare() or zombie:isDead()
-                or RandomZeds.isExcluded(zombie)
-                or not RandomZeds.isValidOnlineID(onlineID) then
-            pendingServerStates[zombie] = nil
-        else
-            pendingServerStates[zombie] = nil
-            queueIdentifiedServerState(zombie, state, onlineID)
+    local now = getTimestampMs()
+    if now >= nextPendingServerStateCheckAt then
+        nextPendingServerStateCheckAt = now
+            + PENDING_SERVER_STATE_CHECK_INTERVAL_MS
+        for zombie, pendingState in pairs(pendingServerStates) do
+            if now - pendingState.queuedAt >= PENDING_SERVER_STATE_TIMEOUT_MS then
+                pendingServerStates[zombie] = nil
+            elseif not zombie:getCurrentSquare() or zombie:isDead()
+                    or RandomZeds.isExcluded(zombie) then
+                pendingServerStates[zombie] = nil
+            else
+                local onlineID = zombie:getOnlineID()
+                if RandomZeds.isValidOnlineID(onlineID) then
+                    pendingServerStates[zombie] = nil
+                    queueIdentifiedServerState(zombie, pendingState.state,
+                        onlineID)
+                end
+            end
         end
     end
 

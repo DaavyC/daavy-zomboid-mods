@@ -307,6 +307,33 @@ option RandomZeds.CrawlerMemoryNoneChance {
     translation = RandomZeds_CrawlerMemoryNoneChance,
 }
 
+option RandomZeds.CrawlerSpeedMultiplier {
+    type = double,
+    min = 0.5,
+    max = 1.5,
+    default = 1.0,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerSpeedMultiplier,
+}
+
+option RandomZeds.CrawlerSpeedVariationDecrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerSpeedVariationDecrease,
+}
+
+option RandomZeds.CrawlerSpeedVariationIncrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZeds,
+    translation = RandomZeds_CrawlerSpeedVariationIncrease,
+}
+
 option RandomZeds.ShamblerFragileChance {
     type = double,
     min = 0,
@@ -476,6 +503,33 @@ option RandomZeds.ShamblerMemoryNoneChance {
     default = 0,
     page = RandomZeds,
     translation = RandomZeds_ShamblerMemoryNoneChance,
+}
+
+option RandomZeds.ShamblerSpeedMultiplier {
+    type = double,
+    min = 0.5,
+    max = 1.5,
+    default = 1.0,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerSpeedMultiplier,
+}
+
+option RandomZeds.ShamblerSpeedVariationDecrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerSpeedVariationDecrease,
+}
+
+option RandomZeds.ShamblerSpeedVariationIncrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZeds,
+    translation = RandomZeds_ShamblerSpeedVariationIncrease,
 }
 
 option RandomZeds.FastShamblerFragileChance {
@@ -649,32 +703,33 @@ option RandomZeds.FastShamblerMemoryNoneChance {
     translation = RandomZeds_FastShamblerMemoryNoneChance,
 }
 
-option RandomZeds.SprinterSpeedMultiplier {
+option RandomZeds.FastShamblerSpeedMultiplier {
     type = double,
     min = 0.5,
     max = 1.5,
     default = 1.0,
     page = RandomZeds,
-    translation = RandomZeds_SprinterSpeedMultiplier,
+    translation = RandomZeds_FastShamblerSpeedMultiplier,
 }
 
-option RandomZeds.SprinterSpeedVariationDecrease {
-    type = double,
-    min = 0.0,
-    max = 0.5,
-    default = 0.0,
+option RandomZeds.FastShamblerSpeedVariationDecrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
     page = RandomZeds,
-    translation = RandomZeds_SprinterSpeedVariationDecrease,
+    translation = RandomZeds_FastShamblerSpeedVariationDecrease,
 }
 
-option RandomZeds.SprinterSpeedVariationIncrease {
-    type = double,
-    min = 0.0,
-    max = 0.5,
-    default = 0.0,
+option RandomZeds.FastShamblerSpeedVariationIncrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
     page = RandomZeds,
-    translation = RandomZeds_SprinterSpeedVariationIncrease,
+    translation = RandomZeds_FastShamblerSpeedVariationIncrease,
 }
+
 
 option RandomZeds.SprinterFragileChance {
     type = double,
@@ -845,6 +900,33 @@ option RandomZeds.SprinterMemoryNoneChance {
     default = 0,
     page = RandomZeds,
     translation = RandomZeds_SprinterMemoryNoneChance,
+}
+
+option RandomZeds.SprinterSpeedMultiplier {
+    type = double,
+    min = 0.5,
+    max = 1.5,
+    default = 1.0,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterSpeedMultiplier,
+}
+
+option RandomZeds.SprinterSpeedVariationDecrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterSpeedVariationDecrease,
+}
+
+option RandomZeds.SprinterSpeedVariationIncrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZeds,
+    translation = RandomZeds_SprinterSpeedVariationIncrease,
 }
 
 option RandomZedsNight.CrawlerChance {
@@ -1054,6 +1136,33 @@ option RandomZedsNight.CrawlerMemoryNoneChance {
     translation = RandomZeds_CrawlerMemoryNoneChance,
 }
 
+option RandomZedsNight.CrawlerSpeedMultiplier {
+    type = double,
+    min = 0.5,
+    max = 1.5,
+    default = 1.0,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerSpeedMultiplier,
+}
+
+option RandomZedsNight.CrawlerSpeedVariationDecrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerSpeedVariationDecrease,
+}
+
+option RandomZedsNight.CrawlerSpeedVariationIncrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZedsNight,
+    translation = RandomZeds_CrawlerSpeedVariationIncrease,
+}
+
 option RandomZedsNight.ShamblerFragileChance {
     type = double,
     min = 0,
@@ -1223,6 +1332,33 @@ option RandomZedsNight.ShamblerMemoryNoneChance {
     default = 0,
     page = RandomZedsNight,
     translation = RandomZeds_ShamblerMemoryNoneChance,
+}
+
+option RandomZedsNight.ShamblerSpeedMultiplier {
+    type = double,
+    min = 0.5,
+    max = 1.5,
+    default = 1.0,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerSpeedMultiplier,
+}
+
+option RandomZedsNight.ShamblerSpeedVariationDecrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerSpeedVariationDecrease,
+}
+
+option RandomZedsNight.ShamblerSpeedVariationIncrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZedsNight,
+    translation = RandomZeds_ShamblerSpeedVariationIncrease,
 }
 
 option RandomZedsNight.FastShamblerFragileChance {
@@ -1396,32 +1532,33 @@ option RandomZedsNight.FastShamblerMemoryNoneChance {
     translation = RandomZeds_FastShamblerMemoryNoneChance,
 }
 
-option RandomZedsNight.SprinterSpeedMultiplier {
+option RandomZedsNight.FastShamblerSpeedMultiplier {
     type = double,
     min = 0.5,
     max = 1.5,
     default = 1.0,
     page = RandomZedsNight,
-    translation = RandomZeds_SprinterSpeedMultiplier,
+    translation = RandomZeds_FastShamblerSpeedMultiplier,
 }
 
-option RandomZedsNight.SprinterSpeedVariationDecrease {
-    type = double,
-    min = 0.0,
-    max = 0.5,
-    default = 0.0,
+option RandomZedsNight.FastShamblerSpeedVariationDecrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
     page = RandomZedsNight,
-    translation = RandomZeds_SprinterSpeedVariationDecrease,
+    translation = RandomZeds_FastShamblerSpeedVariationDecrease,
 }
 
-option RandomZedsNight.SprinterSpeedVariationIncrease {
-    type = double,
-    min = 0.0,
-    max = 0.5,
-    default = 0.0,
+option RandomZedsNight.FastShamblerSpeedVariationIncrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
     page = RandomZedsNight,
-    translation = RandomZeds_SprinterSpeedVariationIncrease,
+    translation = RandomZeds_FastShamblerSpeedVariationIncrease,
 }
+
 
 option RandomZedsNight.SprinterFragileChance {
     type = double,
@@ -1592,6 +1729,33 @@ option RandomZedsNight.SprinterMemoryNoneChance {
     default = 0,
     page = RandomZedsNight,
     translation = RandomZeds_SprinterMemoryNoneChance,
+}
+
+option RandomZedsNight.SprinterSpeedMultiplier {
+    type = double,
+    min = 0.5,
+    max = 1.5,
+    default = 1.0,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterSpeedMultiplier,
+}
+
+option RandomZedsNight.SprinterSpeedVariationDecrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterSpeedVariationDecrease,
+}
+
+option RandomZedsNight.SprinterSpeedVariationIncrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZedsNight,
+    translation = RandomZeds_SprinterSpeedVariationIncrease,
 }
 
 option RandomZedsWeather.CrawlerChance {
@@ -1801,6 +1965,33 @@ option RandomZedsWeather.CrawlerMemoryNoneChance {
     translation = RandomZeds_CrawlerMemoryNoneChance,
 }
 
+option RandomZedsWeather.CrawlerSpeedMultiplier {
+    type = double,
+    min = 0.5,
+    max = 1.5,
+    default = 1.0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerSpeedMultiplier,
+}
+
+option RandomZedsWeather.CrawlerSpeedVariationDecrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerSpeedVariationDecrease,
+}
+
+option RandomZedsWeather.CrawlerSpeedVariationIncrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZedsWeather,
+    translation = RandomZeds_CrawlerSpeedVariationIncrease,
+}
+
 option RandomZedsWeather.ShamblerFragileChance {
     type = double,
     min = 0,
@@ -1970,6 +2161,33 @@ option RandomZedsWeather.ShamblerMemoryNoneChance {
     default = 0,
     page = RandomZedsWeather,
     translation = RandomZeds_ShamblerMemoryNoneChance,
+}
+
+option RandomZedsWeather.ShamblerSpeedMultiplier {
+    type = double,
+    min = 0.5,
+    max = 1.5,
+    default = 1.0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerSpeedMultiplier,
+}
+
+option RandomZedsWeather.ShamblerSpeedVariationDecrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerSpeedVariationDecrease,
+}
+
+option RandomZedsWeather.ShamblerSpeedVariationIncrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZedsWeather,
+    translation = RandomZeds_ShamblerSpeedVariationIncrease,
 }
 
 option RandomZedsWeather.FastShamblerFragileChance {
@@ -2143,32 +2361,33 @@ option RandomZedsWeather.FastShamblerMemoryNoneChance {
     translation = RandomZeds_FastShamblerMemoryNoneChance,
 }
 
-option RandomZedsWeather.SprinterSpeedMultiplier {
+option RandomZedsWeather.FastShamblerSpeedMultiplier {
     type = double,
     min = 0.5,
     max = 1.5,
     default = 1.0,
     page = RandomZedsWeather,
-    translation = RandomZeds_SprinterSpeedMultiplier,
+    translation = RandomZeds_FastShamblerSpeedMultiplier,
 }
 
-option RandomZedsWeather.SprinterSpeedVariationDecrease {
-    type = double,
-    min = 0.0,
-    max = 0.5,
-    default = 0.0,
+option RandomZedsWeather.FastShamblerSpeedVariationDecrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
     page = RandomZedsWeather,
-    translation = RandomZeds_SprinterSpeedVariationDecrease,
+    translation = RandomZeds_FastShamblerSpeedVariationDecrease,
 }
 
-option RandomZedsWeather.SprinterSpeedVariationIncrease {
-    type = double,
-    min = 0.0,
-    max = 0.5,
-    default = 0.0,
+option RandomZedsWeather.FastShamblerSpeedVariationIncrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
     page = RandomZedsWeather,
-    translation = RandomZeds_SprinterSpeedVariationIncrease,
+    translation = RandomZeds_FastShamblerSpeedVariationIncrease,
 }
+
 
 option RandomZedsWeather.SprinterFragileChance {
     type = double,
@@ -2339,4 +2558,31 @@ option RandomZedsWeather.SprinterMemoryNoneChance {
     default = 0,
     page = RandomZedsWeather,
     translation = RandomZeds_SprinterMemoryNoneChance,
+}
+
+option RandomZedsWeather.SprinterSpeedMultiplier {
+    type = double,
+    min = 0.5,
+    max = 1.5,
+    default = 1.0,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterSpeedMultiplier,
+}
+
+option RandomZedsWeather.SprinterSpeedVariationDecrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterSpeedVariationDecrease,
+}
+
+option RandomZedsWeather.SprinterSpeedVariationIncrease {
+    type = enum,
+    numValues = 6,
+    default = 1,
+    valueTranslation = RandomZeds_SpeedVariationPreset,
+    page = RandomZedsWeather,
+    translation = RandomZeds_SprinterSpeedVariationIncrease,
 }

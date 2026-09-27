@@ -12,8 +12,9 @@ RandomZeds.SPEED_TYPES = table.newarray(
 )
 local SPEED_TAG = "RandomZedsSpeedType"
 local EXCLUDED_TAG = "RandomZedsExcluded"
-local MIN_SPRINTER_MULTIPLIER = 0.5
-local MAX_SPRINTER_MULTIPLIER = 1.5
+local MIN_SPEED_MULTIPLIER = 0.5
+local MAX_SPEED_MULTIPLIER = 1.5
+local SPEED_VARIATION_STEP = 0.1
 local function hasPendingEntries(entries)
     for _ in pairs(entries) do
         return true
@@ -22,8 +23,11 @@ local function hasPendingEntries(entries)
 end
 RandomZeds.SPEED_TYPE_IDS = SPEED_TYPE_IDS
 RandomZeds.SPEED_TAG = SPEED_TAG
-RandomZeds.MIN_SPRINTER_MULTIPLIER = MIN_SPRINTER_MULTIPLIER
-RandomZeds.MAX_SPRINTER_MULTIPLIER = MAX_SPRINTER_MULTIPLIER
+RandomZeds.MIN_SPEED_MULTIPLIER = MIN_SPEED_MULTIPLIER
+RandomZeds.MAX_SPEED_MULTIPLIER = MAX_SPEED_MULTIPLIER
+RandomZeds.SPEED_VARIATION_STEP = SPEED_VARIATION_STEP
+RandomZeds.MIN_SPRINTER_MULTIPLIER = MIN_SPEED_MULTIPLIER
+RandomZeds.MAX_SPRINTER_MULTIPLIER = MAX_SPEED_MULTIPLIER
 RandomZeds.hasPendingEntries = hasPendingEntries
 
 function RandomZeds.isDebugEnabled()
@@ -69,14 +73,16 @@ function RandomZeds.requireIntegerRange(numericInput, description, minimum, maxi
     return number
 end
 
-function RandomZeds.requireSprinterMultiplier(numericInput, description)
+function RandomZeds.requireSpeedMultiplier(numericInput, description)
     return RandomZeds.requireRange(
         numericInput,
         description,
-        MIN_SPRINTER_MULTIPLIER,
-        MAX_SPRINTER_MULTIPLIER
+        MIN_SPEED_MULTIPLIER,
+        MAX_SPEED_MULTIPLIER
     )
 end
+
+RandomZeds.requireSprinterMultiplier = RandomZeds.requireSpeedMultiplier
 
 function RandomZeds.readOptionalNumber(storedInput, description)
     if storedInput == nil then return nil end
@@ -163,13 +169,34 @@ local SPEED_TYPE_IDS = RandomZeds.SPEED_TYPE_IDS
 local SPEED_TAG = RandomZeds.SPEED_TAG
 local SPRINTER_MULTIPLIER_TAG = "RandomZedsSprinterMultiplier"
 local SPRINTER_BASE_SPEED_TAG = "RandomZedsSprinterBaseSpeed"
+local SPEED_BASE_SPEED_TAG = "RandomZedsSpeedBaseSpeed"
 local SPRINTER_SPEED_SCALE_VARIABLE = "RandomZedsSprinterSpeedScale"
-local SPRINTER_SPEED_REFRESH_VARIABLE = "RandomZedsSprinterSpeedRefresh"
-local SPRINTER_ANIMATION_REFRESH_DURATION_MS = 500
-local MAX_SPRINTER_REFRESHES_PER_CALL = 32
 local SPRINTER_SPEED_TOLERANCE = 0.005
 local NATIVE_OPTION_NAMES = table.newarray("Sight", "Hearing")
-local pendingSprinterAnimationRefreshes = setmetatable({}, { __mode = "k" })
+local ANIMATION_SPEED_SCALES = {
+    sprinter = table.newarray({
+        { variable = SPRINTER_SPEED_SCALE_VARIABLE, base = 0.8 }
+    }),
+    fastShambler = table.newarray(
+        { variable = "RandomZedsFastShamblerSpeedScale1", base = 0.92 },
+        { variable = "RandomZedsFastShamblerSpeedScale2", base = 1.04 },
+        { variable = "RandomZedsFastShamblerSpeedScale3", base = 0.8 },
+        { variable = "RandomZedsFastShamblerSpeedScale4", base = 0.6 },
+        { variable = "RandomZedsFastShamblerSpeedScale5", base = 0.92 },
+        { variable = "RandomZedsLungeSpeedScale1", base = 0.64 },
+        { variable = "RandomZedsLungeSpeedScale2", base = 0.8 }
+    ),
+    shambler = table.newarray(
+        { variable = "RandomZedsShamblerSpeedScale1", base = 0.8 },
+        { variable = "RandomZedsShamblerSpeedScale2", base = 0.64 },
+        { variable = "RandomZedsShamblerSpeedScale3", base = 0.72 },
+        { variable = "RandomZedsLungeSpeedScale1", base = 0.64 },
+        { variable = "RandomZedsLungeSpeedScale2", base = 0.8 }
+    ),
+    crawler = table.newarray({
+        { variable = "RandomZedsCrawlerSpeedScale", base = 0.64 }
+    }),
+}
 local synapseApi
 local synapseApiAvailable = false
 
@@ -184,11 +211,6 @@ local function getSynapseApi()
     synapseApi = api
     synapseApiAvailable = true
     return api
-end
-
-local function clearSprinterAnimationRefresh(zombie)
-    zombie:setVariable(SPRINTER_SPEED_REFRESH_VARIABLE, false)
-    pendingSprinterAnimationRefreshes[zombie] = nil
 end
 
 function RandomZeds.forceVanillaPerceptionDefaults()
@@ -273,11 +295,12 @@ function RandomZeds.applyZombieFeatures(
     return true
 end
 
-local function getSprinterBaseSpeed(zombie, modData)
+local function getSprinterBaseSpeed(zombie, modData, baseSpeedOverride)
     if not zombie then return nil end
     modData = modData or zombie:getModData()
     if not modData then return nil end
-    local baseSpeed = modData[SPRINTER_BASE_SPEED_TAG]
+    local baseSpeed = baseSpeedOverride or modData[SPRINTER_BASE_SPEED_TAG]
+        or modData[SPEED_BASE_SPEED_TAG]
     if baseSpeed == nil then
         baseSpeed = RandomZeds.requireNumber(
             zombie:getSpeedMod(), "sprinter base speed")
@@ -316,71 +339,7 @@ function RandomZeds.forEachLoadedZombie(callback)
     return zombieCount
 end
 
-function RandomZeds.forEachLoadedZombieWithinBudget(cursorState, budgetMs, callback)
-    if not cursorState then return 0 end
-    local cell = getCell()
-    local zombies = cell and cell:getZombieList()
-    if not zombies then
-        cursorState.index = 0
-        return 0
-    end
-
-    local count = zombies:size()
-    if count <= 0 then
-        cursorState.index = 0
-        return 0
-    end
-
-    local index = tonumber(cursorState.index) or 0
-    if index % 1 ~= 0 or index < 0 then index = 0 end
-    if index >= count then index = 0 end
-    local getTimestamp = getTimestampMs
-    local startedAt = getTimestamp()
-    local budget = tonumber(budgetMs) or 1
-    if budget <= 0 then budget = 1 end
-    local processed = 0
-    local currentTime = startedAt
-    repeat
-        callback(zombies:get(index), currentTime)
-        processed = processed + 1
-        index = index + 1
-        if index >= count then index = 0 end
-        if processed >= count then break end
-        currentTime = getTimestamp()
-    until currentTime - startedAt >= budget
-
-    cursorState.index = index
-    return processed
-end
-
-local function getVariableBoolean(zombie, name)
-    return zombie:getVariableBoolean(name) == true
-end
-
-local function hasSprinterMovementIntent(zombie)
-    return getVariableBoolean(zombie, "bPathfind")
-        or (isMultiplayer() and getVariableBoolean(zombie, "bMovingNetwork"))
-        or zombie:isMoving()
-end
-
-local function getSprinterMotionState(zombie)
-    if not zombie or zombie:isDead() or zombie:isCrawling()
-            or zombie:getCurrentActionContextStateName() == "getup" then
-        return false, false, false
-    end
-
-    local target = zombie:getTarget()
-    local moving = getVariableBoolean(zombie, "bMoving")
-    local movementIntent = target ~= nil or hasSprinterMovementIntent(zombie)
-    return target ~= nil or moving or movementIntent, movementIntent, moving
-end
-
-function RandomZeds.isSprinterMotionExpected(zombie)
-    local expected = getSprinterMotionState(zombie)
-    return expected
-end
-
-function RandomZeds.isRemoteSprinterSpeedScaled(zombie, expectedSpeed)
+function RandomZeds.isRemoteZombieSpeedScaled(zombie, expectedSpeed)
     if not isMultiplayer() or not zombie or not zombie.isRemoteZombie
             or not zombie:isRemoteZombie() then
         return false
@@ -394,54 +353,7 @@ function RandomZeds.isRemoteSprinterSpeedScaled(zombie, expectedSpeed)
             <= SPRINTER_SPEED_TOLERANCE
 end
 
-function RandomZeds.repairRemoteSprinterType(zombie)
-    if not isMultiplayer() or not zombie or not zombie.isRemoteZombie
-            or not zombie:isRemoteZombie() then
-        return false
-    end
-    local walkType = tostring(zombie:getWalkType() or "")
-    local changed = false
-    if walkType:sub(1, 6) ~= "sprint" then
-        zombie:setWalkType("sprint")
-        changed = true
-    end
-    if zombie:getSpeedType() ~= SPEED_TYPE_IDS.sprinter then
-        zombie:setSpeedTypeFromWalkType()
-        changed = true
-    end
-    if not zombie:isCanWalk() then
-        zombie:setCanWalk(true)
-        changed = true
-    end
-    return changed
-end
-
-local function reconcileOfflineSprinterMotion(zombie)
-    if not RandomZeds.isSprinterMotionExpected(zombie) then return end
-    if not zombie:isRunning() then zombie:setRunning(true) end
-    local movementIntent = zombie:getTarget() ~= nil
-        or hasSprinterMovementIntent(zombie)
-    if not getVariableBoolean(zombie, "bMoving") and movementIntent then
-        zombie:setVariable("bMoving", true)
-    end
-end
-
-local function reconcileOnlineSprinterMotion(zombie)
-    local expected, movementIntent, moving = getSprinterMotionState(zombie)
-    if not expected then return end
-    if not zombie:isRunning() then zombie:setRunning(true) end
-    if not moving and movementIntent then
-        zombie:setVariable("bMoving", true)
-    end
-end
-
-function RandomZeds.reconcileSprinterMotion(zombie)
-    if isMultiplayer() then
-        reconcileOnlineSprinterMotion(zombie)
-        return
-    end
-    reconcileOfflineSprinterMotion(zombie)
-end
+RandomZeds.isRemoteSprinterSpeedScaled = RandomZeds.isRemoteZombieSpeedScaled
 
 local function hasExpectedNativeSpeedType(zombie, speedType, speedTypeId)
     if speedType == "crawler" then
@@ -463,7 +375,7 @@ local function hasExpectedSprinterSpeed(zombie, modData)
     local nativeSpeedMatches = math.abs(speedMod - expectedSpeed)
         <= SPRINTER_SPEED_TOLERANCE
     local remoteSpeedIsScaled = isMultiplayer()
-        and RandomZeds.isRemoteSprinterSpeedScaled(zombie, expectedSpeed)
+        and RandomZeds.isRemoteZombieSpeedScaled(zombie, expectedSpeed)
     if not nativeSpeedMatches and not remoteSpeedIsScaled then return false end
 
     local walkType = tostring(zombie:getWalkType() or "")
@@ -478,45 +390,98 @@ function RandomZeds.isZombieSpeedTypeApplied(zombie, speedType)
 
     local modData = zombie:getModData()
     if not modData then return false end
-    if speedType == "sprinter" and modData[SPEED_TAG] ~= "sprinter" then
-        return false
-    end
+    if modData[SPEED_TAG] ~= speedType then return false end
 
     local applied = hasExpectedNativeSpeedType(zombie, speedType, speedTypeId)
     if applied and speedType == "sprinter" then
         applied = hasExpectedSprinterSpeed(zombie, modData)
+    elseif applied then
+        local baseSpeed = tonumber(modData[SPEED_BASE_SPEED_TAG])
+        local multiplier = tonumber(modData[SPRINTER_MULTIPLIER_TAG])
+        local speedMod = tonumber(zombie:getSpeedMod())
+        local expectedSpeed = baseSpeed and multiplier
+            and baseSpeed * multiplier
+        local nativeSpeedMatches = expectedSpeed and speedMod
+            and math.abs(speedMod - expectedSpeed) <= SPRINTER_SPEED_TOLERANCE
+        local remoteSpeedIsScaled = expectedSpeed
+            and RandomZeds.isRemoteZombieSpeedScaled(zombie, expectedSpeed)
+        applied = nativeSpeedMatches or remoteSpeedIsScaled
     end
 
     return applied
 end
 
-function RandomZeds.applySprinterAnimationSpeed(zombie, multiplier)
+local function updateAnimationSpeedScales(zombie, animationScales, multiplier)
+    for index = 1, #animationScales do
+        local animationScale = animationScales[index]
+        local speedScale = animationScale.base * multiplier
+        local currentSpeedScale = zombie:getVariableFloat(
+            animationScale.variable, 0.0)
+        if math.abs(currentSpeedScale - speedScale)
+                > SPRINTER_SPEED_TOLERANCE then
+            zombie:setVariable(animationScale.variable, speedScale)
+        end
+    end
+end
+
+function RandomZeds.applyZombieAnimationSpeed(zombie, speedType, multiplier)
     if not zombie then return false end
-    local validMultiplier = RandomZeds.requireSprinterMultiplier(
-        multiplier, "sprinter speed multiplier")
+    local animationScales = ANIMATION_SPEED_SCALES[speedType]
+    if not animationScales then return false end
+    local validMultiplier = RandomZeds.requireSpeedMultiplier(
+        multiplier, speedType .. " speed multiplier")
     if not validMultiplier and not isMultiplayer() then return false end
     multiplier = validMultiplier or 1.0
-    local speedScale = 0.8 * multiplier
-    local currentSpeedScale = zombie:getVariableFloat(
-        SPRINTER_SPEED_SCALE_VARIABLE, 0.0)
-    if math.abs(currentSpeedScale - speedScale)
-            <= SPRINTER_SPEED_TOLERANCE then
-        return true
-    end
-    zombie:setVariable(SPRINTER_SPEED_SCALE_VARIABLE, speedScale)
-    zombie:setVariable(SPRINTER_SPEED_REFRESH_VARIABLE, true)
-    pendingSprinterAnimationRefreshes[zombie] = getTimestampMs()
-        + SPRINTER_ANIMATION_REFRESH_DURATION_MS
+    updateAnimationSpeedScales(zombie, animationScales, multiplier)
     return true
 end
 
-function RandomZeds.applySprinterSpeed(zombie, multiplier)
-    if not zombie then return false end
-    multiplier = RandomZeds.requireSprinterMultiplier(
-        multiplier, "sprinter speed multiplier") or 1.0
-    local modData = zombie:getModData()
+local function getZombieSpeedBaseSpeed(zombie, modData, baseSpeedOverride)
+    local baseSpeed = RandomZeds.requireNumber(
+        baseSpeedOverride, "zombie base speed")
+    if not baseSpeed then
+        baseSpeed = RandomZeds.requireNumber(
+            modData[SPEED_BASE_SPEED_TAG], "stored zombie base speed")
+    end
+    if not baseSpeed then
+        baseSpeed = RandomZeds.requireNumber(
+            zombie:getSpeedMod(), "zombie base speed")
+        if zombie.isRemoteZombie and zombie:isRemoteZombie()
+                and baseSpeed and baseSpeed >= 10 then
+            baseSpeed = baseSpeed / 1000
+        end
+    end
+    if not baseSpeed or baseSpeed <= 0 then return nil end
+    return baseSpeed
+end
+
+local function applyScaledZombieSpeed(
+        zombie, modData, speedType, multiplier, baseSpeedOverride)
     if not modData then return false end
-    local baseSpeed = getSprinterBaseSpeed(zombie, modData)
+    multiplier = RandomZeds.requireSpeedMultiplier(
+        multiplier, speedType .. " speed multiplier") or 1.0
+    local baseSpeed = getZombieSpeedBaseSpeed(
+        zombie, modData, baseSpeedOverride)
+    if not baseSpeed then return false end
+
+    zombie:setSpeedMod(baseSpeed * multiplier)
+    if not RandomZeds.applyZombieAnimationSpeed(zombie, speedType, multiplier) then
+        return false
+    end
+    modData[SPRINTER_MULTIPLIER_TAG] = multiplier
+    modData[SPEED_BASE_SPEED_TAG] = baseSpeed
+    return true
+end
+
+function RandomZeds.applySprinterSpeed(
+        zombie, multiplier, baseSpeedOverride, modDataOverride)
+    if not zombie then return false end
+    multiplier = RandomZeds.requireSpeedMultiplier(
+        multiplier, "sprinter speed multiplier") or 1.0
+    local modData = modDataOverride or zombie:getModData()
+    if not modData then return false end
+    local baseSpeed = getSprinterBaseSpeed(
+        zombie, modData, baseSpeedOverride)
     if not baseSpeed then
         baseSpeed = tonumber(zombie:getSpeedMod()) or 1.0
         if baseSpeed <= 0 then baseSpeed = 1.0 end
@@ -528,13 +493,11 @@ function RandomZeds.applySprinterSpeed(zombie, multiplier)
         and not zombie:isCrawling()
         and zombie:isCanWalk()
         and tostring(zombie:getWalkType() or ""):sub(1, 6) == "sprint"
-    if remote then
-        RandomZeds.repairRemoteSprinterType(zombie)
-    elseif not nativeTypeValid then
+    if not remote and not nativeTypeValid then
         zombie:doSprinter()
     end
     zombie:setSpeedMod(expectedSpeed)
-    RandomZeds.applySprinterAnimationSpeed(zombie, multiplier)
+    RandomZeds.applyZombieAnimationSpeed(zombie, "sprinter", multiplier)
     if not zombie:isDead() then
         zombie:setRunning(true)
     end
@@ -546,7 +509,7 @@ function RandomZeds.applySprinterSpeed(zombie, multiplier)
         "multiplier", multiplier,
         "base speed", baseSpeed,
         "expected speed", expectedSpeed,
-        "native type valid before repair", nativeTypeValid,
+        "native type valid before application", nativeTypeValid,
         "remote", remote
     )
     if RandomZeds.isDebugEnabled() then
@@ -560,25 +523,6 @@ function RandomZeds.applySprinterSpeed(zombie, multiplier)
         )
     end
     return true
-end
-
-function RandomZeds.refreshSprinterAnimationSpeeds()
-    if not RandomZeds.hasPendingEntries(pendingSprinterAnimationRefreshes) then return end
-
-    local now = getTimestampMs()
-    local processed = 0
-    for zombie, refreshAt in pairs(pendingSprinterAnimationRefreshes) do
-        local refreshDeadline = tonumber(refreshAt)
-        if not refreshDeadline or zombie:isDead()
-                or not zombie:getCurrentSquare() then
-            pendingSprinterAnimationRefreshes[zombie] = nil
-        elseif now >= refreshDeadline then
-            zombie:setVariable(SPRINTER_SPEED_REFRESH_VARIABLE, false)
-            pendingSprinterAnimationRefreshes[zombie] = nil
-        end
-        processed = processed + 1
-        if processed >= MAX_SPRINTER_REFRESHES_PER_CALL then break end
-    end
 end
 
 function RandomZeds.setCrawlerState(zombie, crawling)
@@ -596,7 +540,23 @@ function RandomZeds.setCrawlerState(zombie, crawling)
     return true
 end
 
-function RandomZeds.applyZombieSpeedType(zombie, speedType, multiplier)
+local function applyNativeZombieSpeedType(zombie, speedType)
+    if speedType == "crawler" then
+        RandomZeds.setCrawlerState(zombie, true)
+        zombie:doCrawlerSpeed(3)
+        return
+    end
+
+    RandomZeds.setCrawlerState(zombie, false)
+    if speedType == "fastShambler" then
+        zombie:doFastShambler()
+    else
+        zombie:doShambler()
+    end
+end
+
+function RandomZeds.applyZombieSpeedType(
+        zombie, speedType, multiplier, baseSpeedOverride)
     if not zombie or not SPEED_TYPE_IDS[speedType] then return false end
 
     RandomZeds.debugLog(
@@ -605,25 +565,22 @@ function RandomZeds.applyZombieSpeedType(zombie, speedType, multiplier)
         "multiplier", multiplier
     )
 
-    if speedType ~= "sprinter" then
-        clearSprinterAnimationRefresh(zombie)
+    local modData = zombie:getModData()
+    if not modData then return false end
+    if modData[SPEED_TAG] ~= speedType then
+        modData[SPEED_BASE_SPEED_TAG] = nil
+        modData[SPRINTER_BASE_SPEED_TAG] = nil
     end
-    if speedType == "crawler" then
-        RandomZeds.setCrawlerState(zombie, true)
-        zombie:doCrawlerSpeed(3)
-        return true
+    if speedType == "sprinter" then
+        return RandomZeds.applySprinterSpeed(
+            zombie, multiplier, baseSpeedOverride, modData)
     end
 
-    RandomZeds.setCrawlerState(zombie, false)
-    if speedType == "sprinter" then
-        return RandomZeds.applySprinterSpeed(zombie, multiplier)
-    end
-    if speedType == "fastShambler" then
-        zombie:doFastShambler()
-    else
-        zombie:doShambler()
-    end
-    return true
+    local remote = isMultiplayer() and zombie.isRemoteZombie
+        and zombie:isRemoteZombie()
+    if not remote then applyNativeZombieSpeedType(zombie, speedType) end
+    return applyScaledZombieSpeed(
+        zombie, modData, speedType, multiplier, baseSpeedOverride)
 end
 
 return RandomZeds

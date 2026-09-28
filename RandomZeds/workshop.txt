@@ -1,7 +1,7 @@
 version=1
 id=3778522347
 title=Random Zeds
-description=[h1]Random Zeds [B42.20][/h1]
+description=[h1]Random Zeds [B42.21][/h1]
 description=Randomize zombie speed types, toughness, sight, and hearing with separate settings for day, night, and weather.
 description=
 description=[h2]Features[/h2]

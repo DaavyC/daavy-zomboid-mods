@@ -6,4 +6,4 @@ poster=poster.png
 description=Adds more variety to zombies by randomizing how they move and behave in singleplayer and multiplayer.
 modversion=1.4.0
 pzversion=42
-versionMin=42.20
+versionMin=42.21

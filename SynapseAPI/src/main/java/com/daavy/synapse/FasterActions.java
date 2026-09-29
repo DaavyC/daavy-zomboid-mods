@@ -440,7 +440,7 @@ public final class FasterActions {
 
         state.noDurationLogged = false;
         float progress = getProgress(action.currentTime, duration.value);
-        UIManager.getProgressBar(player.getIndex()).setValue(progress);
+        UIManager.trySetProgressBarValue(player.getIndex(), progress);
         state.log(action, progress, duration.source, duration.value);
     }
 
@@ -515,7 +515,7 @@ public final class FasterActions {
             return false;
         }
         action.delta = 1.0F;
-        UIManager.getProgressBar(player.getIndex()).setValue(1.0F);
+        UIManager.trySetProgressBarValue(player.getIndex(), 1.0F);
         state.log(action, 1.0F, "force-complete", action.maxTime);
         return true;
     }

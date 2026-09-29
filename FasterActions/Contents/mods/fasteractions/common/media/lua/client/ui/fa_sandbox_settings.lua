@@ -100,6 +100,33 @@ local function customizePage(page)
     return copyPage(page)
 end
 
+local function moveFasterActionsTitles(page)
+    if not page or not page.settings then return end
+    local settings = page.settings
+    for index = 1, #settings do
+        local setting = settings[index]
+        if getTitle(setting) then
+            setting.fasterActionsTitle = setting.title
+            setting.title = nil
+        end
+    end
+end
+
+local function normalizeInGameSandboxPageName(page)
+    if page and isFasterActionsPage(page)
+            and page.name == getText("Sandbox_Title_FasterActions_ActionCategories") then
+        page.name = getText("Sandbox_FasterActions")
+    end
+end
+
+local function createInGameSandboxPage(page)
+    if not isFasterActionsPage(page) then return page end
+    normalizeInGameSandboxPageName(page)
+    local customPage = copyPage(page)
+    moveFasterActionsTitles(customPage)
+    return customPage
+end
+
 local function shiftPanelChildren(panel, y, amount)
     local children = panel:getChildrenInOrder()
     for index = 1, #children do
@@ -118,11 +145,12 @@ local function trackFasterActionsHeader(panel, label)
 end
 
 local function hasFasterActionsTitle(panel, setting)
-    return setting and setting.title and panel.labels[setting.name] ~= nil
+    return setting and setting.fasterActionsTitle
+        and panel.labels[setting.name] ~= nil
 end
 
 local function addFasterActionsTitle(panel, setting, titleHeight, titleAmount)
-    local title = setting and setting.title
+    local title = setting and setting.fasterActionsTitle
     local row = panel.labels[setting.name]
     local y = row:getY()
     shiftPanelChildren(panel, y, titleAmount)
@@ -282,7 +310,7 @@ local function installInGameSandboxPanelHook()
 
     local originalCreatePanel = ISServerSandboxOptionsUI.createPanel
     ISServerSandboxOptionsUI.createPanel = function(self, page)
-        local customPage = customizePage(page)
+        local customPage = createInGameSandboxPage(page)
         local panel = originalCreatePanel(self, customPage)
         addFasterActionsTitles(panel, customPage)
         centerInGameSettings(panel, customPage)

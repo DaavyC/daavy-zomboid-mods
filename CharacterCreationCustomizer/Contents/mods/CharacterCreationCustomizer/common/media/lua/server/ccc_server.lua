@@ -1,6 +1,6 @@
 if isClient() then return end
 
-local M = require "CharacterCreationCustomizer_Shared"
+local M = require "ccc_shared"
 
 local function playerFromEvent(playerIndex, playerObject)
     if playerObject then return playerObject end
@@ -148,6 +148,7 @@ local function reconcileProfession(playerObject)
         current = fallback
     end
 
+    M.debugLog("Reconciling player profession", current)
     local currentGrants = M.professionGrantedTraits(current)
     removeDisabledTraits(playerObject, allowedTraitKeys(currentGrants))
     replaceProfessionTraits(traits, oldProfession, current, currentGrants)
@@ -166,12 +167,14 @@ local function grantProfessionItems(playerObject)
     local inventory = playerObject:getInventory()
     local professionKey = M.professionKey(profession)
     local itemTypes = M.parseGrantedItems(M.professionValue(profession, "GrantedItems"), profession)
+    M.debugLog("Granting profession items", professionKey, #itemTypes)
     for index = 1, #itemTypes do
         local itemType = itemTypes[index]
         local addedItem = inventory:AddItem(itemType)
         if not addedItem then
             error("Failed to add item " .. itemType .. " for profession " .. professionKey)
         end
+        M.debugLog("Granted profession item", professionKey, itemType)
     end
 end
 
@@ -185,6 +188,7 @@ local function applyInitialLevels(playerObject, modData)
             local currentLevel = playerObject:getPerkLevel(entry.perk)
             local targetLevel = math.floor(math.max(0, math.min(10, currentLevel + levelChange)))
             if targetLevel ~= currentLevel then
+                M.debugLog("Applying initial perk level", entry.key, currentLevel, targetLevel)
                 playerObject:setPerkLevelDebug(entry.perk, targetLevel)
                 xp = xp or playerObject:getXp()
                 xp:setXPToLevel(entry.perk, targetLevel)
@@ -198,19 +202,29 @@ end
 local function applyToPlayer(playerIndex, playerObject)
     M.apply()
     local player = playerFromEvent(playerIndex, playerObject)
-    if not player then return end
+    if not player then
+        M.debugLog("Skipping player setup because the player is unavailable", playerIndex)
+        return
+    end
     local modData = player:getModData()
-    if modData.CharacterCreationCustomizerInitialLevels then return end
+    if modData.CharacterCreationCustomizerInitialLevels then
+        M.debugLog("Skipping player setup because initial levels were already applied", playerIndex)
+        return
+    end
     if player:getHoursSurvived() > 0 then
+        M.debugLog("Skipping character creation setup for an existing player", playerIndex)
         markInitialLevelsApplied(player, modData)
         return
     end
+    M.debugLog("Applying character creation setup to player", playerIndex)
     reconcileProfession(player)
     grantProfessionItems(player)
     applyInitialLevels(player, modData)
+    M.debugLog("Character creation setup applied to player", playerIndex)
 end
 
 Events.OnInitGlobalModData.Add(function()
+    M.debugLog("Applying configuration during global mod data initialization")
     M.apply()
 end)
 

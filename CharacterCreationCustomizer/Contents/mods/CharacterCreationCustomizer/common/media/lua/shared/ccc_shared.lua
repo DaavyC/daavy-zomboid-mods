@@ -3,6 +3,7 @@ if existingCustomizer then return existingCustomizer end
 
 local M = {}
 rawset(_G, "CharacterCreationCustomizer", M)
+local print = print
 local PROFESSION_OPTION_SUFFIXES = { "Disable", "Cost", "GrantedTraits", "GrantedItems" }
 local standardPerks
 local configurationFingerprintTable
@@ -122,13 +123,13 @@ M.originalProfessionDefinitions = {}
 M.originalProfessionGrants = {}
 
 function M.isDebugEnabled()
-    return getDebug()
+    local sandbox = SandboxVars and SandboxVars.CharacterCreationCustomizer
+    return sandbox ~= nil and sandbox.Advanced_Debug_Enabled == true
 end
 
-function M.debug(message)
-    if M.isDebugEnabled() then
-        print("[Character Creation Customizer] " .. tostring(message))
-    end
+function M.debugLog(...)
+    if not M.isDebugEnabled() then return end
+    print("[Character Creation Customizer][Debug]", ...)
 end
 
 function M.definitionKey(definition)
@@ -258,7 +259,9 @@ function M.configurationFingerprint()
     local values = {}
     for index = 1, #configurationFingerprintKeys do
         local key = configurationFingerprintKeys[index]
-        values[index] = tostring(key) .. ":" .. tostring(configurationFingerprintValues[key])
+        if key ~= "Advanced_Debug_Enabled" then
+            values[#values + 1] = tostring(key) .. ":" .. tostring(configurationFingerprintValues[key])
+        end
     end
     configurationFingerprintValue = table.concat(values, "|")
     return configurationFingerprintValue
@@ -669,12 +672,12 @@ function M.apply()
         return
     end
 
-    M.debug("Applying configuration")
+    M.debugLog("Applying sandbox configuration")
     M.applyTraitCosts()
     M.applyProfessionTraits()
     M.appliedSignature = signature
     M.appliedConfigurationFingerprint = fingerprint
-    M.debug("Configuration applied")
+    M.debugLog("Sandbox configuration applied")
 end
 
 return M

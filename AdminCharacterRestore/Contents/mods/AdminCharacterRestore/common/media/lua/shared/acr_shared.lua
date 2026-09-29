@@ -13,6 +13,13 @@ local MIN_SNAPSHOT_INTERVAL_HOURS = 1
 local MAX_SNAPSHOT_INTERVAL_HOURS = 24
 local MIN_SNAPSHOT_LIMIT = 1
 local MAX_SNAPSHOT_LIMIT = 5
+local print = print
+
+local function isResourceIdentifier(value)
+    if value == "" then return false end
+    local separator = value:find(":", 1, true)
+    return separator ~= 1 and separator ~= #value
+end
 
 local function readSandboxOption(optionName)
     if type(getSandboxOptions) ~= "function" then return nil end
@@ -42,23 +49,21 @@ function ACR.getMaxSnapshotsPerPlayer()
 end
 
 function ACR.isDebugEnabled()
-    return getDebug()
+    local sandboxVars = SandboxVars
+    local settings = sandboxVars and sandboxVars.AdminCharacterRestore
+    return settings ~= nil and settings.Debug == true
 end
 
-function ACR.debug(message)
-    if ACR.isDebugEnabled() then print("[AdminCharacterRestore] debug=" .. tostring(message)) end
+function ACR.debug(...)
+    if not ACR.isDebugEnabled() then return end
+    print("[AdminCharacterRestore][Debug]", ...)
 end
 
 function ACR.nowMs()
-    local ok, timestamp
     if type(getTimestampMs) == "function" then
-        ok, timestamp = pcall(getTimestampMs)
-    elseif type(getTimestamp) == "function" then
-        ok, timestamp = pcall(getTimestamp)
-        if ok and timestamp then timestamp = timestamp * 1000 end
+        return math.floor(getTimestampMs())
     end
-
-    if ok and tonumber(timestamp) then return math.floor(timestamp) end
+    if type(getTimestamp) == "function" then return math.floor(getTimestamp() * 1000) end
     return math.floor(os.time() * 1000)
 end
 
@@ -71,16 +76,21 @@ function ACR.worldDays()
 end
 
 function ACR.resourceKey(resource)
-    local ok, location = pcall(function () return ResourceLocation.of(resource) end)
-    return ok and tostring(location) or tostring(resource)
+    if resource == nil then return nil end
+    local resourceName = tostring(resource)
+    if not isResourceIdentifier(resourceName) then return resourceName end
+    return tostring(ResourceLocation.of(resourceName))
 end
 
 function ACR.copyStringArray(values)
     local copy = {}
     if type(values) ~= "table" then return copy end
 
-    for _, stringValue in ipairs(values) do
-        if type(stringValue) == "string" and stringValue ~= "" then table.insert(copy, stringValue) end
+    for index = 1, #values do
+        local stringValue = values[index]
+        if type(stringValue) == "string" and stringValue ~= "" then
+            copy[#copy + 1] = stringValue
+        end
     end
     return copy
 end
@@ -131,8 +141,8 @@ end
 
 local function resolvePerk(perkName)
     if type(perkName) ~= "string" or not Perks or not Perks.FromString then return nil end
-    local ok, perk = pcall(function () return Perks.FromString(perkName) end)
-    if not ok or not perk or perk == Perks.None or perk == Perks.MAX then return nil end
+    local perk = Perks.FromString(perkName)
+    if not perk or perk == Perks.None or perk == Perks.MAX then return nil end
     return perk
 end
 
@@ -150,15 +160,16 @@ local function normalizePerkLevel(player, perk, savedLevel)
 end
 
 function ACR.applyPerks(player, perks)
+    local xp
     for perkName, savedPerk in pairs(perks or {}) do
         if type(savedPerk) == "table" then
             local perk = resolvePerk(perkName)
             if perk then
+                xp = xp or player:getXp()
                 local targetLevel = math.max(
                     0, math.min(10, math.floor(tonumber(savedPerk.level) or player:getPerkLevel(perk)))
                 )
                 local targetXP = tonumber(savedPerk.xp)
-                local xp = player:getXp()
                 if targetXP then
                     xp:AddXP(perk, targetXP - xp:getXP(perk), false, false, true, false)
                 else
@@ -171,18 +182,16 @@ function ACR.applyPerks(player, perks)
 end
 
 function ACR.applyProfession(player, professionName)
-    if type(professionName) ~= "string" then return end
-    local ok, location = pcall(function () return ResourceLocation.of(professionName) end)
-    if not ok then return end
+    if type(professionName) ~= "string" or not isResourceIdentifier(professionName) then return end
+    local location = ResourceLocation.of(professionName)
     local profession = CharacterProfession.get(location)
     local definition = profession and CharacterProfessionDefinition.getCharacterProfessionDefinition(profession)
     if definition then player:getDescriptor():setCharacterProfession(definition:getType()) end
 end
 
 local function resolveTrait(traitName)
-    if type(traitName) ~= "string" then return nil end
-    local ok, location = pcall(function () return ResourceLocation.of(traitName) end)
-    return ok and CharacterTrait.get(location) or nil
+    if type(traitName) ~= "string" or not isResourceIdentifier(traitName) then return nil end
+    return CharacterTrait.get(ResourceLocation.of(traitName))
 end
 
 local function currentTraitKey(trait)
@@ -190,22 +199,23 @@ local function currentTraitKey(trait)
     return definition and tostring(definition:getType()) or nil
 end
 
-local function removeUnwantedTraits(player, wanted)
-    local knownTraits = player:getCharacterTraits():getKnownTraits()
+local function removeUnwantedTraits(player, characterTraits, wanted)
+    local knownTraits = characterTraits:getKnownTraits()
     for index = knownTraits:size() - 1, 0, -1 do
         local trait = knownTraits:get(index)
         if not wanted[currentTraitKey(trait)] then
-            player:getCharacterTraits():remove(trait)
+            characterTraits:remove(trait)
             player:modifyTraitXPBoost(trait, true)
         end
     end
 end
 
-local function addWantedTraits(player, traits)
-    for _, traitName in ipairs(traits or {}) do
+local function addWantedTraits(player, characterTraits, traits)
+    for index = 1, #(traits or {}) do
+        local traitName = traits[index]
         local trait = resolveTrait(traitName)
         if trait and not player:hasTrait(trait) then
-            player:getCharacterTraits():add(trait)
+            characterTraits:add(trait)
             player:modifyTraitXPBoost(trait, false)
         end
     end
@@ -213,19 +223,23 @@ end
 
 function ACR.applyTraits(player, traits)
     local wanted = {}
-    for _, traitName in ipairs(traits or {}) do
-        wanted[ACR.resourceKey(traitName)] = true
+    for index = 1, #(traits or {}) do
+        local traitName = traits[index]
+        local traitKey = ACR.resourceKey(traitName)
+        if traitKey then wanted[traitKey] = true end
     end
-    removeUnwantedTraits(player, wanted)
-    addWantedTraits(player, traits)
+    local characterTraits = player:getCharacterTraits()
+    removeUnwantedTraits(player, characterTraits, wanted)
+    addWantedTraits(player, characterTraits, traits)
 end
 
 function ACR.applyRecipes(player, recipes)
     local knownRecipes = player:getKnownRecipes()
-    for _, recipe in ipairs(recipes or {}) do
+    for index = 1, #(recipes or {}) do
+        local recipe = recipes[index]
         if type(recipe) == "string" and not knownRecipes:contains(recipe) then
-            local ok, learned = pcall(function () return player:learnRecipe(recipe) end)
-            if not ok or not learned then knownRecipes:add(recipe) end
+            local learned = player:learnRecipe(recipe)
+            if not learned then knownRecipes:add(recipe) end
         end
     end
 end
@@ -249,13 +263,16 @@ end
 
 local function applyReadCollections(player, snapshot)
     local alreadyReadBooks = player:getAlreadyReadBook()
-    for _, book in ipairs(snapshot.alreadyReadBooks or {}) do
+    for index = 1, #(snapshot.alreadyReadBooks or {}) do
+        local book = snapshot.alreadyReadBooks[index]
         if not alreadyReadBooks:contains(book) then alreadyReadBooks:add(book) end
     end
-    for _, media in ipairs(snapshot.readPrintMedia or {}) do
+    for index = 1, #(snapshot.readPrintMedia or {}) do
+        local media = snapshot.readPrintMedia[index]
         player:addReadPrintMedia(media)
     end
-    for _, lineID in ipairs(snapshot.knownMediaLines or {}) do
+    for index = 1, #(snapshot.knownMediaLines or {}) do
+        local lineID = snapshot.knownMediaLines[index]
         if not player:isKnownMediaLine(lineID) then player:addKnownMediaLine(lineID) end
     end
 end

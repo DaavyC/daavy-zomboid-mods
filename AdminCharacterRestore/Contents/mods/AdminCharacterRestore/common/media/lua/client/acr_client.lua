@@ -1,4 +1,4 @@
-require "AdminCharacterRestoreShared"
+require "acr_shared"
 require "ISUI/ISPanel"
 require "ISUI/ISButton"
 require "ISUI/ISScrollingListBox"
@@ -22,8 +22,9 @@ local function isLocalAdmin()
     if not isClient() then return false end
     local player = getPlayer()
     if not player then return false end
+    if player:getAccessLevel() == "admin" then return true end
     local role = player:getRole()
-    return player:getAccessLevel() == "admin" or (role and role:getName() == "admin")
+    return role and role:getName() == "admin"
 end
 
 local function requestList()
@@ -138,7 +139,8 @@ end
 function AdminCharacterRestoreUI:filterSnapshots()
     self.snapshots:clear()
     local user = self.users.selected and self.users.selected > 0 and self.users:getOptionData(self.users.selected)
-    for _, snapshot in ipairs(self.allSnapshots or {}) do
+    for index = 1, #(self.allSnapshots or {}) do
+        local snapshot = self.allSnapshots[index]
         if type(snapshot) == "table" and snapshot.username == user then
             local day = snapshot.worldDays and string.format("%.1f", snapshot.worldDays) or "?"
             local label = text("Snapshot", day, tostring(snapshot.snapshotId))
@@ -152,7 +154,8 @@ function AdminCharacterRestoreUI:setData(snapshots, users)
     self.allSnapshots = type(snapshots) == "table" and snapshots or {}
     self.users:clear()
     local userList = type(users) == "table" and users or {}
-    for _, username in ipairs(userList) do
+    for index = 1, #userList do
+        local username = userList[index]
         if type(username) == "string" then self.users:addOptionWithData(username, username) end
     end
     if self.users.options[1] then self.users.selected = 1 end
@@ -170,7 +173,7 @@ function AdminCharacterRestoreUI:onRestore()
     if not selected or not selected.item or not selected.item.playerKey then return end
     local player = getPlayer()
     if not player then return end
-    ACR.debug("Requesting restore snapshot=" .. tostring(selected.item.snapshotId))
+    ACR.debug("Requesting restore snapshot", selected.item.snapshotId)
     sendClientCommand(player, ACR.ID, "RestoreSnapshot", {
         playerKey = selected.item.playerKey,
         snapshotId = tostring(selected.item.snapshotId)
@@ -200,29 +203,19 @@ local function openUI()
     requestList()
 end
 
-local function logClientRestore(player, snapshot)
-    print(
-        string.format(
-            "[AdminCharacterRestore] action=client_apply target=%s snapshot=%s timestamp=%s",
-            tostring(player:getUsername()), tostring(snapshot.id), tostring(ACR.nowMs())
-        )
-    )
-end
-
 local function applySnapshot(snapshot)
     local player = getPlayer()
     if not player or player:isDead() or type(snapshot) ~= "table" then return end
     snapshot = ACR.copyRestorePayload(snapshot)
     if not snapshot then return end
 
-    ACR.debug("Applying snapshot on client id=" .. tostring(snapshot.id))
+    ACR.debug("Applying snapshot on client", snapshot.id)
     ACR.applyRestoreState(player, snapshot)
-    logClientRestore(player, snapshot)
 end
 
 local function onServerCommand(module, command, args)
     if module ~= ACR.ID or type(command) ~= "string" or (args ~= nil and type(args) ~= "table") then return end
-    ACR.debug("Received server command=" .. command)
+    ACR.debug("Received server command", command)
     if command == "Snapshots" and AdminCharacterRestoreUI.instance then
         AdminCharacterRestoreUI.instance:setData(args and args.snapshots, args and args.users)
         ACR.debug("Updated snapshot list")

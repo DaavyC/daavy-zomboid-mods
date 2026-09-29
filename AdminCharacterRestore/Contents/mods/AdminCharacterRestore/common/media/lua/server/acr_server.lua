@@ -1,4 +1,4 @@
-require "AdminCharacterRestoreShared"
+require "acr_shared"
 
 if not isServer() then return end
 
@@ -13,36 +13,24 @@ end
 
 local function getSteamID(player)
     if not player then return nil end
-    local ok, steamID = pcall(function () return player:getSteamID() end)
-    if not ok or steamID == nil then return nil end
+    local steamID = player:getSteamID()
+    if steamID == nil then return nil end
     steamID = tostring(steamID)
     if steamID == "" or steamID == "nil" or steamID == "0" or steamID == "-1" then return nil end
     return steamID
 end
 
-local function getPlayerKey(player)
-    local steamID = getSteamID(player)
-    local username = getUsername(player)
+local function getPlayerKey(username, steamID)
     if not username then return nil end
     return steamID and ("steam:" .. steamID) or ("user:" .. username)
-end
-
-local function logAction(action, details)
-    details = details or {}
-    print(
-        string.format(
-            "[AdminCharacterRestore] action=%s admin=%s target=%s snapshot=%s detail=%s timestamp=%s", tostring(action),
-            tostring(details.admin or "-"), tostring(details.target or "-"), tostring(details.snapshot or "-"),
-            tostring(details.detail or "-"), tostring(ACR.nowMs())
-        )
-    )
 end
 
 local function normalizeTraits(traits)
     local normalizedTraits = {}
     if type(traits) == "table" then
-        for _, traitName in ipairs(traits) do
-            if type(traitName) == "string" then table.insert(normalizedTraits, ACR.resourceKey(traitName)) end
+        for index = 1, #traits do
+            local traitName = traits[index]
+            if type(traitName) == "string" then normalizedTraits[#normalizedTraits + 1] = ACR.resourceKey(traitName) end
         end
     end
     return normalizedTraits
@@ -89,7 +77,8 @@ end
 
 local function appendLegacyRecordSnapshots(restores, seen, storedRecord)
     if type(storedRecord.snapshots) ~= "table" then return end
-    for _, snapshot in ipairs(storedRecord.snapshots) do
+    for index = 1, #storedRecord.snapshots do
+        local snapshot = storedRecord.snapshots[index]
         if type(snapshot) == "table" and (snapshot.released or (snapshot.released == nil and storedRecord.released)) then
             appendLegacySnapshot(restores, seen, snapshot)
         end
@@ -103,16 +92,16 @@ local function appendLegacyReleasedSnapshots(restores, seen, storedRecord)
         appendLegacySnapshot(restores, seen, storedRecord.released)
         return
     end
-    for _, snapshot in ipairs(storedRecord.released) do
-        appendLegacySnapshot(restores, seen, snapshot)
+    for index = 1, #storedRecord.released do
+        appendLegacySnapshot(restores, seen, storedRecord.released[index])
     end
 end
 
 local function collectLegacyRestores(storedRecord)
     local restores = type(storedRecord.restores) == "table" and storedRecord.restores or {}
     local seen = {}
-    for _, snapshot in ipairs(restores) do
-        local identity = snapshotIdentity(snapshot)
+    for index = 1, #restores do
+        local identity = snapshotIdentity(restores[index])
         if identity ~= nil then seen[identity] = true end
     end
     appendLegacyRecordSnapshots(restores, seen, storedRecord)
@@ -123,7 +112,8 @@ end
 local function normalizeRestores(restores)
     local normalizedRestores = {}
     local maxSnapshots = ACR.getMaxSnapshotsPerPlayer()
-    for _, snapshot in ipairs(restores) do
+    for index = 1, #restores do
+        local snapshot = restores[index]
         local normalized = normalizeSnapshot(snapshot)
         if normalized then table.insert(normalizedRestores, normalized) end
     end
@@ -170,14 +160,15 @@ local function migrateModData()
         local record = migrateRecord(storedRecord)
         local greatest = tonumber(record.lastSnapshotId) or 0
         greatest = math.max(greatest, tonumber(record.latestSnapshot and record.latestSnapshot.id) or 0)
-        for _, snapshot in ipairs(record.restores) do
+        for index = 1, #record.restores do
+            local snapshot = record.restores[index]
             greatest = math.max(greatest, tonumber(snapshot.id) or 0)
         end
         record.lastSnapshotId = greatest
         modData.lastSnapshotId = math.max(modData.lastSnapshotId, greatest)
         modData.players[key] = record
     end
-    ACR.debug("ModData migrated schema=" .. tostring(modData.schemaVersion))
+    ACR.debug("ModData migrated", modData.schemaVersion)
 end
 
 local function ensureModData()
@@ -203,11 +194,11 @@ end
 
 local function ensurePlayerRecord(player)
     local username = getUsername(player)
-    local key = getPlayerKey(player)
+    local steamID = getSteamID(player)
+    local key = getPlayerKey(username, steamID)
     if not username or not key then return nil end
 
     local players = ensureModData().players
-    local steamID = getSteamID(player)
     local storedKey, record = findExistingRecord(players, key, steamID, username)
     record = record or { restores = {} }
     record = migrateRecord(record)
@@ -222,9 +213,7 @@ end
 
 local function trimRestores(record)
     local maxSnapshots = ACR.getMaxSnapshotsPerPlayer()
-    ACR.debug("Trimming restores user=" .. tostring(record.username)
-            .. " count=" .. tostring(#record.restores)
-            .. " max=" .. tostring(maxSnapshots))
+    ACR.debug("Trimming restores", record.username, #record.restores, maxSnapshots)
     while #record.restores > maxSnapshots do
         table.remove(record.restores)
     end
@@ -233,7 +222,8 @@ end
 local function nextSnapshotId(record, timestamp)
     local greatest = math.max(tonumber(modData.lastSnapshotId) or 0, tonumber(record.lastSnapshotId) or 0)
     greatest = math.max(greatest, tonumber(record.latestSnapshot and record.latestSnapshot.id) or 0)
-    for _, storedSnapshot in ipairs(record.restores) do
+    for index = 1, #record.restores do
+        local storedSnapshot = record.restores[index]
         greatest = math.max(greatest, tonumber(storedSnapshot.id) or 0)
     end
 
@@ -258,26 +248,30 @@ end
 
 local function buildLiteratureIndex()
     if literatureTypes then return end
-    literatureTypes = {}
+    literatureTypes = table.newarray()
     local items = getScriptManager():getAllItems()
+    local literatureCount = 0
     for index = 0, items:size() - 1 do
         local scriptItem = items:get(index)
         if scriptItem:isItemType(ItemType.LITERATURE) then
-            table.insert(literatureTypes, scriptItem:getFullName())
+            literatureCount = literatureCount + 1
+            literatureTypes[literatureCount] = scriptItem:getFullName()
         end
     end
 end
 
 local function buildMediaIndex()
     if mediaLineIds then return end
-    mediaLineIds = {}
+    mediaLineIds = table.newarray()
     local seen = {}
     for _, media in pairs(RecMedia or {}) do
-        for _, line in ipairs(media.lines or {}) do
+        local lines = media.lines or {}
+        for index = 1, #lines do
+            local line = lines[index]
             local lineID = line.text
             if lineID and not seen[lineID] then
                 seen[lineID] = true
-                table.insert(mediaLineIds, lineID)
+                mediaLineIds[#mediaLineIds + 1] = lineID
             end
         end
     end
@@ -286,7 +280,8 @@ end
 local function captureReadPages(player)
     buildLiteratureIndex()
     local pages = {}
-    for _, fullType in ipairs(literatureTypes) do
+    for index = 1, #literatureTypes do
+        local fullType = literatureTypes[index]
         local pagesRead = player:getAlreadyReadPages(fullType)
         if pagesRead > 0 then pages[fullType] = pagesRead end
     end
@@ -296,17 +291,19 @@ end
 local function captureKnownMediaLines(player)
     buildMediaIndex()
     local knownLines = {}
-    for _, lineID in ipairs(mediaLineIds) do
-        if player:isKnownMediaLine(lineID) then table.insert(knownLines, lineID) end
+    for index = 1, #mediaLineIds do
+        local lineID = mediaLineIds[index]
+        if player:isKnownMediaLine(lineID) then knownLines[#knownLines + 1] = lineID end
     end
     return knownLines
 end
 
 local function copyJavaList(javaValues)
     local strings = {}
-    for index = 0, javaValues:size() - 1 do
+    local size = javaValues:size()
+    for index = 0, size - 1 do
         local javaValue = javaValues:get(index)
-        if javaValue then table.insert(strings, tostring(javaValue)) end
+        if javaValue then strings[#strings + 1] = tostring(javaValue) end
     end
     return strings
 end
@@ -317,11 +314,13 @@ end
 
 local function capturePerks(player)
     local perks = {}
-    for index = 0, Perks.getMaxIndex() - 1 do
+    local xp = player:getXp()
+    local maxPerkIndex = Perks.getMaxIndex()
+    for index = 0, maxPerkIndex - 1 do
         local perkType = Perks.fromIndex(index)
         local perk = perkType and PerkFactory.getPerk(perkType)
         if perk and perk:getParent() ~= Perks.None then
-            perks[tostring(perkType)] = { level = player:getPerkLevel(perkType), xp = player:getXp():getXP(perkType) }
+            perks[tostring(perkType)] = { level = player:getPerkLevel(perkType), xp = xp:getXP(perkType) }
         end
     end
     return perks
@@ -331,7 +330,7 @@ local function captureTraits(player)
     local traits = {}
     local knownTraits = player:getCharacterTraits():getKnownTraits()
     for index = 0, knownTraits:size() - 1 do
-        table.insert(traits, tostring(knownTraits:get(index)))
+        traits[#traits + 1] = tostring(knownTraits:get(index))
     end
     return traits
 end
@@ -341,7 +340,8 @@ local function captureRecipes(player)
 end
 
 local function getProfession(player)
-    local profession = player:getDescriptor():getCharacterProfession()
+    local descriptor = player:getDescriptor()
+    local profession = descriptor:getCharacterProfession()
     return profession and tostring(profession) or nil
 end
 
@@ -366,32 +366,26 @@ local function captureSnapshot(player, record)
     local snapshot = captureRestorableState(player)
     snapshot.id = nextSnapshotId(record, timestamp)
     snapshot.username = getUsername(player)
-    snapshot.steamID = getSteamID(player)
+    snapshot.steamID = record.steamID
     snapshot.createdAt = timestamp
     snapshot.worldDays = ACR.worldDays()
     return snapshot
 end
 
-local function saveLatestSnapshot(player, action)
-    local record = ensurePlayerRecord(player)
+local function saveLatestSnapshot(player, record)
+    record = record or ensurePlayerRecord(player)
     if not record then return end
 
     record.latestSnapshot = captureSnapshot(player, record)
     record.latestWorldHour = ACR.worldHours()
-    ACR.debug("Saved latest snapshot for " .. tostring(record.username) .. " id=" .. tostring(record.latestSnapshot.id))
-    logAction(action, {
-        admin = "server",
-        target = record.username,
-        snapshot = record.latestSnapshot.id,
-        detail = "saved"
-    })
+    ACR.debug("Saved latest snapshot", record.username, record.latestSnapshot.id)
 end
 
-local function releaseLatestSnapshot(player, reason)
+local function releaseLatestSnapshot(player)
     local record = ensurePlayerRecord(player)
     local latest = record and record.latestSnapshot
     if not latest then
-        logAction("release_denied", { admin = "server", target = getUsername(player), detail = "latest_missing" })
+        ACR.debug("Snapshot release denied: latest snapshot missing")
         return
     end
 
@@ -401,8 +395,7 @@ local function releaseLatestSnapshot(player, reason)
     trimRestores(record)
     record.latestSnapshot = nil
     record.latestWorldHour = nil
-    ACR.debug("Released snapshot for " .. tostring(record.username) .. " id=" .. tostring(latest.id))
-    logAction("release", { admin = "server", target = record.username, snapshot = latest.id, detail = reason })
+    ACR.debug("Released snapshot", record.username, latest.id)
 end
 
 local function isSnapshotDue(record, worldHour, intervalHours)
@@ -415,10 +408,10 @@ local function capturePlayerIfDue(player, worldHour, intervalHours)
     if not record then return end
 
     if isSnapshotDue(record, worldHour, intervalHours) then
-        ACR.debug("Snapshot due for " .. tostring(record.username))
-        saveLatestSnapshot(player, "snapshot_latest")
+        ACR.debug("Snapshot due", record.username)
+        saveLatestSnapshot(player, record)
     else
-        ACR.debug("Snapshot not due for " .. tostring(record.username))
+        ACR.debug("Snapshot not due", record.username)
     end
 end
 
@@ -428,7 +421,7 @@ local function captureLatestDue()
 
     local worldHour = ACR.worldHours()
     local intervalHours = ACR.getSnapshotIntervalHours()
-    ACR.debug(string.format("Scheduler check worldHour=%.2f intervalHours=%d", worldHour, intervalHours))
+    ACR.debug("Scheduler check", worldHour, intervalHours)
     for index = 0, players:size() - 1 do
         capturePlayerIfDue(players:get(index), worldHour, intervalHours)
     end
@@ -436,14 +429,15 @@ end
 
 local function appendRecordSnapshots(output, playerKey, record)
     trimRestores(record)
-    for _, storedSnapshot in ipairs(record.restores) do
-        table.insert(output, {
+    for index = 1, #record.restores do
+        local storedSnapshot = record.restores[index]
+        output[#output + 1] = {
             playerKey = playerKey,
             snapshotId = tostring(storedSnapshot.id),
             username = record.username,
             restoreName = type(storedSnapshot.restoreName) == "string" and storedSnapshot.restoreName or nil,
             worldDays = storedSnapshot.worldDays
-        })
+        }
     end
 end
 
@@ -474,7 +468,8 @@ end
 local function findSnapshot(playerKey, snapshotID)
     local record = ensureModData().players[playerKey]
     if not record then return nil, nil end
-    for _, storedSnapshot in ipairs(record.restores) do
+    for index = 1, #record.restores do
+        local storedSnapshot = record.restores[index]
         if tostring(storedSnapshot.id) == snapshotID then return record, storedSnapshot end
     end
     return record, nil
@@ -485,14 +480,15 @@ local function findOnlineTarget(record)
     if not players then return nil end
     local usernameMatch
     local usernameMismatch = false
+    local recordUsername = record.username
 
     for index = 0, players:size() - 1 do
         local player = players:get(index)
         local playerSteamID = getSteamID(player)
         if record.steamID and playerSteamID then
             if playerSteamID == tostring(record.steamID) then return player end
-            if getUsername(player) == record.username then usernameMismatch = true end
-        elseif getUsername(player) == record.username then
+            if getUsername(player) == recordUsername then usernameMismatch = true end
+        elseif getUsername(player) == recordUsername then
             usernameMatch = player
         end
     end
@@ -527,15 +523,18 @@ end
 local function applyBookMultipliers(player, readPages)
     buildLiteratureIndex()
     local scriptManager = getScriptManager()
-    for _, fullType in ipairs(literatureTypes) do
+    local xp
+    for index = 1, #literatureTypes do
+        local fullType = literatureTypes[index]
         local pagesRead = tonumber(readPages and readPages[fullType])
         if pagesRead and pagesRead > 0 then
             local scriptItem = scriptManager:getItem(fullType)
             if scriptItem then
                 local perk, maxMultiplier, minLevel, maxLevel, pageCount = bookMultiplier(scriptItem)
                 if perk and pageCount and pageCount > 0 then
+                    xp = xp or player:getXp()
                     local multiplier = math.floor(math.min(1, pagesRead / pageCount) * 10) * (maxMultiplier / 10)
-                    if multiplier > player:getXp():getMultiplier(perk) then
+                    if multiplier > xp:getMultiplier(perk) then
                         addXpMultiplier(player, perk, multiplier, minLevel, maxLevel)
                     end
                 end
@@ -570,31 +569,13 @@ local function isAdmin(player)
     return role and role:getName() == "admin"
 end
 
-local function logRestoreDenied(requester, snapshotID, detail, targetName)
-    logAction("restore_denied", {
-        admin = getUsername(requester),
-        target = targetName,
-        snapshot = snapshotID,
-        detail = detail
-    })
-end
-
-local function logRestoreApplied(requester, target, snapshotID)
-    logAction("restore", {
-        admin = getUsername(requester),
-        target = getUsername(target),
-        snapshot = snapshotID,
-        detail = "applied"
-    })
-end
-
 local function findLiveTarget(record)
     local target = findOnlineTarget(record)
     return target and not target:isDead() and target or nil
 end
 
 local function sendRestore(target, snapshot)
-    ACR.debug("Applying restore on server for " .. tostring(getUsername(target)) .. " id=" .. tostring(snapshot.id))
+    ACR.debug("Applying restore on server", snapshot.id)
     applySnapshotOnServer(target, snapshot)
     sendServerCommand(target, ACR.ID, "ApplySnapshot", { snapshot = snapshot })
 end
@@ -602,9 +583,9 @@ end
 local function runSelfCommand(command, requester)
     if command == "ReleaseLatest" then
         if requester:isDead() then
-            releaseLatestSnapshot(requester, "death")
+            releaseLatestSnapshot(requester)
         else
-            logAction("release_denied", { target = getUsername(requester), detail = "not_dead" })
+            ACR.debug("Snapshot release denied: requester is alive")
         end
         return true
     end
@@ -612,78 +593,75 @@ local function runSelfCommand(command, requester)
     if command == "RefreshLatest" then
         local record = not requester:isDead() and ensurePlayerRecord(requester)
         if record and not record.latestSnapshot then
-            saveLatestSnapshot(requester, "snapshot_latest")
+            saveLatestSnapshot(requester, record)
         end
         return true
     end
     return false
 end
 
-local function resolveRestoreSource(requester, args)
+local function resolveRestoreSource(args)
     local playerKey, snapshotID = validRestoreRequest(args)
     if not playerKey then
-        logRestoreDenied(requester, nil, "invalid_request")
-        return nil, nil, nil
+        ACR.debug("Restore denied: invalid request")
+        return nil, nil
     end
 
     local record, snapshot = findSnapshot(playerKey, snapshotID)
     if not snapshot then
-        logRestoreDenied(requester, snapshotID, "snapshot_missing")
-        return nil, nil, nil
+        ACR.debug("Restore denied: snapshot missing", playerKey, snapshotID)
+        return nil, nil
     end
-    return record, snapshot, snapshotID
+    return record, snapshot
 end
 
-local function restoreSnapshotFromCommand(requester, args)
-    local record, snapshot, snapshotID = resolveRestoreSource(requester, args)
+local function restoreSnapshotFromCommand(args)
+    local record, snapshot = resolveRestoreSource(args)
     if not snapshot then return end
 
     local target = findLiveTarget(record)
     if not target then
-        logRestoreDenied(requester, snapshotID, "target_unavailable", record.username)
+        ACR.debug("Restore denied: target unavailable", record.username, snapshot.id)
         return
     end
 
     local restoreSnapshot = ACR.copyRestorePayload(snapshot)
     if not restoreSnapshot then
-        logRestoreDenied(requester, snapshotID, "invalid_snapshot")
+        ACR.debug("Restore denied: invalid snapshot", record.username, snapshot.id)
         return
     end
 
     sendRestore(target, restoreSnapshot)
-    logRestoreApplied(requester, target, snapshotID)
 end
 
-local function validateCommandArgs(requester, args)
-    if args ~= nil and type(args) ~= "table" then
-        ACR.debug("Rejected command with invalid arguments from " .. tostring(getUsername(requester)))
-        logAction("denied", { admin = getUsername(requester), detail = "invalid_arguments" })
-        return nil
-    end
+local function validateCommandArgs(args)
+    if args ~= nil and type(args) ~= "table" then return nil end
     return args or {}
 end
 
 local function sendSnapshotList(requester)
     local payload = listPayload()
     sendServerCommand(requester, ACR.ID, "Snapshots", payload)
-    ACR.debug("Sent snapshot list snapshots=" .. tostring(#payload.snapshots) .. " users=" .. tostring(#payload.users))
-    logAction("list", { admin = getUsername(requester), detail = "sent" })
+    ACR.debug("Sent snapshot list", #payload.snapshots, #payload.users)
 end
 
 local function onClientCommand(module, command, requester, args)
     if module ~= ACR.ID or type(command) ~= "string" or not requester then return end
-    ACR.debug("Received command=" .. command .. " requester=" .. tostring(getUsername(requester)))
-    local commandArgs = validateCommandArgs(requester, args)
-    if not commandArgs then return end
+    ACR.debug("Received command", command)
+    local commandArgs = validateCommandArgs(args)
+    if not commandArgs then
+        ACR.debug("Rejected command: invalid arguments", command)
+        return
+    end
     if runSelfCommand(command, requester) then return end
     if not isAdmin(requester) then
-        logAction("denied", { admin = getUsername(requester), detail = "not_admin" })
+        ACR.debug("Rejected admin command: requester is not an admin", command)
         return
     end
     if command == "ListSnapshots" then
         sendSnapshotList(requester)
     elseif command == "RestoreSnapshot" then
-        restoreSnapshotFromCommand(requester, commandArgs)
+        restoreSnapshotFromCommand(commandArgs)
     end
 end
 

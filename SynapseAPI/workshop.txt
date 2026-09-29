@@ -1,7 +1,7 @@
 version=1
 id=3793697487
 title=Synapse API
-description=[h1]Synapse API [B42.20][/h1]
+description=[h1]Synapse API [B42.21][/h1]
 description=An optional Java library for my Project Zomboid mods.
 description=Install it when one of my mods requires it.
 description=

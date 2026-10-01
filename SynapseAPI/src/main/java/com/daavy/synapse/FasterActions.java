@@ -30,6 +30,18 @@ public final class FasterActions {
     private static final String VISUAL_DURATION_MARKER = "FasterActionsVisualDuration";
     private static final String LOG_PREFIX = "[FasterActions]";
     private static final String[] INVENTORY_EXCLUDED_PATTERNS = { "Animal", "Hutch", "Recipe", "Plumb" };
+    private static final String[] INVENTORY_ACTION_TYPES = {
+        "ISItemSlotAddAction",
+        "ISItemSlotRemoveAction",
+        "ISDropAnimalCorpseAndThen",
+        "ISGiveWaterToAnimal",
+        "ISHutchGrabAnimal",
+        "ISHutchGrabCorpseAction",
+        "ISHutchGrabEgg",
+        "ISKillAnimalInInventory",
+        "ISPickupAnimal",
+        "ISPickAxeGroundCoverItem"
+    };
     private static final String[] EQUIP_ACTION_PATTERNS = {
         "Equip",
         "Equipment",
@@ -144,7 +156,10 @@ public final class FasterActions {
     }
 
     private static float getSafehouseMultiplier(DurationCategory category) {
-        return getSandboxMultiplier(category.safehouseOptionName);
+        SandboxOptions.SandboxOption enabledOption = SandboxOptions.instance.getOptionByName("FasterActions.SafehouseEnabled");
+        return enabledOption != null && Boolean.TRUE.equals(enabledOption.asConfigOption().getValueAsObject())
+                ? getSandboxMultiplier(category.safehouseOptionName)
+                : getSandboxMultiplier(category);
     }
 
     private static float getSandboxMultiplier(String optionName) {
@@ -254,7 +269,7 @@ public final class FasterActions {
     }
 
     public static long adjustInventoryAnimationEventDelay(NetTimedAction action, long delay) {
-        if (isServerInventoryAction(action)) {
+        if (isServerInventoryAction(action) || isServerEquipAction(action)) {
             return adjustInventoryEventDelay(action, delay);
         }
         debugLog(LOG_PREFIX + "[Animation] type=" + action.type
@@ -275,7 +290,7 @@ public final class FasterActions {
     }
 
     private static boolean isInventoryActionType(String actionType) {
-        return hasText(actionType)
+        return equalsAny(actionType, INVENTORY_ACTION_TYPES) || hasText(actionType)
                 && !containsAny(actionType, INVENTORY_EXCLUDED_PATTERNS)
                 && !isEquipActionType(actionType)
                 && containsAny(actionType, INVENTORY_ACTION_PATTERNS);

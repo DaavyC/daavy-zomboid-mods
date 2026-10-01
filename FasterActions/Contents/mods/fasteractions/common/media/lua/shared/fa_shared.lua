@@ -579,7 +579,10 @@ local function getVisualDuration(action, actionTime, multiplier)
 end
 
 local function getAppliedDuration(action, actionTime, category, visualDuration)
-    if isClient() and isNativeRemoteAction(action) and not isInventoryAnimationAction(action) then
+    if category == "Equip" and isInventoryAnimationAction(action) then
+        return visualDuration
+    end
+    if isClient() and isNativeRemoteAction(action) then
         return -1
     end
     if isServer() and category == "Mechanic" and isNativeRemoteAction(action) then

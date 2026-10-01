@@ -200,6 +200,38 @@ local ANIMATION_SPEED_SCALES = {
 local synapseApi
 local synapseApiAvailable = false
 
+local function deferRemoteClientSpeed(zombie, speedType, multiplier)
+    if not isClient() or not zombie.isRemoteZombie
+            or not zombie:isRemoteZombie() then return false end
+    RandomZeds.applyZombieAnimationSpeed(zombie, speedType, multiplier)
+    return true
+end
+
+function RandomZeds.initializeZombieAnimationSpeed(zombie)
+    if zombie:getVariableBoolean("RandomZedsAnimationInitialized") then return end
+    for speedIndex = 1, #RandomZeds.SPEED_TYPES do
+        local scales = ANIMATION_SPEED_SCALES[RandomZeds.SPEED_TYPES[speedIndex]]
+        for scaleIndex = 1, #scales do
+            local scale = scales[scaleIndex]
+            if zombie:getVariableFloat(scale.variable, 0.0) == 0.0 then
+                zombie:setVariable(scale.variable, scale.base)
+            end
+        end
+    end
+    zombie:setVariable("RandomZedsAnimationInitialized", true)
+end
+
+function RandomZeds.applyZombieProfile(zombie, state)
+    if deferRemoteClientSpeed(zombie, state.speedType, state.multiplier) then
+        return false
+    end
+    RandomZeds.setCrawlerState(zombie, state.speedType == "crawler")
+    RandomZeds.applyZombieNativeStats(zombie, state.sight, state.hearing)
+    RandomZeds.applyZombieFeatureState(zombie, state)
+    return RandomZeds.applyZombieSpeedType(
+        zombie, state.speedType, state.multiplier, state.baseSpeed)
+end
+
 local function getSynapseApi()
     if synapseApiAvailable then return synapseApi end
     local apiRoot = _G.Synapse and _G.Synapse.API
@@ -235,9 +267,6 @@ function RandomZeds.applyZombieNativeStats(zombie, sight, hearing)
     local api = getSynapseApi()
     if api and nativeStatValues[1] and nativeStatValues[2] then
         api.applyZombieSenses(zombie, nativeStatValues[1], nativeStatValues[2])
-        return true
-    end
-    if nativeStatValues[1] == 2 and nativeStatValues[2] == 2 then
         return true
     end
     local options = getSandboxOptions and getSandboxOptions()
@@ -476,10 +505,19 @@ end
 function RandomZeds.applySprinterSpeed(
         zombie, multiplier, baseSpeedOverride, modDataOverride)
     if not zombie then return false end
+    if deferRemoteClientSpeed(zombie, "sprinter", multiplier) then return false end
     multiplier = RandomZeds.requireSpeedMultiplier(
         multiplier, "sprinter speed multiplier") or 1.0
     local modData = modDataOverride or zombie:getModData()
     if not modData then return false end
+    local nativeTypeValid = zombie:getSpeedType() == SPEED_TYPE_IDS.sprinter
+        and not zombie:isCrawling()
+        and zombie:isCanWalk()
+        and tostring(zombie:getWalkType() or ""):sub(1, 6) == "sprint"
+    if not nativeTypeValid then
+        RandomZeds.setCrawlerState(zombie, false)
+        zombie:doSprinter()
+    end
     local baseSpeed = getSprinterBaseSpeed(
         zombie, modData, baseSpeedOverride)
     if not baseSpeed then
@@ -487,15 +525,6 @@ function RandomZeds.applySprinterSpeed(
         if baseSpeed <= 0 then baseSpeed = 1.0 end
     end
     local expectedSpeed = baseSpeed * multiplier
-    local remote = isMultiplayer()
-        and zombie.isRemoteZombie and zombie:isRemoteZombie()
-    local nativeTypeValid = zombie:getSpeedType() == SPEED_TYPE_IDS.sprinter
-        and not zombie:isCrawling()
-        and zombie:isCanWalk()
-        and tostring(zombie:getWalkType() or ""):sub(1, 6) == "sprint"
-    if not remote and not nativeTypeValid then
-        zombie:doSprinter()
-    end
     zombie:setSpeedMod(expectedSpeed)
     RandomZeds.applyZombieAnimationSpeed(zombie, "sprinter", multiplier)
     if not zombie:isDead() then
@@ -509,8 +538,7 @@ function RandomZeds.applySprinterSpeed(
         "multiplier", multiplier,
         "base speed", baseSpeed,
         "expected speed", expectedSpeed,
-        "native type valid before application", nativeTypeValid,
-        "remote", remote
+        "native type valid before application", nativeTypeValid
     )
     if RandomZeds.isDebugEnabled() then
         RandomZeds.debugLog(
@@ -558,6 +586,7 @@ end
 function RandomZeds.applyZombieSpeedType(
         zombie, speedType, multiplier, baseSpeedOverride)
     if not zombie or not SPEED_TYPE_IDS[speedType] then return false end
+    if deferRemoteClientSpeed(zombie, speedType, multiplier) then return false end
 
     RandomZeds.debugLog(
         "Applying zombie speed type",
@@ -576,9 +605,7 @@ function RandomZeds.applyZombieSpeedType(
             zombie, multiplier, baseSpeedOverride, modData)
     end
 
-    local remote = isMultiplayer() and zombie.isRemoteZombie
-        and zombie:isRemoteZombie()
-    if not remote then applyNativeZombieSpeedType(zombie, speedType) end
+    applyNativeZombieSpeedType(zombie, speedType)
     return applyScaledZombieSpeed(
         zombie, modData, speedType, multiplier, baseSpeedOverride)
 end

@@ -225,15 +225,15 @@ local function makeModDataState(zombie, modData)
 end
 
 local function applyFreshClientStateValues(zombie, state)
-    RandomZeds.applyZombieNativeStats(zombie, state.sight, state.hearing)
-    RandomZeds.applyZombieFeatureState(zombie, state)
-    if not applyClientSpeedType(
-            zombie, state.speedType, tonumber(state.multiplier) or 1.0,
-            state.baseSpeed) then
+    if not RandomZeds.applyZombieProfile(zombie, state) then
         return false
     end
-    local health = tonumber(state.health)
-    if health then zombie:setHealth(health) end
+    local previousRevision = RandomZeds.readOptionalInteger(
+        zombie:getVariableString(CLIENT_REROLL_VARIABLE), "applied client revision")
+    if state.restore ~= true and previousRevision
+            and state.reroll > previousRevision then
+        zombie:setHealth(state.health)
+    end
     return true
 end
 
@@ -341,6 +341,7 @@ end
 
 local function processLoadedZombie(zombie)
     if not zombie then return end
+    RandomZeds.initializeZombieAnimationSpeed(zombie)
     if zombie:isDead() then
         discardZombie(zombie)
         return
@@ -510,6 +511,7 @@ end
 local function onGameStart()
     RandomZeds.forceVanillaPerceptionDefaults()
     refreshLoadedZombies()
+    sendClientCommand(COMMAND_MODULE, "RequestStates", {})
 end
 
 local function onZombieDead(zombie)

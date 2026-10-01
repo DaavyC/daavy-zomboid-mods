@@ -254,13 +254,14 @@ local function isWeatherActive(settings)
     end
     local climate = getClimateManager and getClimateManager()
     if not climate then return false end
-    if settings.rain and climate:getPrecipitationIntensity() > 0 then
+    if settings.rain and not climate:getPrecipitationIsSnow()
+            and climate:getPrecipitationIntensity() > 0 then
         return true
     end
     if settings.fog and climate:getFogIntensity() > 0 then
         return true
     end
-    return settings.snow and climate:getSnowStrength() > 0 or false
+    return settings.snow and climate:isSnowing() or false
 end
 
 local function readSeasonStart(options, optionName, fallback)

@@ -168,7 +168,6 @@ end
 
 local protection = createProtection(mode)
 
-local WEATHER_PERIOD = Config.WEATHER_PERIOD
 local DISABLED_PERIOD = Config.DISABLED_PERIOD
 local FEATURE_PROFILE_NAMES = Config.FEATURE_PROFILE_NAMES
 local PROFILE_DEFINITIONS = Config.PROFILE_DEFINITIONS
@@ -460,10 +459,7 @@ local function writeAppliedZombieState(zombie, modData, state)
 end
 
 local function applyFreshZombieState(zombie, modData, state)
-    RandomZeds.applyZombieNativeStats(zombie, state.sight, state.hearing)
-    RandomZeds.applyZombieFeatureState(zombie, state)
-    if not RandomZeds.applyZombieSpeedType(
-            zombie, state.speedType, state.multiplier, state.baseSpeed) then
+    if not RandomZeds.applyZombieProfile(zombie, state) then
         return false
     end
     writeAppliedZombieState(zombie, modData, state)
@@ -861,25 +857,8 @@ local function updateEffectiveState()
     applyPendingRerolls()
 end
 
-local function onWeatherPeriodComplete()
-    if lastEffectiveMode ~= WEATHER_PERIOD then
-        updateEffectiveState()
-        return
-    end
-    RandomZeds.forceVanillaPerceptionDefaults()
-
-    local period = Config.getCurrentPeriod()
-    if period == DISABLED_PERIOD then
-        applyEffectiveProfile(period, nil, period)
-        return
-    end
-    local _, config, signature = Config.readProfile(
-        period, Config.getOptionPrefix(period), "")
-    applyEffectiveProfile(period, config, signature)
-    applyPendingRerolls()
-end
-
 local function onZombieCreate(zombie)
+    RandomZeds.initializeZombieAnimationSpeed(zombie)
     if RandomZeds.isExcluded(zombie) then return end
 
     if lastEffectiveConfig and zombie:getSquare() then
@@ -937,11 +916,12 @@ local function initialize()
     Events.OnPlayerMove.Add(protection.onPlayerMove)
     Events.OnWeatherPeriodStart.Add(updateEffectiveState)
     Events.OnWeatherPeriodStage.Add(updateEffectiveState)
-    Events.OnWeatherPeriodComplete.Add(onWeatherPeriodComplete)
+    Events.OnWeatherPeriodComplete.Add(updateEffectiveState)
     Events.OnTick.Add(processScheduledZombieWork)
     Events.EveryOneMinute.Add(updateEffectiveState)
     Events.EveryOneMinute.Add(protection.refreshProtectedChunks)
     protection.refreshProtectedChunks()
+    RandomZeds.forEachLoadedZombie(RandomZeds.initializeZombieAnimationSpeed)
     updateEffectiveState()
     initialized = true
 end

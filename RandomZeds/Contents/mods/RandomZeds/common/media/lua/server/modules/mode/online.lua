@@ -12,7 +12,20 @@ local PENDING_SERVER_STATE_CHECK_INTERVAL_MS = 1000
 local PENDING_SERVER_STATE_TIMEOUT_MS = 60000
 local SERVER_STATE_FIELDS = table.newarray(
     "period", "speedType", "multiplier", "baseSpeed", "health", "sight",
-    "hearing", "cognition", "strength", "memory", "reroll", "id")
+    "hearing", "cognition", "strength", "memory", "reroll", "id", "restore")
+local STORED_STATE_TAGS = {
+    period = "RandomZedsPeriod",
+    speedType = "RandomZedsSpeedType",
+    multiplier = "RandomZedsSprinterMultiplier",
+    health = "RandomZedsHealth",
+    sight = "RandomZedsSight",
+    hearing = "RandomZedsHearing",
+    cognition = "RandomZedsCognition",
+    strength = "RandomZedsStrength",
+    memory = "RandomZedsMemory",
+    reroll = REROLL_TAG,
+}
+local lastStateRequests = setmetatable({}, { __mode = "k" })
 local rerollRevision = 0
 local queuedServerStates = table.newarray()
 local pendingServerStates = {}
@@ -115,40 +128,83 @@ local function getEmptyStatePacketSize()
         + 1 + 2 + #"states" + 1 + 4
 end
 
-local function sendServerStateBatch(states)
+local function sendServerStateBatch(states, player)
     if #states > 0 then
         RandomZeds.debugLog("Sending server state packet", "count", #states)
-        sendServerCommand(COMMAND_MODULE, STATE_COMMAND, { states = states })
+        if player then
+            sendServerCommand(player, COMMAND_MODULE, STATE_COMMAND, { states = states })
+        else
+            sendServerCommand(COMMAND_MODULE, STATE_COMMAND, { states = states })
+        end
+    end
+end
+
+local function getServerStateBatchEnd(queuedStates, firstIndex)
+    local packetSize = getEmptyStatePacketSize()
+    for stateIndex = firstIndex, #queuedStates do
+        local encodedEntrySize = 10 + getEncodedStateSize(queuedStates[stateIndex])
+        if packetSize + encodedEntrySize
+                > SERVER_COMMAND_BUFFER_CAPACITY_BYTES then
+            if stateIndex == firstIndex then
+                error("A zombie state exceeds the server command buffer capacity")
+            end
+            return stateIndex - 1
+        end
+        packetSize = packetSize + encodedEntrySize
+    end
+    return #queuedStates
+end
+
+local function sendServerStates(queuedStates, player)
+    local firstIndex = 1
+    while firstIndex <= #queuedStates do
+        local lastIndex = getServerStateBatchEnd(queuedStates, firstIndex)
+        local states = {}
+        for stateIndex = firstIndex, lastIndex do
+            states[#states + 1] = queuedStates[stateIndex]
+        end
+        sendServerStateBatch(states, player)
+        firstIndex = lastIndex + 1
     end
 end
 
 function Online.flushServerStates()
-    local queuedStates = queuedServerStates
-    local queuedCount = #queuedStates
-    if queuedCount == 0 then return end
-
-    local states = {}
-    local packetSize = getEmptyStatePacketSize()
-    for stateIndex = 1, queuedCount do
-        local state = queuedStates[stateIndex]
-        local encodedEntrySize = 10 + getEncodedStateSize(state)
-        if #states > 0
-                and packetSize + encodedEntrySize
-                    > SERVER_COMMAND_BUFFER_CAPACITY_BYTES then
-            sendServerStateBatch(states)
-            states = {}
-            packetSize = getEmptyStatePacketSize()
-        end
-        if packetSize + encodedEntrySize
-                > SERVER_COMMAND_BUFFER_CAPACITY_BYTES then
-            error("A zombie state exceeds the server command buffer capacity")
-        end
-        states[#states + 1] = state
-        packetSize = packetSize + encodedEntrySize
-    end
-
-    sendServerStateBatch(states)
+    sendServerStates(queuedServerStates)
     queuedServerStates = table.newarray()
+end
+
+local function snapshotZombieState(zombie)
+    local modData = zombie:getModData()
+    local onlineID = zombie:getOnlineID()
+    if zombie:isDead() or RandomZeds.isExcluded(zombie, modData)
+            or not RandomZeds.isValidOnlineID(onlineID)
+            or not modData.RandomZedsPeriod or not modData.RandomZedsSpeedType then
+        return nil
+    end
+    local state = { id = onlineID, restore = true }
+    for index = 1, #SERVER_STATE_FIELDS do
+        local field = SERVER_STATE_FIELDS[index]
+        local tag = STORED_STATE_TAGS[field]
+        if tag then state[field] = modData[tag] end
+    end
+    state.baseSpeed = modData[state.speedType == "sprinter"
+        and SPRINTER_BASE_SPEED_TAG or SPEED_BASE_SPEED_TAG]
+    return state
+end
+
+local function onClientCommand(module, command, player)
+    if module ~= COMMAND_MODULE or command ~= "RequestStates"
+            or not player then return end
+    local now = getTimestampMs()
+    local previousRequest = lastStateRequests[player]
+    if previousRequest and now - previousRequest < 5000 then return end
+    lastStateRequests[player] = now
+    local states = table.newarray()
+    RandomZeds.forEachLoadedZombie(function(zombie)
+        local state = snapshotZombieState(zombie)
+        if state then states[#states + 1] = state end
+    end)
+    sendServerStates(states, player)
 end
 
 function Online.processPendingServerStates()
@@ -185,9 +241,13 @@ function Online.advanceRerollRevision()
 end
 
 function Online.persistRerollRevision(modData)
+    local storedRevision = RandomZeds.readOptionalInteger(
+        modData[REROLL_TAG], "stored zombie reroll revision") or 0
+    rerollRevision = math.max(rerollRevision, storedRevision + 1)
     modData[REROLL_TAG] = rerollRevision
 end
 
 Events.OnZombieDead.Add(discardPendingServerState)
+Events.OnClientCommand.Add(onClientCommand)
 
 return Online

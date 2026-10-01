@@ -1,0 +1,26 @@
+VERSION = 1,
+
+option HighBeams.DistanceMultiplier {
+    type = double,
+    min = 1,
+    max = 10,
+    default = 2,
+    page = HighBeams,
+    translation = HighBeams_DistanceMultiplier,
+}
+
+option HighBeams.BrightnessMultiplier {
+    type = double,
+    min = 1,
+    max = 5,
+    default = 1.5,
+    page = HighBeams,
+    translation = HighBeams_BrightnessMultiplier,
+}
+
+option HighBeams.Debug {
+    type = boolean,
+    default = false,
+    page = HighBeams,
+    translation = HighBeams_Debug,
+}

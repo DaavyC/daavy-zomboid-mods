@@ -1,0 +1,9 @@
+name=High Beams
+id=HighBeams
+author=Daavy
+icon=poster.png
+poster=poster.png
+description=Toggle high beams from the vehicle radial menu.
+modversion=1.0.0
+pzversion=42
+versionMin=42.21

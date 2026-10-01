@@ -1,0 +1,11 @@
+{
+    "Sandbox_HighBeams": "High Beams",
+    "Sandbox_HighBeams_DistanceMultiplier": "Distance multiplier",
+    "Sandbox_HighBeams_DistanceMultiplier_tooltip": "High beam distance relative to each headlight's normal distance. Range: 1-10. Default: 2.",
+    "Sandbox_HighBeams_BrightnessMultiplier": "Brightness multiplier",
+    "Sandbox_HighBeams_BrightnessMultiplier_tooltip": "High beam brightness relative to each headlight's normal brightness. Range: 1-5. Default: 1.5.",
+    "Sandbox_HighBeams_Debug": "Debug",
+    "Sandbox_HighBeams_Debug_tooltip": "Enable execution logs for High Beams to help diagnose bugs. Disabled by default.",
+    "Sandbox_Title_HighBeams_Headlights": "Headlights",
+    "Sandbox_Title_HighBeams_Advanced": "Advanced"
+}

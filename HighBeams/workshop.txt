@@ -1,0 +1,24 @@
+version=1
+id=3811069838
+title=High Beams
+description=[h1]High Beams [B42.21][/h1]
+description=Switch between normal headlights and high beams from the vehicle radial menu.
+description=
+description=[h2]Features[/h2]
+description=[list]
+description=[*]Only the driver can switch modes. The option sits next to the vanilla headlight control.
+description=[*]By default, high beams reach twice as far and are 1.5 times as bright as normal headlights.
+description=[*]Adjust distance and brightness in Sandbox Options.
+description=[*]Each vehicle keeps its selected mode after a server restart.
+description=[*]Players see the same headlight mode in multiplayer.
+description=[*]The mod is compatible with vanilla and modded vehicles.
+description=[/list]
+description=
+description=[h2]Support[/h2]
+description=Join the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url] for help and feedback.
+description=[url=https://ko-fi.com/C1I7209LY1][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
+description=
+description=[h2]Credits[/h2]
+description=This mod is heavily [b]inspired[/b] by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3438126404]Nepenthe's High Beams[/url].
+tags=Build 42;Multiplayer;Vehicles;QoL
+visibility=public

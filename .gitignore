@@ -1,10 +1,8 @@
 # Codex
 AGENTS.md
 .tools
-.backup
 
 # Sync
 _gsdata_
 
 # Ignore (mods that I don't want to commit but are in my local mod folder)
-ManageContainersPatch

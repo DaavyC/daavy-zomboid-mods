@@ -1,0 +1,23 @@
+version=1
+id=3811730894
+title=Multiplayer Fast Forward
+description=[h1]Multiplayer Fast Forward [B42.21][/h1]
+description=Pause or speed up time in multiplayer. All players must vote for the same option.
+description=
+description=[h2]Features[/h2]
+description=[list]
+description=[*]Use the 5x, 20x, or 40x speed options, or set each speed from 2x to 100x in Sandbox Options.
+description=[*]Zombie protection pauses fast forward for everyone when a zombie approaches.
+description=[*]Set the minimum number of online players needed to start fast forward.
+description=[*]Choose whether admins can set the fast-forward option for all players.
+description=[/list]
+description=
+description=[h2]Controls[/h2]
+description=Use the speed buttons or keyboard shortcuts to vote. Moving during fast forward returns the game to normal speed.
+description=When admin overrides are enabled, admins can hold Shift while selecting an option to set it for all players. Zombie protection and the minimum player count still apply.
+description=
+description=[h2]Support[/h2]
+description=Join the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url] for help and feedback.
+description=[url=https://ko-fi.com/C1I7209LY1][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
+tags=Build 42;Interface;Multiplayer;QoL
+visibility=public

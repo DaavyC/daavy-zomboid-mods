@@ -1,0 +1,7 @@
+{
+    "UI_MFF_Votes": "%1: %2/%3 votes",
+    "UI_MFF_MinimumPlayers": "Fast forward requires %2 online players. Online: %1.",
+    "UI_MFF_AdminForce": "Admins can hold Shift to vote for everyone.",
+    "UI_MFF_ZombieBlocked": "Zombie protection blocks fast forward.",
+    "UI_MFF_SleepBlocked": "Sleep acceleration disables speed voting."
+}

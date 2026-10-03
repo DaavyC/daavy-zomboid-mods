@@ -1,14 +1,14 @@
 if isClient() then return end
 
 local M = require "ccc_shared"
+local traitDefinition = M.traitDefinition
 
 local function playerFromEvent(playerIndex, playerObject)
     if playerObject then return playerObject end
     return getSpecificPlayer(playerIndex)
 end
 
-local function professionDefinition(playerObject)
-    local descriptor = playerObject:getDescriptor()
+local function professionDefinition(descriptor)
     local professionType = descriptor:getCharacterProfession()
     if not professionType then return end
     local profession = CharacterProfessionDefinition.getCharacterProfessionDefinition(professionType)
@@ -28,12 +28,6 @@ local function appendList(target, values)
     end
 end
 
-local function traitDefinition(traitType)
-    local definition = CharacterTraitDefinition.getCharacterTraitDefinition(traitType)
-    if definition == nil then error("Missing trait definition: " .. tostring(traitType)) end
-    return definition
-end
-
 local function traitKey(traitType)
     return M.definitionKey(traitDefinition(traitType))
 end
@@ -48,7 +42,12 @@ local function appendOriginalGrants(target, profession)
     local professionKey = M.professionKey(profession)
     local grants = M.originalProfessionGrants[professionKey]
     if not grants then error("Missing original grants for profession " .. professionKey) end
-    appendList(target, grants)
+    for index = 1, #grants do
+        local traitType = grants[index]
+        if not M.traitBuyable(traitDefinition(traitType)) then
+            target[#target + 1] = traitType
+        end
+    end
 end
 
 local function appendProfessionGrants(target, profession)
@@ -87,7 +86,7 @@ local function reconcileRecipes(playerObject, oldProfession, oldTraits, currentP
 
     local currentRecipes = {}
     appendGrantedRecipes(currentRecipes, currentProfession)
-    local currentTraits = {}
+    local currentTraits = table.newarray()
     appendTraits(currentTraits, playerObject:getCharacterTraits():getKnownTraits())
     appendTraitRecipes(currentRecipes, currentTraits)
 
@@ -100,15 +99,13 @@ end
 
 local function removeDisabledTraits(playerObject, allowedTraits)
     local traits = playerObject:getCharacterTraits()
-    local invalid = {}
+    local invalid = table.newarray()
     local knownTraits = traits:getKnownTraits()
     for i = 0, knownTraits:size() - 1 do
         local traitType = knownTraits:get(i)
-        if not allowedTraits[traitKey(traitType)] then
-            local definition = traitDefinition(traitType)
-            if not M.traitEnabled(definition) then
-                invalid[#invalid + 1] = traitType
-            end
+        local definition = traitDefinition(traitType)
+        if not allowedTraits[M.definitionKey(definition)] and not M.traitEnabled(definition) then
+            invalid[#invalid + 1] = traitType
         end
     end
     removeTraits(traits, invalid)
@@ -123,7 +120,7 @@ local function allowedTraitKeys(grantedTraits)
 end
 
 local function replaceProfessionTraits(traits, oldProfession, currentProfession, currentGrants)
-    local removedTraits = {}
+    local removedTraits = table.newarray()
     appendProfessionGrants(removedTraits, oldProfession)
     appendProfessionGrants(removedTraits, currentProfession)
     removeTraits(traits, removedTraits)
@@ -134,16 +131,13 @@ local function reconcileProfession(playerObject)
     local descriptor = playerObject:getDescriptor()
 
     local traits = playerObject:getCharacterTraits()
-    local oldTraits = {}
+    local oldTraits = table.newarray()
     appendTraits(oldTraits, traits:getKnownTraits())
-    local oldProfession = professionDefinition(playerObject)
+    local oldProfession = professionDefinition(descriptor)
     local current = oldProfession
     local fallback = M.fallbackProfession()
     if not fallback then error("No profession is available for character creation") end
-    if not current then
-        descriptor:setCharacterProfession(fallback:getType())
-        current = fallback
-    elseif not M.professionEnabled(current) and current ~= fallback then
+    if not current or (not M.professionEnabled(current) and current ~= fallback) then
         descriptor:setCharacterProfession(fallback:getType())
         current = fallback
     end
@@ -162,11 +156,11 @@ local function markInitialLevelsApplied(playerObject, modData)
 end
 
 local function grantProfessionItems(playerObject)
-    local profession = professionDefinition(playerObject)
+    local profession = professionDefinition(playerObject:getDescriptor())
     if not profession then error("Player has no profession") end
     local inventory = playerObject:getInventory()
     local professionKey = M.professionKey(profession)
-    local itemTypes = M.parseGrantedItems(M.professionValue(profession, "GrantedItems"), profession)
+    local itemTypes = M.professionGrantedItems(profession)
     M.debugLog("Granting profession items", professionKey, #itemTypes)
     for index = 1, #itemTypes do
         local itemType = itemTypes[index]
@@ -178,7 +172,7 @@ local function grantProfessionItems(playerObject)
     end
 end
 
-local function applyInitialLevels(playerObject, modData)
+local function applyInitialLevels(playerObject)
     local xp
     local standardPerks = M.getStandardPerks()
     for index = 1, #standardPerks do
@@ -186,7 +180,7 @@ local function applyInitialLevels(playerObject, modData)
         local levelChange = M.standardValue(entry)
         if levelChange ~= 0 then
             local currentLevel = playerObject:getPerkLevel(entry.perk)
-            local targetLevel = math.floor(math.max(0, math.min(10, currentLevel + levelChange)))
+            local targetLevel = math.floor(M.clampSkillLevel(currentLevel + levelChange))
             if targetLevel ~= currentLevel then
                 M.debugLog("Applying initial perk level", entry.key, currentLevel, targetLevel)
                 playerObject:setPerkLevelDebug(entry.perk, targetLevel)
@@ -195,8 +189,6 @@ local function applyInitialLevels(playerObject, modData)
             end
         end
     end
-
-    markInitialLevelsApplied(playerObject, modData)
 end
 
 local function applyToPlayer(playerIndex, playerObject)
@@ -219,7 +211,8 @@ local function applyToPlayer(playerIndex, playerObject)
     M.debugLog("Applying character creation setup to player", playerIndex)
     reconcileProfession(player)
     grantProfessionItems(player)
-    applyInitialLevels(player, modData)
+    applyInitialLevels(player)
+    markInitialLevelsApplied(player, modData)
     M.debugLog("Character creation setup applied to player", playerIndex)
 end
 

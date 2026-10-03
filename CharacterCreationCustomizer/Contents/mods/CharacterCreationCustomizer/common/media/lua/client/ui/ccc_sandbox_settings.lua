@@ -2,6 +2,7 @@ local M = require "ccc_shared"
 
 local standardEntry
 local standardGroupRank
+local SETTING_METADATA_KEYS = table.newarray("tooltip", "title", "translatedName", "standardTitle", "subtitle")
 
 local groupOrder = {
     QOL = 1,
@@ -149,7 +150,7 @@ local professionRanks
 local function professionRank(key)
     if not professionRanks then
         professionRanks = {}
-        local professions = {}
+        local professions = table.newarray()
         local definitionList = CharacterProfessionDefinition.getProfessions()
         for i = 0, definitionList:size() - 1 do
             professions[#professions + 1] = definitionList:get(i)
@@ -227,14 +228,6 @@ local function compareSettings(left, right)
     return (partOrder[leftPart] or 99) < (partOrder[rightPart] or 99)
 end
 
-local function settingsOrder(page)
-    local order = {}
-    for index = 1, #page.settings do
-        order[index] = page.settings[index]
-    end
-    return order
-end
-
 local function settingsOrderChanged(settings, previousOrder)
     for index = 1, #settings do
         if previousOrder[index] ~= settings[index] then return true end
@@ -242,40 +235,24 @@ local function settingsOrderChanged(settings, previousOrder)
     return false
 end
 
-local function updateSettingValue(changed, setting, property, value)
-    if setting[property] == value then return changed end
-    setting[property] = value
-    return true
-end
-
-local function updateSettingMetadata(setting, previousGroup, previousKey)
+local function settingMetadata(setting, previousGroup, previousKey)
     local group = settingGroup(setting)
     local section, key, part = settingParts(setting)
     local isStandard = section == "Standard"
-    local changed = false
     local tooltipKey = tooltipKeyFor(section, key, part)
-    if tooltipKey then
-        changed = updateSettingValue(changed, setting, "tooltip", composeTooltip(setting, getText(tooltipKey)))
-    end
-
     local title = group and group ~= previousGroup and group or nil
     local subtitle = not isStandard and isSubtitleSetting(section, key, part) and key ~= previousKey and settingLabel(setting) or nil
-    local standardTitle = isStandard and title or nil
-    local standardLabel = isStandard and part == "InitialLevel" and settingLabel(setting) or nil
-
-    if isStandard or section == "Professions" then
-        changed = updateSettingValue(changed, setting, "title", nil)
-        if isStandard then
-            changed = updateSettingValue(changed, setting, "translatedName", standardLabel)
-            subtitle = nil
-        end
-    else
-        changed = updateSettingValue(changed, setting, "title", title)
+    local translatedName = setting.translatedName
+    if isStandard then
+        translatedName = part == "InitialLevel" and settingLabel(setting) or nil
     end
-    changed = updateSettingValue(changed, setting, "standardTitle", standardTitle)
-    changed = updateSettingValue(changed, setting, "subtitle", subtitle)
-
-    return changed, group or previousGroup, key or previousKey
+    return {
+        tooltip = tooltipKey and composeTooltip(setting, getText(tooltipKey)) or setting.tooltip,
+        title = not isStandard and section ~= "Professions" and title or nil,
+        translatedName = translatedName,
+        standardTitle = isStandard and title or nil,
+        subtitle = subtitle,
+    }, group or previousGroup, key or previousKey
 end
 
 local function addTitles(page)
@@ -283,7 +260,7 @@ local function addTitles(page)
     if not hasCustomizerSettings(page) then return false end
     M.rememberTraits()
 
-    local oldOrder = settingsOrder(page)
+    local oldOrder = table.newarray(page.settings)
     table.sort(page.settings, compareSettings)
     local changed = settingsOrderChanged(page.settings, oldOrder)
 
@@ -291,9 +268,15 @@ local function addTitles(page)
     local previousKey
     for index = 1, #page.settings do
         local setting = page.settings[index]
-        local settingChanged
-        settingChanged, previousGroup, previousKey = updateSettingMetadata(setting, previousGroup, previousKey)
-        changed = settingChanged or changed
+        local metadata
+        metadata, previousGroup, previousKey = settingMetadata(setting, previousGroup, previousKey)
+        for propertyIndex = 1, #SETTING_METADATA_KEYS do
+            local property = SETTING_METADATA_KEYS[propertyIndex]
+            if setting[property] ~= metadata[property] then
+                setting[property] = metadata[property]
+                changed = true
+            end
+        end
     end
 
     return changed
@@ -345,7 +328,9 @@ local function clearPanelTooltips(panel)
 end
 
 local function shiftPanelChildren(panel, y, amount)
-    for _, child in pairs(panel:getChildren()) do
+    local children = panel:getChildrenInOrder()
+    for index = 1, #children do
+        local child = children[index]
         local childY = child:getY()
         if childY >= y then
             child:setY(childY + amount)
@@ -391,6 +376,25 @@ local function restoreControlStates(panel, states)
     end
 end
 
+local function seedSettingState(setting, state)
+    if state.text ~= nil then
+        setting.text = state.text
+    elseif state.selected ~= nil then
+        setting.default = state.selected
+    end
+end
+
+local function seedConfiguredSetting(setting, configOption)
+    local optionType = configOption:getType()
+    if optionType == "integer" or optionType == "double" then
+        setting.text = configOption:getValueAsString()
+    elseif optionType == "string" or optionType == "text" then
+        setting.text = configOption:getValueAsObject()
+    elseif optionType == "boolean" then
+        setting.default = configOption:getValueAsObject()
+    end
+end
+
 local function seedPanelSettings(page, states)
     if not page or not page.settings then return end
     local options = getSandboxOptions()
@@ -398,23 +402,11 @@ local function seedPanelSettings(page, states)
         local setting = page.settings[index]
         local state = states[setting.name]
         if state then
-            if state.text ~= nil then
-                setting.text = state.text
-            elseif state.selected ~= nil then
-                setting.default = state.selected
-            end
+            seedSettingState(setting, state)
         else
             local option = options:getOptionByName(setting.name)
             if not option then error("Missing sandbox option: " .. setting.name) end
-            local configOption = option:asConfigOption()
-            local optionType = configOption:getType()
-            if optionType == "integer" or optionType == "double" then
-                setting.text = configOption:getValueAsString()
-            elseif optionType == "string" or optionType == "text" then
-                setting.text = configOption:getValueAsObject()
-            elseif optionType == "boolean" then
-                setting.default = configOption:getValueAsObject()
-            end
+            seedConfiguredSetting(setting, option:asConfigOption())
         end
     end
 end
@@ -428,15 +420,21 @@ local function replaceOwnerControls(owner, panel)
     end
 end
 
-local function addCenteredLabel(panel, height, text, font, y)
-    local label = ISLabel:new(0, 0, height, text, 1, 1, 1, 1, font)
+local function addCenteredLabel(panel, labelSpec)
+    local label = ISLabel:new(0, 0, labelSpec.height, labelSpec.text, 1, 1, 1, 1, labelSpec.font)
     panel:addChild(label)
     label:setX((panel:getWidth() - label:getWidth()) / 2)
-    label:setY(y)
+    label:setY(labelSpec.y)
+    local headers = panel.characterCreationCustomizerHeaders
+    if not headers then
+        headers = table.newarray()
+        panel.characterCreationCustomizerHeaders = headers
+    end
+    headers[#headers + 1] = label
     return label
 end
 
-local function addStandardTitles(panel, page)
+local function addSandboxTitles(panel, page, titleProperty)
     if not panel or not page or not page.settings or not panel.labels then return end
 
     local titleHeight = getTextManager():getFontFromEnum(UIFont.Large):getLineHeight() + 6
@@ -444,14 +442,16 @@ local function addStandardTitles(panel, page)
 
     for index = 1, #page.settings do
         local setting = page.settings[index]
-        if setting.standardTitle then
+        if setting[titleProperty] then
             local row = panel.labels[setting.name]
             if row then
                 local y = row:getY()
                 local amount = titleHeight + 22
                 shiftPanelChildren(panel, y, amount)
 
-                addCenteredLabel(panel, titleHeight, titleText(setting.standardTitle), UIFont.Large, y + 20)
+                addCenteredLabel(panel, {
+                    height = titleHeight, text = titleText(setting[titleProperty]), font = UIFont.Large, y = y + 20,
+                })
                 addedHeight = addedHeight + amount
             end
         end
@@ -479,7 +479,9 @@ local function addSandboxSubtitles(panel, page)
                 local amount = subtitleHeight + subtitleSpacing
                 shiftPanelChildren(panel, y, amount)
 
-                addCenteredLabel(panel, subtitleHeight, setting.subtitle, UIFont.Medium, y)
+                addCenteredLabel(panel, {
+                    height = subtitleHeight, text = setting.subtitle, font = UIFont.Medium, y = y,
+                })
                 addedHeight = addedHeight + amount
             end
         end
@@ -492,7 +494,7 @@ local function addSandboxSubtitles(panel, page)
 end
 
 local sandboxPanelHooked = false
-local hostPanelHooked = false
+local hookedHostPageEdit
 local rebuiltSandboxScreen
 local rebuiltSandboxListbox
 local rebuiltSandboxFingerprint
@@ -500,24 +502,24 @@ local rebuiltHostPageEdit
 local rebuiltHostListbox
 local rebuiltHostFingerprint
 
+local function invalidCustomizerInteger(optionName, option, control)
+    if not control or not optionName:match("^CharacterCreationCustomizer%.") then return false end
+    local configOption = option:asConfigOption()
+    if configOption:getType() ~= "integer" then return false end
+    local text = control.getText and control:getText()
+    return text ~= nil and (text == "" or text == "-" or not configOption:isValidString(text))
+end
+
 local function filteredSettingsOptions(owner, category, options)
     local controls = owner and owner.controls
     controls = category and controls and controls[category] or controls
-    local validOptions = {}
+    local validOptions = table.newarray()
     local optionCount = options:getNumOptions()
     for index = 0, optionCount - 1 do
         local option = options:getOptionByIndex(index)
         local optionName = option:getName()
         local control = controls and controls[optionName]
-        local invalidInteger = false
-        if control and optionName:match("^CharacterCreationCustomizer%.") then
-            local configOption = option:asConfigOption()
-            if configOption:getType() == "integer" then
-                local text = control.getText and control:getText()
-                invalidInteger = text ~= nil and (text == "" or text == "-" or not configOption:isValidString(text))
-            end
-        end
-        if not invalidInteger then
+        if not invalidCustomizerInteger(optionName, option, control) then
             validOptions[#validOptions + 1] = option
         end
     end
@@ -531,16 +533,127 @@ local function filteredSettingsOptions(owner, category, options)
     }
 end
 
-local function filteredSettingsFromUI(owner, category, options, callback)
-    local filteredOptions = filteredSettingsOptions(owner, category, options)
-    return callback(filteredOptions)
-end
-
 local function decorateSettingsPanel(panel, page)
     syncPanelTooltips(panel, page)
-    addStandardTitles(panel, page)
+    addSandboxTitles(panel, page, "standardTitle")
     addSandboxSubtitles(panel, page)
     return panel
+end
+
+local function copyCustomizerPage(page)
+    local copiedPage = copyTable(page)
+    copiedPage.settings = table.newarray()
+    for index = 1, #page.settings do
+        copiedPage.settings[index] = copyTable(page.settings[index])
+    end
+    return copiedPage
+end
+
+local function createInGameSandboxPage(page)
+    if not hasCustomizerSettings(page) then return page end
+
+    local customPage = copyCustomizerPage(page)
+    addTitles(customPage)
+    for index = 1, #customPage.settings do
+        local setting = customPage.settings[index]
+        setting.inGameTitle = setting.standardTitle or setting.title
+        setting.title = nil
+    end
+    return customPage
+end
+
+local IN_GAME_SETTINGS_SPACING = 10
+
+local function inGameSettingsWidths(panel, page)
+    local labelWidth = 0
+    local controlWidth = 0
+    for index = 1, #page.settings do
+        local setting = page.settings[index]
+        local label = panel.labels[setting.name]
+        local control = panel.controls[setting.name]
+        if label and control then
+            labelWidth = math.max(labelWidth, label:getWidth())
+            controlWidth = math.max(controlWidth, control:getWidth())
+        end
+    end
+    return { label = labelWidth, control = controlWidth }
+end
+
+local function centerInGameSettingRows(panel, page, widths)
+    local panelWidth = panel:getWidth()
+    local contentWidth = widths.label + IN_GAME_SETTINGS_SPACING + widths.control
+    local contentX = (panelWidth - contentWidth) / 2
+    for index = 1, #page.settings do
+        local setting = page.settings[index]
+        local label = panel.labels[setting.name]
+        local control = panel.controls[setting.name]
+        if label and control then
+            label:setX(contentX + widths.label - label:getWidth())
+            control:setX(contentX + widths.label + IN_GAME_SETTINGS_SPACING)
+        end
+    end
+end
+
+local function centerInGameHeaders(panel, panelWidth)
+    local headers = panel.characterCreationCustomizerHeaders
+    if not headers then return end
+    for index = 1, #headers do
+        local header = headers[index]
+        header:setX((panelWidth - header:getWidth()) / 2)
+    end
+end
+
+local function centerInGameSettings(panel, page)
+    if not panel or not page or not page.settings
+            or not panel.labels or not panel.controls then
+        return panel
+    end
+    if not hasCustomizerSettings(page) then return panel end
+
+    local widths = inGameSettingsWidths(panel, page)
+    if widths.label == 0 or widths.control == 0 then return panel end
+
+    local panelWidth = panel:getWidth()
+    centerInGameSettingRows(panel, page, widths)
+    centerInGameHeaders(panel, panelWidth)
+    return panel
+end
+
+local inGameSandboxOptionsHooked = false
+
+local function hookInGameSandboxPanelCreation()
+    local originalCreatePanel = ISServerSandboxOptionsUI.createPanel
+    ISServerSandboxOptionsUI.createPanel = function(self, page)
+        local customPage = createInGameSandboxPage(page)
+        local panel = originalCreatePanel(self, customPage)
+        if hasCustomizerSettings(customPage) then
+            addSandboxTitles(panel, customPage, "inGameTitle")
+            addSandboxSubtitles(panel, customPage)
+            centerInGameSettings(panel, customPage)
+        end
+        return panel
+    end
+end
+
+local function hookInGameSandboxPanelSelection()
+    local originalOnMouseDownListbox = ISServerSandboxOptionsUI.onMouseDownListbox
+    if originalOnMouseDownListbox then
+        ISServerSandboxOptionsUI.onMouseDownListbox = function(self, item)
+            originalOnMouseDownListbox(self, item)
+            if item and item.page and item.panel then
+                centerInGameSettings(item.panel, item.page)
+            end
+        end
+    end
+end
+
+local function installInGameSandboxOptionsHook()
+    if inGameSandboxOptionsHooked then return end
+    if not ISServerSandboxOptionsUI or not ISServerSandboxOptionsUI.createPanel then return end
+
+    hookInGameSandboxPanelCreation()
+    hookInGameSandboxPanelSelection()
+    inGameSandboxOptionsHooked = true
 end
 
 local function installSandboxPanelHook()
@@ -549,9 +662,7 @@ local function installSandboxPanelHook()
     local originalSettingsFromUI = SandboxOptionsScreen.settingsFromUI
 
     function SandboxOptionsScreen:settingsFromUI(options)
-        return filteredSettingsFromUI(self, nil, options, function(filteredOptions)
-            return originalSettingsFromUI(self, filteredOptions)
-        end)
+        return originalSettingsFromUI(self, filteredSettingsOptions(self, nil, options))
     end
 
     function SandboxOptionsScreen:createPanel(page)
@@ -564,10 +675,9 @@ local function installSandboxPanelHook()
 end
 
 local function installHostPanelHook()
-    if hostPanelHooked then return end
     local screen = ServerSettingsScreen and ServerSettingsScreen.instance
     local pageEdit = screen and screen.pageEdit
-    if not pageEdit then return end
+    if not pageEdit or pageEdit == hookedHostPageEdit then return end
     local pageEditMethods = getmetatable(pageEdit).__index
     local originalCreatePanel = pageEditMethods.createPanel
     if not originalCreatePanel then return end
@@ -575,9 +685,7 @@ local function installHostPanelHook()
 
     if originalSettingsFromUI then
         rawset(pageEdit, "settingsFromUIAux", function(owner, category, options)
-            return filteredSettingsFromUI(owner, category, options, function(filteredOptions)
-                return originalSettingsFromUI(owner, category, filteredOptions)
-            end)
+            return originalSettingsFromUI(owner, category, filteredSettingsOptions(owner, category, options))
         end)
     end
 
@@ -587,33 +695,36 @@ local function installHostPanelHook()
         return decorateSettingsPanel(originalCreatePanel(owner, category, page), page)
     end)
 
-    hostPanelHooked = true
+    hookedHostPageEdit = pageEdit
+end
+
+local function showSettingsPanel(owner, panel)
+    owner:addChild(panel)
+    owner.currentPanel = panel
+    owner:onPanelChange()
+end
+
+local function rebuildSettingsPanel(owner, itemData, createPanel)
+    local oldPanel = itemData.panel
+    local wasCurrent = owner.currentPanel == oldPanel
+    local controlStates = saveControlStates(oldPanel)
+    seedPanelSettings(itemData.page, controlStates)
+    clearPanelTooltips(oldPanel)
+    if wasCurrent then owner:removeChild(oldPanel) end
+
+    itemData.panel = createPanel(itemData.page)
+    replaceOwnerControls(owner, itemData.panel)
+    restoreControlStates(itemData.panel, controlStates)
+    if wasCurrent then showSettingsPanel(owner, itemData.panel) end
 end
 
 local function rebuildSettingsPanels(owner, listbox, createPanel)
     for index = 1, #listbox.items do
-        local listItem = listbox.items[index]
-        local itemData = listItem.item
+        local itemData = listbox.items[index].item
         local page = itemData and itemData.page
         local changed = addTitles(page)
         if changed or (hasCustomizerSettings(page) and itemData and itemData.panel and not itemData.panel.subtitles) then
-            local oldPanel = itemData.panel
-            local wasCurrent = owner.currentPanel == oldPanel
-            local controlStates = saveControlStates(oldPanel)
-            seedPanelSettings(page, controlStates)
-            clearPanelTooltips(oldPanel)
-            if wasCurrent then
-                owner:removeChild(oldPanel)
-            end
-
-            itemData.panel = createPanel(page)
-            replaceOwnerControls(owner, itemData.panel)
-            restoreControlStates(itemData.panel, controlStates)
-            if wasCurrent then
-                owner:addChild(itemData.panel)
-                owner.currentPanel = itemData.panel
-                owner:onPanelChange()
-            end
+            rebuildSettingsPanel(owner, itemData, createPanel)
         end
     end
 end
@@ -663,6 +774,7 @@ end
 local function initialize()
     installSandboxPanelHook()
     installHostPanelHook()
+    installInGameSandboxOptionsHook()
     rebuildSandboxOptionsPage()
     rebuildHostSettingsPage()
 end
@@ -672,7 +784,9 @@ local function installSandboxSettings(lookupStandardEntry, lookupStandardGroupRa
     standardGroupRank = lookupStandardGroupRank
     installSandboxPanelHook()
     installHostPanelHook()
+    installInGameSandboxOptionsHook()
     Events.OnMainMenuEnter.Add(initialize)
+    Events.OnGameStart.Add(installInGameSandboxOptionsHook)
 end
 
 return installSandboxSettings

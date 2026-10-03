@@ -1,7 +1,7 @@
 version=1
 id=3791185259
 title=Character Creation Customizer
-description=[h1]Character Creation Customizer [B42.20][/h1]
+description=[h1]Character Creation Customizer [B42.21][/h1]
 description=Change traits, professions, starting skill levels, and profession rewards in Sandbox Options.
 description=
 description=[h2]Features[/h2]

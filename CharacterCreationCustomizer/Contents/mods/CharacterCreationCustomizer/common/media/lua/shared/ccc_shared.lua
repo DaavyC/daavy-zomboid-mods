@@ -1,27 +1,27 @@
-local existingCustomizer = rawget(_G, "CharacterCreationCustomizer")
-if existingCustomizer then return existingCustomizer end
-
 local M = {}
-rawset(_G, "CharacterCreationCustomizer", M)
 local print = print
-local PROFESSION_OPTION_SUFFIXES = { "Disable", "Cost", "GrantedTraits", "GrantedItems" }
+local OPTION_SUFFIXES = {
+    NonBuyableTraits = table.newarray("Buyable", "Cost"),
+    Traits = table.newarray("Disable", "Cost"),
+    Professions = table.newarray("Disable", "Cost", "GrantedTraits", "GrantedItems"),
+}
 local standardPerks
 local configurationFingerprintTable
-local configurationFingerprintKeys = {}
+local configurationFingerprintKeys = table.newarray()
 local configurationFingerprintKeySet = {}
 local configurationFingerprintValues = {}
 local configurationFingerprintKeyCount
 local configurationFingerprintValue
 
-M.standardPerkNames = {
+M.standardPerkNames = table.newarray(
     "Aiming", "Reloading",
     "Axe", "LongBlade", "Blunt", "Maintenance", "SmallBlade", "SmallBlunt", "Spear",
     "Blacksmith", "Woodwork", "Carving", "Cooking", "Electricity", "Glassmaking",
     "FlintKnapping", "Masonry", "Mechanics", "Pottery", "Tailoring", "MetalWelding",
     "Farming", "Husbandry", "Butchering",
     "Fitness", "Lightfoot", "Nimble", "Sprinting", "Sneak", "Strength",
-    "Doctor", "Fishing", "PlantScavenging", "Tracking", "Trapping",
-}
+    "Doctor", "Fishing", "PlantScavenging", "Tracking", "Trapping"
+)
 
 M.englishTraitLabels = {
     ["adrenaline junkie"] = "adrenalinejunkie",
@@ -117,8 +117,8 @@ M.englishTraitLabels = {
     ["whittler"] = "whittler",
 }
 
-M.originalTraitDefinitions = M.originalTraitDefinitions or {}
-M.originalTraitDefinitionsByShortKey = M.originalTraitDefinitionsByShortKey or {}
+M.originalTraitDefinitions = {}
+M.originalTraitDefinitionsByShortKey = {}
 M.originalProfessionDefinitions = {}
 M.originalProfessionGrants = {}
 
@@ -148,47 +148,29 @@ function M.professionKey(definition)
     return name and tostring(name):gsub("^.*:", "") or tostring(professionType)
 end
 
+function M.traitDefinition(traitType)
+    local definition = CharacterTraitDefinition.getCharacterTraitDefinition(traitType)
+    if not definition then error("Missing trait definition: " .. tostring(traitType)) end
+    return definition
+end
+
 local function optionalOptionMissing(options, section, key)
-    if section == "NonBuyableTraits" then
-        local base = key:match("^(.+)_Buyable$")
-        local suffix = "Buyable"
-        if not base then
-            base = key:match("^(.+)_Cost$")
-            suffix = "Cost"
-        end
-        if not base then return false end
-        local counterpart = suffix == "Buyable" and "Cost" or "Buyable"
-        return not options:getOptionByName("CharacterCreationCustomizer." .. section .. "_"
-            .. base .. "_" .. counterpart)
+    local suffixes = OPTION_SUFFIXES[section]
+    if not suffixes then return false end
+    local base, part = key:match("^(.+)_(%w+)$")
+    if not base then return false end
+    local recognized = false
+    for index = 1, #suffixes do
+        if suffixes[index] == part then recognized = true; break end
     end
-    if section == "Traits" then
-        local base = key:match("^(.+)_Disable$")
-        local suffix = "Disable"
-        if not base then
-            base = key:match("^(.+)_Cost$")
-            suffix = "Cost"
+    if not recognized then return false end
+    local prefix = "CharacterCreationCustomizer." .. section .. "_" .. base .. "_"
+    for index = 1, #suffixes do
+        if suffixes[index] ~= part and options:getOptionByName(prefix .. suffixes[index]) then
+            return false
         end
-        if not base then return false end
-        local counterpart = suffix == "Disable" and "Cost" or "Disable"
-        return not options:getOptionByName("CharacterCreationCustomizer." .. section .. "_"
-            .. base .. "_" .. counterpart)
     end
-    if section == "Professions" then
-        local base = key:match("^(.+)_Disable$")
-            or key:match("^(.+)_Cost$")
-            or key:match("^(.+)_GrantedTraits$")
-            or key:match("^(.+)_GrantedItems$")
-        if not base then return false end
-        for index = 1, #PROFESSION_OPTION_SUFFIXES do
-            local suffix = PROFESSION_OPTION_SUFFIXES[index]
-            if options:getOptionByName("CharacterCreationCustomizer." .. section .. "_"
-                .. base .. "_" .. suffix) then
-                return false
-            end
-        end
-        return true
-    end
-    return false
+    return true
 end
 
 function M.optionValue(section, key)
@@ -211,22 +193,14 @@ end
 local function refreshConfigurationFingerprintKeys(sandbox)
     local keyCount = 0
     local changed = sandbox ~= configurationFingerprintTable
-    for _ in pairs(sandbox) do
+    for key in pairs(sandbox) do
         keyCount = keyCount + 1
-    end
-
-    if not changed and keyCount == configurationFingerprintKeyCount then
-        for key in pairs(sandbox) do
-            if not configurationFingerprintKeySet[key] then
-                changed = true
-                break
-            end
-        end
+        if not configurationFingerprintKeySet[key] then changed = true end
     end
     if not changed and keyCount == configurationFingerprintKeyCount then return end
 
     configurationFingerprintTable = sandbox
-    configurationFingerprintKeys = {}
+    configurationFingerprintKeys = table.newarray()
     configurationFingerprintKeySet = {}
     configurationFingerprintValues = {}
     configurationFingerprintKeyCount = keyCount
@@ -256,7 +230,7 @@ function M.configurationFingerprint()
     end
     if not changed then return configurationFingerprintValue end
 
-    local values = {}
+    local values = table.newarray()
     for index = 1, #configurationFingerprintKeys do
         local key = configurationFingerprintKeys[index]
         if key ~= "Advanced_Debug_Enabled" then
@@ -285,7 +259,7 @@ function M.rememberProfessions()
         local key = M.professionKey(profession)
         M.originalProfessionDefinitions[key] = M.originalProfessionDefinitions[key] or profession
         if not M.originalProfessionGrants[key] then
-            local grants = {}
+            local grants = table.newarray()
             local grantedTraits = profession:getGrantedTraits()
             for j = 0, grantedTraits:size() - 1 do
                 grants[#grants + 1] = grantedTraits:get(j)
@@ -319,20 +293,27 @@ function M.traitValue(definition, suffix)
     local section = original:isFree() and "NonBuyableTraits" or "Traits"
     return M.optionValue(section, M.shortKeyFor(original) .. "_" .. suffix)
 end
-local function isDisabled(value)
+function M.isEnabled(value)
     return value == true or value == 1 or value == "true"
+end
+
+local isEnabled = M.isEnabled
+
+function M.qolEnabled(key)
+    local configured = M.optionValue("QOL", key)
+    return configured == nil or isEnabled(configured)
 end
 
 function M.traitEnabled(definition)
     if M.originalTrait(definition):isFree() then return true end
     local disabledValue = M.traitValue(definition, "Disable")
-    return not isDisabled(disabledValue)
+    return not isEnabled(disabledValue)
 end
 
 function M.traitBuyable(definition)
     local original = M.originalTrait(definition)
     if not original:isFree() then return true end
-    return isDisabled(M.traitValue(original, "Buyable"))
+    return isEnabled(M.traitValue(original, "Buyable"))
 end
 
 function M.traitCost(definition)
@@ -349,7 +330,7 @@ local function preserveTranslatedText(translatedText)
 end
 
 local function listValues(values)
-    local result = {}
+    local result = table.newarray()
     for i = 0, values:size() - 1 do
         result[#result + 1] = values:get(i)
     end
@@ -372,24 +353,29 @@ local function xpBoostValues(definition)
     return result
 end
 
-local function copyTraitDefinition(definition)
+local function copyDefinition(definition)
     return {
         type = definition:getType(),
         name = preserveTranslatedText(definition:getUIName()),
         description = definition:getDescription(),
-        disabledInMultiplayer = definition:isDisabledInMultiplayer(),
-        grantedTraits = listValues(definition:getGrantedTraits()),
         grantedRecipes = listValues(definition:getGrantedRecipes()),
-        mutuallyExclusiveTraits = listValues(definition:getMutuallyExclusiveTraits()),
         xpBoosts = xpBoostValues(definition),
     }
+end
+
+local function copyTraitDefinition(definition)
+    local snapshot = copyDefinition(definition)
+    snapshot.disabledInMultiplayer = definition:isDisabledInMultiplayer()
+    snapshot.grantedTraits = listValues(definition:getGrantedTraits())
+    snapshot.mutuallyExclusiveTraits = listValues(definition:getMutuallyExclusiveTraits())
+    return snapshot
 end
 
 local function applyDefinitionSnapshot(replacement, snapshot)
     if snapshot.description ~= nil then replacement:setDescription(snapshot.description) end
     for index = 1, #snapshot.grantedTraits do replacement:addGrantedTrait(snapshot.grantedTraits[index]) end
     for index = 1, #snapshot.grantedRecipes do replacement:addGrantedRecipe(snapshot.grantedRecipes[index]) end
-    for index = 1, #(snapshot.mutuallyExclusiveTraits or {}) do
+    for index = 1, #(snapshot.mutuallyExclusiveTraits or table.newarray()) do
         replacement:addMutuallyExclusive(snapshot.mutuallyExclusiveTraits[index])
     end
     for perk, level in pairs(snapshot.xpBoosts) do replacement:addXPBoost(perk, level) end
@@ -461,7 +447,7 @@ function M.resolveTraitLabel(value)
 end
 
 function M.parseGrantedTraits(value, profession)
-    local grantedTraits = {}
+    local grantedTraits = table.newarray()
     local seen = {}
     forEachListToken(value, function(token)
         local definition = M.resolveTraitLabel(token)
@@ -493,14 +479,14 @@ function M.professionGrantedTraits(profession)
         if not originalGrants then error("Missing original grants for profession " .. professionKey) end
         return originalGrants
     end
-    if M.normalizeLabel(configured) == "" then return {} end
+    if M.normalizeLabel(configured) == "" then return table.newarray() end
     local grants = M.parseGrantedTraits(configured, profession)
     if #grants == 0 then error("No valid granted traits for profession " .. professionKey) end
     return grants
 end
 
 function M.parseGrantedItems(value, profession)
-    local grantedItems = {}
+    local grantedItems = table.newarray()
     forEachListToken(value, function(token)
         local itemDefinition = ScriptManager.instance:FindItem(token)
         if itemDefinition == nil then
@@ -513,23 +499,35 @@ function M.parseGrantedItems(value, profession)
     return grantedItems
 end
 
+function M.professionGrantedItems(profession)
+    return M.parseGrantedItems(M.professionValue(profession, "GrantedItems"), profession)
+end
+
 function M.professionEnabled(profession)
     if profession and profession:getType() == CharacterProfession.UNEMPLOYED then
         return true
     end
     local disabledValue = M.professionValue(profession, "Disable")
-    return not isDisabled(disabledValue)
+    return not isEnabled(disabledValue)
+end
+
+local function originalProfession(profession)
+    local professionKey = M.professionKey(profession)
+    local original = M.originalProfessionDefinitions[professionKey]
+    if not original then
+        M.rememberProfessions()
+        original = M.originalProfessionDefinitions[professionKey]
+    end
+    if not original then error("Missing original profession definition: " .. professionKey) end
+    return original
 end
 
 function M.professionCost(profession)
-    M.rememberProfessions()
+    local original = originalProfession(profession)
     local configuredCost = M.professionValue(profession, "Cost")
-    local professionKey = M.professionKey(profession)
-    local original = M.originalProfessionDefinitions[professionKey]
-    if not original then error("Missing original profession definition: " .. professionKey) end
     if configuredCost == nil then return original:getCost() end
     local cost = tonumber(configuredCost)
-    if cost == nil then error("Invalid profession cost for " .. professionKey) end
+    if cost == nil then error("Invalid profession cost for " .. M.professionKey(profession)) end
     return cost
 end
 
@@ -542,16 +540,11 @@ local function sameGrantTypes(current, desired)
 end
 
 local function copyProfessionDefinition(definition, grantedTraits, cost)
-    return {
-        type = definition:getType(),
-        name = preserveTranslatedText(definition:getUIName()),
-        description = definition:getDescription(),
-        texture = definition:getTexture(),
-        grantedTraits = grantedTraits,
-        grantedRecipes = listValues(definition:getGrantedRecipes()),
-        xpBoosts = xpBoostValues(definition),
-        cost = cost,
-    }
+    local snapshot = copyDefinition(definition)
+    snapshot.texture = definition:getTexture()
+    snapshot.grantedTraits = grantedTraits
+    snapshot.cost = cost
+    return snapshot
 end
 
 local function applyProfessionSnapshot(snapshot)
@@ -571,9 +564,7 @@ function M.applyProfessionTraits()
     local professions = CharacterProfessionDefinition.getProfessions()
     for i = 0, professions:size() - 1 do
         local profession = professions:get(i)
-        local professionKey = M.professionKey(profession)
-        local original = M.originalProfessionDefinitions[professionKey]
-        if not original then error("Missing original profession definition: " .. professionKey) end
+        local original = originalProfession(profession)
         local grants = M.professionGrantedTraits(profession)
         local desiredCost = M.professionCost(profession)
         if profession:getCost() ~= desiredCost
@@ -585,7 +576,7 @@ end
 
 function M.getStandardPerks()
     if standardPerks ~= nil then return standardPerks end
-    standardPerks = {}
+    standardPerks = table.newarray()
     for index = 1, #M.standardPerkNames do
         local key = M.standardPerkNames[index]
         local perk = Perks[key]
@@ -612,6 +603,10 @@ function M.standardValue(entry)
     return math.max(-10, math.min(10, initialLevel))
 end
 
+function M.clampSkillLevel(level)
+    return math.max(0, math.min(10, level or 0))
+end
+
 function M.fallbackProfession()
     local unemployed
     local professions = CharacterProfessionDefinition.getProfessions()
@@ -629,7 +624,7 @@ end
 function M.configurationSignature()
     M.rememberTraits()
     M.rememberProfessions()
-    local values = {}
+    local values = table.newarray()
     for key, definition in pairs(M.originalTraitDefinitions) do
         values[#values + 1] = "trait:" .. key .. ":"
             .. tostring(M.traitEnabled(definition)) .. ":"
@@ -641,7 +636,7 @@ function M.configurationSignature()
     for i = 0, professions:size() - 1 do
         local profession = professions:get(i)
         M.professionGrantedTraits(profession)
-        M.parseGrantedItems(M.professionValue(profession, "GrantedItems"), profession)
+        M.professionGrantedItems(profession)
         values[#values + 1] = "profession:" .. M.professionKey(profession) .. ":"
             .. tostring(M.professionValue(profession, "GrantedTraits")) .. ":"
             .. tostring(M.professionCost(profession))

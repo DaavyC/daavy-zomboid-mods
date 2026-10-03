@@ -1,8 +1,16 @@
-require "acr_shared"
+local ACR = require "acr_shared"
 
 if not isServer() then return end
 
-local ACR = AdminCharacterRestore
+local PLAYER_KEY_PREFIX = "user:"
+local BOOK_MULTIPLIER_KEY_BY_LEVEL = {
+    [1] = "maxMultiplier1",
+    [3] = "maxMultiplier2",
+    [5] = "maxMultiplier3",
+    [7] = "maxMultiplier4",
+    [9] = "maxMultiplier5"
+}
+
 local modData
 local literatureTypes
 local mediaLineIds
@@ -11,18 +19,20 @@ local function getUsername(player)
     return player and player:getUsername() or nil
 end
 
-local function getSteamID(player)
-    if not player then return nil end
-    local steamID = player:getSteamID()
-    if steamID == nil then return nil end
-    steamID = tostring(steamID)
-    if steamID == "" or steamID == "nil" or steamID == "0" or steamID == "-1" then return nil end
-    return steamID
+local function playerKeyForUsername(username)
+    if type(username) ~= "string" or username == "" then return nil end
+    return PLAYER_KEY_PREFIX .. username
 end
 
-local function getPlayerKey(username, steamID)
-    if not username then return nil end
-    return steamID and ("steam:" .. steamID) or ("user:" .. username)
+local function ensureUsernameRecord(players, username)
+    local key = playerKeyForUsername(username)
+    if not key then return nil end
+    local record = players[key]
+    if not record then
+        record = { username = username, restores = {} }
+        players[key] = record
+    end
+    return record
 end
 
 local function normalizeTraits(traits)
@@ -111,31 +121,26 @@ end
 
 local function normalizeRestores(restores)
     local normalizedRestores = {}
-    local maxSnapshots = ACR.getMaxSnapshotsPerPlayer()
     for index = 1, #restores do
         local snapshot = restores[index]
         local normalized = normalizeSnapshot(snapshot)
         if normalized then table.insert(normalizedRestores, normalized) end
     end
-    while #normalizedRestores > maxSnapshots do
-        table.remove(normalizedRestores)
-    end
     return normalizedRestores
 end
 
 local function normalizeRecordIdentity(storedRecord)
-    if type(storedRecord.username) ~= "string" then storedRecord.username = nil end
-    if storedRecord.steamID ~= nil then
-        local steamType = type(storedRecord.steamID)
-        storedRecord.steamID = (steamType == "string" or steamType == "number") and tostring(storedRecord.steamID)
-            or nil
-        if storedRecord.steamID == "" or storedRecord.steamID == "nil"
-            or storedRecord.steamID == "0" or storedRecord.steamID == "-1" then
-            storedRecord.steamID = nil
-        end
-    end
+    if not playerKeyForUsername(storedRecord.username) then storedRecord.username = nil end
     storedRecord.lastSnapshotId = tonumber(storedRecord.lastSnapshotId)
     storedRecord.latestWorldHour = tonumber(storedRecord.latestWorldHour)
+end
+
+local function trimRestores(record)
+    local maxSnapshots = ACR.getMaxSnapshotsPerPlayer()
+    ACR.debug("Trimming restores", record.username, #record.restores, maxSnapshots)
+    while #record.restores > maxSnapshots do
+        table.remove(record.restores)
+    end
 end
 
 local function migrateRecord(storedRecord)
@@ -151,23 +156,79 @@ local function migrateRecord(storedRecord)
     return storedRecord
 end
 
+local function greatestSnapshotId(record, minimumID)
+    local greatest = math.max(minimumID, tonumber(record.latestSnapshot and record.latestSnapshot.id) or 0)
+    for index = 1, #record.restores do
+        greatest = math.max(greatest, tonumber(record.restores[index].id) or 0)
+    end
+    return greatest
+end
+
+local function snapshotUsername(snapshot, record)
+    return playerKeyForUsername(snapshot.username) and snapshot.username or record.username
+end
+
+local function newestSnapshotFirst(left, right)
+    return (tonumber(left.id) or left.createdAt) > (tonumber(right.id) or right.createdAt)
+end
+
+local function migrateReleasedSnapshots(players, record, seenRestores)
+    for index = 1, #record.restores do
+        local snapshot = record.restores[index]
+        local username = snapshotUsername(snapshot, record)
+        local targetRecord = ensureUsernameRecord(players, username)
+        local seen = seenRestores[username]
+        if not seen then
+            seen = {}
+            seenRestores[username] = seen
+        end
+        appendLegacySnapshot(targetRecord.restores, seen, snapshot)
+    end
+end
+
+local function migrateLatestSnapshot(players, record)
+    local latest = record.latestSnapshot
+    if not latest then return end
+    local targetRecord = ensureUsernameRecord(players, snapshotUsername(latest, record))
+    local current = targetRecord.latestSnapshot
+    if not current or newestSnapshotFirst(latest, current) then
+        targetRecord.latestSnapshot = latest
+        targetRecord.latestWorldHour = record.latestWorldHour
+    end
+end
+
+local function migrateStoredPlayer(players, seenRestores, key, storedRecord)
+    local record = migrateRecord(storedRecord)
+    if not record.username and type(key) == "string" and key:sub(1, #PLAYER_KEY_PREFIX) == PLAYER_KEY_PREFIX then
+        record.username = key:sub(#PLAYER_KEY_PREFIX + 1)
+    end
+    local greatest = greatestSnapshotId(record, tonumber(record.lastSnapshotId) or 0)
+    modData.lastSnapshotId = math.max(modData.lastSnapshotId, greatest)
+    if not ensureUsernameRecord(players, record.username) then
+        players[key] = record
+        print("[AdminCharacterRestore] Stored record has no username; preserved under key", key)
+        return
+    end
+    migrateReleasedSnapshots(players, record, seenRestores)
+    migrateLatestSnapshot(players, record)
+end
+
 local function migrateModData()
     modData.schemaVersion = ACR.DATA_VERSION
-    modData.players = type(modData.players) == "table" and modData.players or {}
+    local storedPlayers = type(modData.players) == "table" and modData.players or {}
+    local players = {}
+    local seenRestores = {}
     modData.lastSnapshotId = tonumber(modData.lastSnapshotId) or 0
 
-    for key, storedRecord in pairs(modData.players) do
-        local record = migrateRecord(storedRecord)
-        local greatest = tonumber(record.lastSnapshotId) or 0
-        greatest = math.max(greatest, tonumber(record.latestSnapshot and record.latestSnapshot.id) or 0)
-        for index = 1, #record.restores do
-            local snapshot = record.restores[index]
-            greatest = math.max(greatest, tonumber(snapshot.id) or 0)
-        end
-        record.lastSnapshotId = greatest
-        modData.lastSnapshotId = math.max(modData.lastSnapshotId, greatest)
-        modData.players[key] = record
+    for key, storedRecord in pairs(storedPlayers) do
+        migrateStoredPlayer(players, seenRestores, key, storedRecord)
     end
+    for _, record in pairs(players) do
+        table.sort(record.restores, newestSnapshotFirst)
+        trimRestores(record)
+        record.lastSnapshotId = greatestSnapshotId(record, tonumber(record.lastSnapshotId) or 0)
+    end
+    modData.players = players
     ACR.debug("ModData migrated", modData.schemaVersion)
 end
 
@@ -178,55 +239,14 @@ local function ensureModData()
     return modData
 end
 
-local function findExistingRecord(players, key, steamID, username)
-    if players[key] then return key, players[key] end
-
-    for storedKey, storedRecord in pairs(players) do
-        if type(storedRecord) == "table" then
-            if steamID and tostring(storedRecord.steamID) == steamID then return storedKey, storedRecord end
-            if username and storedRecord.username == username and (not steamID or not storedRecord.steamID) then
-                return storedKey, storedRecord
-            end
-        end
-    end
-    return nil, nil
-end
-
 local function ensurePlayerRecord(player)
     local username = getUsername(player)
-    local steamID = getSteamID(player)
-    local key = getPlayerKey(username, steamID)
-    if not username or not key then return nil end
-
-    local players = ensureModData().players
-    local storedKey, record = findExistingRecord(players, key, steamID, username)
-    record = record or { restores = {} }
-    record = migrateRecord(record)
-    steamID = steamID or (record.steamID and tostring(record.steamID))
-    local recordKey = steamID and ("steam:" .. steamID) or key
-    record.username = username
-    record.steamID = steamID
-    players[recordKey] = record
-    if storedKey and storedKey ~= recordKey then players[storedKey] = nil end
-    return record
-end
-
-local function trimRestores(record)
-    local maxSnapshots = ACR.getMaxSnapshotsPerPlayer()
-    ACR.debug("Trimming restores", record.username, #record.restores, maxSnapshots)
-    while #record.restores > maxSnapshots do
-        table.remove(record.restores)
-    end
+    return ensureUsernameRecord(ensureModData().players, username)
 end
 
 local function nextSnapshotId(record, timestamp)
-    local greatest = math.max(tonumber(modData.lastSnapshotId) or 0, tonumber(record.lastSnapshotId) or 0)
-    greatest = math.max(greatest, tonumber(record.latestSnapshot and record.latestSnapshot.id) or 0)
-    for index = 1, #record.restores do
-        local storedSnapshot = record.restores[index]
-        greatest = math.max(greatest, tonumber(storedSnapshot.id) or 0)
-    end
-
+    local minimumID = math.max(tonumber(modData.lastSnapshotId) or 0, tonumber(record.lastSnapshotId) or 0)
+    local greatest = greatestSnapshotId(record, minimumID)
     local nextID = math.max(timestamp, greatest + 1)
     record.lastSnapshotId = nextID
     modData.lastSnapshotId = nextID
@@ -366,7 +386,6 @@ local function captureSnapshot(player, record)
     local snapshot = captureRestorableState(player)
     snapshot.id = nextSnapshotId(record, timestamp)
     snapshot.username = getUsername(player)
-    snapshot.steamID = record.steamID
     snapshot.createdAt = timestamp
     snapshot.worldDays = ACR.worldDays()
     return snapshot
@@ -402,8 +421,16 @@ local function isSnapshotDue(record, worldHour, intervalHours)
     return not record.latestWorldHour or worldHour - record.latestWorldHour >= intervalHours
 end
 
+local function onCharacterDeath(character)
+    if instanceof(character, "IsoPlayer") then releaseLatestSnapshot(character) end
+end
+
 local function capturePlayerIfDue(player, worldHour, intervalHours)
-    if not player or player:isDead() then return end
+    if not player then return end
+    if player:isDead() then
+        releaseLatestSnapshot(player)
+        return
+    end
     local record = ensurePlayerRecord(player)
     if not record then return end
 
@@ -475,38 +502,18 @@ local function findSnapshot(playerKey, snapshotID)
     return record, nil
 end
 
-local function findOnlineTarget(record)
+local function findLiveTarget(record)
     local players = getOnlinePlayers()
     if not players then return nil end
-    local usernameMatch
-    local usernameMismatch = false
     local recordUsername = record.username
 
     for index = 0, players:size() - 1 do
         local player = players:get(index)
-        local playerSteamID = getSteamID(player)
-        if record.steamID and playerSteamID then
-            if playerSteamID == tostring(record.steamID) then return player end
-            if getUsername(player) == recordUsername then usernameMismatch = true end
-        elseif getUsername(player) == recordUsername then
-            usernameMatch = player
+        if getUsername(player) == recordUsername then
+            return not player:isDead() and player or nil
         end
     end
-    return usernameMismatch and nil or usernameMatch
-end
-
-local function bookMultiplierKey(level)
-    if level == 1 then
-        return "maxMultiplier1"
-    elseif level == 3 then
-        return "maxMultiplier2"
-    elseif level == 5 then
-        return "maxMultiplier3"
-    elseif level == 7 then
-        return "maxMultiplier4"
-    elseif level == 9 then
-        return "maxMultiplier5"
-    end
+    return nil
 end
 
 local function bookMultiplier(scriptItem)
@@ -514,10 +521,20 @@ local function bookMultiplier(scriptItem)
     local book = SkillBook[scriptItem:getSkillTrained()]
     if not book then return nil end
     local level = scriptItem:getLevelSkillTrained()
-    local multiplierKey = bookMultiplierKey(level)
+    local multiplierKey = BOOK_MULTIPLIER_KEY_BY_LEVEL[level]
     local maxMultiplier = multiplierKey and book[multiplierKey]
     if not maxMultiplier then return nil end
     return book.perk, maxMultiplier, level, scriptItem:getMaxLevelTrained(), scriptItem:getNumberOfPages()
+end
+
+local function readBookMultiplier(player, scriptItem, pagesRead)
+    if not scriptItem then return nil end
+    local perk, maxMultiplier, minLevel, maxLevel, pageCount = bookMultiplier(scriptItem)
+    if not perk or not pageCount or not (pageCount > 0) then return nil end
+    local nextLevel = player:getPerkLevel(perk) + 1
+    if nextLevel < minLevel or nextLevel > maxLevel then return nil end
+    local multiplier = math.floor(math.min(1, pagesRead / pageCount) * 10) * (maxMultiplier / 10)
+    return perk, multiplier, minLevel, maxLevel
 end
 
 local function applyBookMultipliers(player, readPages)
@@ -528,15 +545,11 @@ local function applyBookMultipliers(player, readPages)
         local fullType = literatureTypes[index]
         local pagesRead = tonumber(readPages and readPages[fullType])
         if pagesRead and pagesRead > 0 then
-            local scriptItem = scriptManager:getItem(fullType)
-            if scriptItem then
-                local perk, maxMultiplier, minLevel, maxLevel, pageCount = bookMultiplier(scriptItem)
-                if perk and pageCount and pageCount > 0 then
-                    xp = xp or player:getXp()
-                    local multiplier = math.floor(math.min(1, pagesRead / pageCount) * 10) * (maxMultiplier / 10)
-                    if multiplier > xp:getMultiplier(perk) then
-                        addXpMultiplier(player, perk, multiplier, minLevel, maxLevel)
-                    end
+            local perk, multiplier, minLevel, maxLevel = readBookMultiplier(player, scriptManager:getItem(fullType), pagesRead)
+            if perk then
+                xp = xp or player:getXp()
+                if multiplier > xp:getMultiplier(perk) then
+                    addXpMultiplier(player, perk, multiplier, minLevel, maxLevel)
                 end
             end
         end
@@ -556,22 +569,9 @@ local function validRestoreRequest(args)
     local snapshotID = type(args.snapshotId) == "string" and args.snapshotId or nil
     if not playerKey or not snapshotID or #playerKey == 0 or #snapshotID == 0 then return nil, nil end
     if #playerKey > 128 or #snapshotID > 128 then return nil, nil end
-    local hasSteamPrefix = playerKey:sub(1, 6) == "steam:" and #playerKey > 6
-    local hasUsernamePrefix = playerKey:sub(1, 5) == "user:" and #playerKey > 5
-    if not hasSteamPrefix and not hasUsernamePrefix then return nil, nil end
+    local hasUsernamePrefix = playerKey:sub(1, #PLAYER_KEY_PREFIX) == PLAYER_KEY_PREFIX and #playerKey > #PLAYER_KEY_PREFIX
+    if not hasUsernamePrefix then return nil, nil end
     return playerKey, snapshotID
-end
-
-local function isAdmin(player)
-    if not player then return false end
-    if player:getAccessLevel() == "admin" then return true end
-    local role = player:getRole()
-    return role and role:getName() == "admin"
-end
-
-local function findLiveTarget(record)
-    local target = findOnlineTarget(record)
-    return target and not target:isDead() and target or nil
 end
 
 local function sendRestore(target, snapshot)
@@ -580,24 +580,19 @@ local function sendRestore(target, snapshot)
     sendServerCommand(target, ACR.ID, "ApplySnapshot", { snapshot = snapshot })
 end
 
-local function runSelfCommand(command, requester)
-    if command == "ReleaseLatest" then
-        if requester:isDead() then
-            releaseLatestSnapshot(requester)
-        else
-            ACR.debug("Snapshot release denied: requester is alive")
-        end
-        return true
+local function releaseRequesterSnapshot(requester)
+    if requester:isDead() then
+        releaseLatestSnapshot(requester)
+    else
+        ACR.debug("Snapshot release denied: requester is alive")
     end
+end
 
-    if command == "RefreshLatest" then
-        local record = not requester:isDead() and ensurePlayerRecord(requester)
-        if record and not record.latestSnapshot then
-            saveLatestSnapshot(requester, record)
-        end
-        return true
+local function refreshRequesterSnapshot(requester)
+    local record = not requester:isDead() and ensurePlayerRecord(requester)
+    if record and not record.latestSnapshot then
+        saveLatestSnapshot(requester, record)
     end
-    return false
 end
 
 local function resolveRestoreSource(args)
@@ -615,7 +610,7 @@ local function resolveRestoreSource(args)
     return record, snapshot
 end
 
-local function restoreSnapshotFromCommand(args)
+local function restoreRequestedSnapshot(args)
     local record, snapshot = resolveRestoreSource(args)
     if not snapshot then return end
 
@@ -645,6 +640,18 @@ local function sendSnapshotList(requester)
     ACR.debug("Sent snapshot list", #payload.snapshots, #payload.users)
 end
 
+local function runAdminCommand(command, requester, args)
+    if not ACR.isAdmin(requester) then
+        ACR.debug("Rejected admin command: requester is not an admin", command)
+        return
+    end
+    if command == "ListSnapshots" then
+        sendSnapshotList(requester)
+    elseif command == "RestoreSnapshot" then
+        restoreRequestedSnapshot(args)
+    end
+end
+
 local function onClientCommand(module, command, requester, args)
     if module ~= ACR.ID or type(command) ~= "string" or not requester then return end
     ACR.debug("Received command", command)
@@ -653,18 +660,16 @@ local function onClientCommand(module, command, requester, args)
         ACR.debug("Rejected command: invalid arguments", command)
         return
     end
-    if runSelfCommand(command, requester) then return end
-    if not isAdmin(requester) then
-        ACR.debug("Rejected admin command: requester is not an admin", command)
-        return
-    end
-    if command == "ListSnapshots" then
-        sendSnapshotList(requester)
-    elseif command == "RestoreSnapshot" then
-        restoreSnapshotFromCommand(commandArgs)
+    if command == "ReleaseLatest" then
+        releaseRequesterSnapshot(requester)
+    elseif command == "RefreshLatest" then
+        refreshRequesterSnapshot(requester)
+    else
+        runAdminCommand(command, requester, commandArgs)
     end
 end
 
 Events.OnInitGlobalModData.Add(ensureModData)
+Events.OnCharacterDeath.Add(onCharacterDeath)
 Events.EveryTenMinutes.Add(captureLatestDue)
 Events.OnClientCommand.Add(onClientCommand)

@@ -1,18 +1,14 @@
-require "acr_shared"
+local ACR = require "acr_shared"
 require "ISUI/ISPanel"
 require "ISUI/ISButton"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISComboBox"
 require "ISUI/AdminPanel/ISAdminPanelUI"
 
-local ACR = AdminCharacterRestore
 local FONT_HEIGHT = getTextManager():getFontHeight(UIFont.Small)
 local BUTTON_HEIGHT = FONT_HEIGHT + 8
 local ROW_HEIGHT = FONT_HEIGHT + 16
 local PADDING = 6
-local adminPanelOriginalCreate
-local adminPanelOriginalUpdate
-local adminPanelOriginalOption
 
 local function text(key, ...)
     return getText("UI_AdminCharacterRestore_" .. key, ...)
@@ -20,14 +16,10 @@ end
 
 local function isLocalAdmin()
     if not isClient() then return false end
-    local player = getPlayer()
-    if not player then return false end
-    if player:getAccessLevel() == "admin" then return true end
-    local role = player:getRole()
-    return role and role:getName() == "admin"
+    return ACR.isAdmin(getPlayer())
 end
 
-local function requestList()
+local function requestSnapshotList()
     local player = getPlayer()
     if player then
         ACR.debug("Requesting snapshot list")
@@ -35,15 +27,21 @@ local function requestList()
     end
 end
 
-local function requestRelease(player)
+local function onLocalPlayerDeath(player)
     if player then
         ACR.debug("Requesting latest snapshot release")
         sendClientCommand(player, ACR.ID, "ReleaseLatest", {})
     end
 end
 
-local function onLocalPlayerDeath(player)
-    requestRelease(player)
+local function requestRestore(snapshot)
+    local player = getPlayer()
+    if not player then return end
+    ACR.debug("Requesting restore snapshot", snapshot.snapshotId)
+    sendClientCommand(player, ACR.ID, "RestoreSnapshot", {
+        playerKey = snapshot.playerKey,
+        snapshotId = tostring(snapshot.snapshotId)
+    })
 end
 
 local function onLocalPlayerCreated(playerIndex)
@@ -56,14 +54,15 @@ end
 
 local function drawSnapshotRowContent(list, y, row)
     local color = row.textColor or list.textColor
+    local width = list:getWidth()
     if list.selected == row.index then
-        list:drawSelection(0, y, list:getWidth(), row.height - 1)
+        list:drawSelection(0, y, width, row.height - 1)
         color = row.selectedTextColor or list.selectedTextColor
     elseif list.mouseoverselected == row.index and list:isMouseOver() and not list:isMouseOverScrollBar() then
-        list:drawMouseOverHighlight(0, y, list:getWidth(), row.height - 1)
+        list:drawMouseOverHighlight(0, y, width, row.height - 1)
     end
     list:drawRectBorder(
-        0, y, list:getWidth(), row.height, 0.5, list.borderColor.r, list.borderColor.g, list.borderColor.b
+        0, y, width, row.height, 0.5, list.borderColor.r, list.borderColor.g, list.borderColor.b
     )
     list:drawText(
         row.text, PADDING, y + math.floor((row.height - FONT_HEIGHT) / 2) - 2, color.r, color.g, color.b, color.a,
@@ -74,7 +73,8 @@ end
 local function drawSnapshotRow(list, y, row)
     if not row.height then row.height = list.itemheight end
     if row.height <= 0 then return y + row.height end
-    if y + list:getYScroll() + list.itemheight < 0 or y + list:getYScroll() >= list.height then
+    local yScroll = list:getYScroll()
+    if y + yScroll + list.itemheight < 0 or y + yScroll >= list.height then
         return y + row.height
     end
     drawSnapshotRowContent(list, y, row)
@@ -118,6 +118,12 @@ local function createActionButtons(panel)
     panel:setHeight(panel.close:getBottom() + PADDING)
 end
 
+local function snapshotDisplayName(snapshot)
+    local day = snapshot.worldDays and string.format("%.1f", snapshot.worldDays) or "?"
+    local label = text("Snapshot", day, tostring(snapshot.snapshotId))
+    return type(snapshot.restoreName) == "string" and snapshot.restoreName or label
+end
+
 local AdminCharacterRestoreUI = ISPanel:derive("AdminCharacterRestoreUI")
 
 function AdminCharacterRestoreUI:createChildren()
@@ -142,10 +148,7 @@ function AdminCharacterRestoreUI:filterSnapshots()
     for index = 1, #(self.allSnapshots or {}) do
         local snapshot = self.allSnapshots[index]
         if type(snapshot) == "table" and snapshot.username == user then
-            local day = snapshot.worldDays and string.format("%.1f", snapshot.worldDays) or "?"
-            local label = text("Snapshot", day, tostring(snapshot.snapshotId))
-            local restoreName = type(snapshot.restoreName) == "string" and snapshot.restoreName or label
-            self.snapshots:addItem(restoreName, snapshot)
+            self.snapshots:addItem(snapshotDisplayName(snapshot), snapshot)
         end
     end
 end
@@ -171,13 +174,7 @@ end
 function AdminCharacterRestoreUI:onRestore()
     local selected = self.snapshots.items[self.snapshots.selected]
     if not selected or not selected.item or not selected.item.playerKey then return end
-    local player = getPlayer()
-    if not player then return end
-    ACR.debug("Requesting restore snapshot", selected.item.snapshotId)
-    sendClientCommand(player, ACR.ID, "RestoreSnapshot", {
-        playerKey = selected.item.playerKey,
-        snapshotId = tostring(selected.item.snapshotId)
-    })
+    requestRestore(selected.item)
 end
 
 function AdminCharacterRestoreUI:new(x, y, width, height)
@@ -200,10 +197,10 @@ local function openUI()
     end
     AdminCharacterRestoreUI.instance:setVisible(true)
     AdminCharacterRestoreUI.instance:addToUIManager()
-    requestList()
+    requestSnapshotList()
 end
 
-local function applySnapshot(snapshot)
+local function applySnapshotOnClient(snapshot)
     local player = getPlayer()
     if not player or player:isDead() or type(snapshot) ~= "table" then return end
     snapshot = ACR.copyRestorePayload(snapshot)
@@ -220,9 +217,13 @@ local function onServerCommand(module, command, args)
         AdminCharacterRestoreUI.instance:setData(args and args.snapshots, args and args.users)
         ACR.debug("Updated snapshot list")
     elseif command == "ApplySnapshot" then
-        applySnapshot(args and args.snapshot)
+        applySnapshotOnClient(args and args.snapshot)
     end
 end
+
+local adminPanelOriginalCreate
+local adminPanelOriginalUpdate
+local adminPanelOriginalOption
 
 local function addAdminButton(panel)
     if panel.adminCharacterRestoreBtn or not panel.cancel then return end

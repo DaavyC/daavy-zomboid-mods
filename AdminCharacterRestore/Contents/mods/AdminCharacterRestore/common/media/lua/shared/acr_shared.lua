@@ -1,9 +1,7 @@
-AdminCharacterRestore = AdminCharacterRestore or {}
-
-local ACR = AdminCharacterRestore
+local ACR = {}
 
 ACR.ID = "AdminCharacterRestore"
-ACR.DATA_VERSION = 2
+ACR.DATA_VERSION = 3
 
 local SNAPSHOT_INTERVAL_OPTION = "AdminCharacterRestore.SnapshotIntervalHours"
 local MAX_SNAPSHOTS_OPTION = "AdminCharacterRestore.MaxSnapshotsPerPlayer"
@@ -15,10 +13,10 @@ local MIN_SNAPSHOT_LIMIT = 1
 local MAX_SNAPSHOT_LIMIT = 5
 local print = print
 
-local function isResourceIdentifier(value)
-    if value == "" then return false end
-    local separator = value:find(":", 1, true)
-    return separator ~= 1 and separator ~= #value
+local function isResourceIdentifier(resourceName)
+    if resourceName == "" then return false end
+    local separator = resourceName:find(":", 1, true)
+    return separator ~= 1 and separator ~= #resourceName
 end
 
 local function readSandboxOption(optionName)
@@ -52,6 +50,13 @@ function ACR.isDebugEnabled()
     local sandboxVars = SandboxVars
     local settings = sandboxVars and sandboxVars.AdminCharacterRestore
     return settings ~= nil and settings.Debug == true
+end
+
+function ACR.isAdmin(player)
+    if not player then return false end
+    if player:getAccessLevel() == "admin" then return true end
+    local role = player:getRole()
+    return role and role:getName() == "admin"
 end
 
 function ACR.debug(...)
@@ -101,8 +106,8 @@ function ACR.copyPageMap(pages)
 
     for fullType, pagesRead in pairs(pages) do
         if type(fullType) == "string" then
-            local number = tonumber(pagesRead)
-            if number and number > 0 then copy[fullType] = number end
+            local pageCount = tonumber(pagesRead)
+            if pageCount and pageCount > 0 then copy[fullType] = pageCount end
         end
     end
     return copy
@@ -112,9 +117,9 @@ function ACR.copyPerks(perks)
     local copy = {}
     if type(perks) ~= "table" then return copy end
 
-    for perkName, saved in pairs(perks) do
-        if type(perkName) == "string" and type(saved) == "table" then
-            copy[perkName] = { level = tonumber(saved.level), xp = tonumber(saved.xp) }
+    for perkName, savedPerk in pairs(perks) do
+        if type(perkName) == "string" and type(savedPerk) == "table" then
+            copy[perkName] = { level = tonumber(savedPerk.level), xp = tonumber(savedPerk.xp) }
         end
     end
     return copy
@@ -146,8 +151,7 @@ local function resolvePerk(perkName)
     return perk
 end
 
-local function normalizePerkLevel(player, perk, savedLevel)
-    local targetLevel = math.max(0, math.min(10, math.floor(tonumber(savedLevel) or player:getPerkLevel(perk))))
+local function setPerkLevel(player, perk, targetLevel)
     for _ = 1, 12 do
         local currentLevel = player:getPerkLevel(perk)
         if currentLevel == targetLevel then return end
@@ -159,26 +163,55 @@ local function normalizePerkLevel(player, perk, savedLevel)
     end
 end
 
+local function strengthXPModifier(nutrition)
+    local proteins = nutrition:getProteins()
+    if proteins > 50 and proteins < 300 then return 1.5 end
+    if proteins < -300 then return 0.7 end
+    return 1
+end
+
+local function restorePerkXP(player, xp, perk, targetXP)
+    local nutrition = player:getNutrition()
+    local modifier = perk == Perks.Strength and strengthXPModifier(nutrition) or 1
+    for _ = 1, 2 do
+        local amount = targetXP - xp:getXP(perk)
+        if amount == 0 then return end
+        if perk == Perks.Fitness and not nutrition:canAddFitnessXp() then
+            setPerkLevel(player, perk, 0)
+        end
+        xp:AddXP(perk, amount / modifier, false, false, true, false)
+    end
+end
+
+local function applySavedPerk(player, xp, perk, savedPerk)
+    local targetLevel = math.max(
+        0, math.min(10, math.floor(tonumber(savedPerk.level) or player:getPerkLevel(perk))))
+    local targetXP = tonumber(savedPerk.xp)
+    if targetXP then
+        restorePerkXP(player, xp, perk, targetXP)
+    else
+        xp:setXPToLevel(perk, targetLevel)
+    end
+    setPerkLevel(player, perk, targetLevel)
+    if perk == Perks.Fitness then
+        player:getStats():set(CharacterStat.FITNESS, targetLevel / 5 - 1)
+    end
+end
+
 function ACR.applyPerks(player, perks)
+    local wasAsleep = player:isAsleep()
+    if wasAsleep then player:setAsleep(false) end
     local xp
     for perkName, savedPerk in pairs(perks or {}) do
         if type(savedPerk) == "table" then
             local perk = resolvePerk(perkName)
             if perk then
                 xp = xp or player:getXp()
-                local targetLevel = math.max(
-                    0, math.min(10, math.floor(tonumber(savedPerk.level) or player:getPerkLevel(perk)))
-                )
-                local targetXP = tonumber(savedPerk.xp)
-                if targetXP then
-                    xp:AddXP(perk, targetXP - xp:getXP(perk), false, false, true, false)
-                else
-                    xp:setXPToLevel(perk, targetLevel)
-                end
-                normalizePerkLevel(player, perk, targetLevel)
+                applySavedPerk(player, xp, perk, savedPerk)
             end
         end
     end
+    if wasAsleep then player:setAsleep(true) end
 end
 
 function ACR.applyProfession(player, professionName)
@@ -186,7 +219,14 @@ function ACR.applyProfession(player, professionName)
     local location = ResourceLocation.of(professionName)
     local profession = CharacterProfession.get(location)
     local definition = profession and CharacterProfessionDefinition.getCharacterProfessionDefinition(profession)
-    if definition then player:getDescriptor():setCharacterProfession(definition:getType()) end
+    if not definition then return end
+    local descriptor = player:getDescriptor()
+    descriptor:setCharacterProfession(definition:getType())
+    descriptor:setProfessionSkills(definition)
+    local knownTraits = player:getCharacterTraits():getKnownTraits()
+    for index = 0, knownTraits:size() - 1 do
+        player:modifyTraitXPBoost(knownTraits:get(index), false)
+    end
 end
 
 local function resolveTrait(traitName)
@@ -261,25 +301,33 @@ local function applyReadPages(player, savedReadPages)
     return mergedReadPages
 end
 
-local function applyReadCollections(player, snapshot)
+local function applyReadBooks(player, books)
     local alreadyReadBooks = player:getAlreadyReadBook()
-    for index = 1, #(snapshot.alreadyReadBooks or {}) do
-        local book = snapshot.alreadyReadBooks[index]
+    for index = 1, #(books or {}) do
+        local book = books[index]
         if not alreadyReadBooks:contains(book) then alreadyReadBooks:add(book) end
     end
-    for index = 1, #(snapshot.readPrintMedia or {}) do
-        local media = snapshot.readPrintMedia[index]
+end
+
+local function applyReadPrintMedia(player, printMedia)
+    for index = 1, #(printMedia or {}) do
+        local media = printMedia[index]
         player:addReadPrintMedia(media)
     end
-    for index = 1, #(snapshot.knownMediaLines or {}) do
-        local lineID = snapshot.knownMediaLines[index]
+end
+
+local function applyKnownMediaLines(player, mediaLines)
+    for index = 1, #(mediaLines or {}) do
+        local lineID = mediaLines[index]
         if not player:isKnownMediaLine(lineID) then player:addKnownMediaLine(lineID) end
     end
 end
 
 function ACR.applyReadState(player, snapshot)
     local readPages = applyReadPages(player, snapshot.readPages)
-    applyReadCollections(player, snapshot)
+    applyReadBooks(player, snapshot.alreadyReadBooks)
+    applyReadPrintMedia(player, snapshot.readPrintMedia)
+    applyKnownMediaLines(player, snapshot.knownMediaLines)
     return readPages
 end
 
@@ -299,3 +347,5 @@ function ACR.applyRestoreState(player, snapshot)
     ACR.applyBasicStats(player, snapshot)
     return readPages
 end
+
+return ACR

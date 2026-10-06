@@ -2,6 +2,7 @@ local MIN_MULTIPLIER = 0.25
 local MAX_MULTIPLIER = 10.0
 local INSTANT_MULTIPLIER = -1.0
 local INSTANT_DURATION = 0.01
+local DURATION_RELATIVE_TOLERANCE = 0.0000001
 local WOODCUTTING_BASE_EVENT_INTERVAL = 1500
 local OPTION_PREFIX = "FasterActions."
 local SAFEHOUSE_OPTION_PREFIX = OPTION_PREFIX .. "Safehouse"
@@ -19,12 +20,13 @@ local CORPSE_DRAGGING_MAX_MULTIPLIER = 10.0
 local CORPSE_DRAGGING_SPEED_TOLERANCE = 0.005
 local initializedCorpseDraggingPlayers = setmetatable({}, { __mode = "k" })
 local activeCorpseDraggingTargets = setmetatable({}, { __mode = "k" })
-local SERVER_MECHANIC_DURATION_MARKER = "FasterActionsMechanicDurationAdjusted"
 local SAFEHOUSE_ACTION_MARKER = "FasterActionsSafehouseActive"
 local ADJUSTED_DURATION_INPUT_MARKER = "FasterActionsAdjustedDurationInput"
 local ADJUSTED_DURATION_OUTPUT_MARKER = "FasterActionsAdjustedDurationOutput"
 local ADJUSTED_DURATION_SAFEHOUSE_MARKER = "FasterActionsAdjustedDurationSafehouse"
 local VISUAL_DURATION_MARKER = "FasterActionsVisualDuration"
+local ANIMATION_PROGRESS_MARKER = "FasterActionsAnimationProgress"
+local REMOTE_PROGRESS_MARKER = "FasterActionsRemoteProgress"
 local INSTANT_HOOD_OPTION = OPTION_PREFIX .. "InstantHood"
 local INSTANT_MAP_OPTION = OPTION_PREFIX .. "InstantMap"
 local WOODCUTTING_MULTIPLIER_MARKER = "FasterActionsWoodcuttingMultiplier"
@@ -585,9 +587,6 @@ local function getAppliedDuration(action, actionTime, category, visualDuration)
     if isClient() and isNativeRemoteAction(action) then
         return -1
     end
-    if isServer() and category == "Mechanic" and isNativeRemoteAction(action) then
-        action[SERVER_MECHANIC_DURATION_MARKER] = true
-    end
     if (isServer() or isClient()) and (category == "Inventory" or category == "Equip") then
         return actionTime
     end
@@ -601,7 +600,16 @@ local function scaleActionDuration(action, actionTime, category, multiplier)
 
     local visualDuration = getVisualDuration(action, actionTime, multiplier)
     action[VISUAL_DURATION_MARKER] = visualDuration
+    action[ANIMATION_PROGRESS_MARKER] = isInventoryAnimationAction(action)
+    action[REMOTE_PROGRESS_MARKER] = category ~= "Inventory" and category ~= "Equip"
+        and isNativeRemoteAction(action)
     return getAppliedDuration(action, actionTime, category, visualDuration)
+end
+
+local function durationsMatch(duration, referenceDuration)
+    return duration == referenceDuration
+        or math.abs(duration - referenceDuration)
+            <= math.max(1, math.abs(referenceDuration)) * DURATION_RELATIVE_TOLERANCE
 end
 
 local function getCachedAdjustedDuration(action, maxTime)
@@ -615,10 +623,10 @@ local function getCachedAdjustedDuration(action, maxTime)
     if cachedState == nil or cachedState ~= isActionInSafehouse(action) then
         return nil
     end
-    if cachedInput == maxTime then
+    if durationsMatch(maxTime, cachedInput) then
         return cachedDuration
     end
-    if cachedDuration == maxTime then
+    if durationsMatch(maxTime, cachedDuration) then
         return maxTime
     end
     return nil
@@ -630,7 +638,7 @@ local function isFinalDurationAdjustment(action, maxTime)
     end
 
     local currentMaxTime = action and action.maxTime
-    return type(currentMaxTime) ~= "number" or currentMaxTime == maxTime
+    return type(currentMaxTime) ~= "number" or durationsMatch(maxTime, currentMaxTime)
 end
 
 local function installInstantHoodHook()

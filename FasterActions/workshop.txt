@@ -6,17 +6,16 @@ description=Change how long actions take with separate speed settings for each c
 description=
 description=[h2]Features[/h2]
 description=[list]
-description=[*]Set a different speed for each category: crafting, blacksmithing, building, woodcutting, mechanic, welding, ripping, sawing, carving, knapping, cleaning, tailoring, equip, inventory, and other actions. Building, mechanic, equip, and inventory speeds require the Synapse API in multiplayer.
+description=[*]Set a different speed for each category: crafting, blacksmithing, building, woodcutting, mechanic, welding, ripping, sawing, carving, knapping, cleaning, tailoring, equip, inventory, and other actions. Building, equip, and inventory speeds require the Synapse API in multiplayer.
 description=[*]Enable separate speed settings inside safehouses. Disabled by default.
 description=[*]Set the speed for grabbing, dragging, dropping, and throwing corpses from 0.25x to 10x.
 description=[*]Choose speeds from 0.25x to 10x. Use -1 for instant actions.
 description=[*]Enable Instant hood to open vehicle hoods instantly.
 description=[*]Enable Instant map to open the world map instantly.
-description=[*]Progress bars follow the selected action speed. (Requires Synapse API)
 description=[/list]
 description=
 description=[h2]Synapse API[/h2]
-description=The optional [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3793697487]Synapse API[/url] Java mod enables Building, Mechanic, Equip, and Inventory speed in multiplayer. It also makes progress bars follow the selected speed.
+description=The optional [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3793697487]Synapse API[/url] Java mod enables Building, Equip, and Inventory speed in multiplayer, including their Safehouse settings.
 description=
 description=[h2]Support[/h2]
 description=Join the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url] for help and feedback.

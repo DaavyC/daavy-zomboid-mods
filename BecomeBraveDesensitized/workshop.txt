@@ -1,0 +1,20 @@
+version=1
+id=3815096056
+title=Become Brave & Desensitized
+description=[h1]Become Brave & Desensitized [B42.21][/h1]
+description=Earn Brave and Desensitized by killing zombies.
+description=
+description=[h2]Features[/h2]
+description=[list]
+description=[*]Kill zombies to earn Brave and Desensitized.
+description=[*]Fear traits raise the kill requirement. Choose whether they block Brave. You can configure Reluctant Fighter to raise the requirement, but it never blocks Brave.
+description=[*]Earning either trait removes Cowardly, Agoraphobic, Claustrophobic, and Fear of Blood. Earning Desensitized also removes Adrenaline Junkie.
+description=[*]Hunter and Target Shooter reduce the kill requirements for both traits. Brave reduces only the requirement for Desensitized.
+description=[*]Doctor, Lumberjack, Nurse, Park Ranger, Police Officer, and Security Guard each reduce the kill requirements for both traits.
+description=[*]Enable Early Rewards for a chance to earn either trait before you reach the required kill count.
+description=[/list]
+description=
+description=[h2]Credits[/h2]
+description=This mod was inspired by [b]Become Brave and Become Desensitized[/b] by [url=https://steamcommunity.com/id/tri2580]Monkey[/url].
+tags=Build 42;Balance;Multiplayer;Traits
+visibility=public

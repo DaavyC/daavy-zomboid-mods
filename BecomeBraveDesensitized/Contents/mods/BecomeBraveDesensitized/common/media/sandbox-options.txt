@@ -1,0 +1,193 @@
+VERSION = 1,
+
+option BecomeBraveDesensitized.BraveKills {
+    type = integer,
+    min = -1,
+    max = 1000000,
+    default = 2500,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_BraveKills,
+}
+
+option BecomeBraveDesensitized.DesensitizedKills {
+    type = integer,
+    min = -1,
+    max = 1000000,
+    default = 5000,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_DesensitizedKills,
+}
+
+option BecomeBraveDesensitized.BraveBlock {
+    type = boolean,
+    default = true,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_BraveBlock,
+}
+
+option BecomeBraveDesensitized.CowardlyExtraKills {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 1000,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_CowardlyExtraKills,
+}
+
+option BecomeBraveDesensitized.AgoraphobicExtraKills {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 4000,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_AgoraphobicExtraKills,
+}
+
+option BecomeBraveDesensitized.ClaustrophobicExtraKills {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 4000,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_ClaustrophobicExtraKills,
+}
+
+option BecomeBraveDesensitized.FearOfBloodExtraKills {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 2000,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_FearOfBloodExtraKills,
+}
+
+option BecomeBraveDesensitized.ReluctantFighterExtraKills {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 0,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_ReluctantFighterExtraKills,
+}
+
+option BecomeBraveDesensitized.HunterKillReduction {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 500,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_HunterKillReduction,
+}
+
+option BecomeBraveDesensitized.BraveKillReduction {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 1500,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_BraveKillReduction,
+}
+
+option BecomeBraveDesensitized.TargetShooterKillReduction {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 250,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_TargetShooterKillReduction,
+}
+
+option BecomeBraveDesensitized.DoctorKillReduction {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 500,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_DoctorKillReduction,
+}
+
+option BecomeBraveDesensitized.LumberjackKillReduction {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 250,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_LumberjackKillReduction,
+}
+
+option BecomeBraveDesensitized.NurseKillReduction {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 250,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_NurseKillReduction,
+}
+
+option BecomeBraveDesensitized.ParkRangerKillReduction {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 500,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_ParkRangerKillReduction,
+}
+
+option BecomeBraveDesensitized.PoliceOfficerKillReduction {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 1000,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_PoliceOfficerKillReduction,
+}
+
+option BecomeBraveDesensitized.SecurityGuardKillReduction {
+    type = integer,
+    min = 0,
+    max = 1000000,
+    default = 500,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_SecurityGuardKillReduction,
+}
+
+option BecomeBraveDesensitized.EarlyTraits {
+    type = boolean,
+    default = false,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_EarlyTraits,
+}
+
+option BecomeBraveDesensitized.BraveMinKills {
+    type = integer,
+    min = -1,
+    max = 1000000,
+    default = 1000,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_BraveMinKills,
+}
+
+option BecomeBraveDesensitized.DesensitizedMinKills {
+    type = integer,
+    min = -1,
+    max = 1000000,
+    default = 2500,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_DesensitizedMinKills,
+}
+
+option BecomeBraveDesensitized.KillsPerAttempt {
+    type = integer,
+    min = 1,
+    max = 1000000,
+    default = 5,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_KillsPerAttempt,
+}
+
+option BecomeBraveDesensitized.Debug {
+    type = boolean,
+    default = false,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_Debug,
+}

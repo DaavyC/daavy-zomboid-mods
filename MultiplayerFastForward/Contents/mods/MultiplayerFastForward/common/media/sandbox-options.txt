@@ -3,7 +3,7 @@ VERSION = 1,
 option MultiplayerFastForward.Speed1 {
     type = integer,
     min = 2,
-    max = 100,
+    max = 1000,
     default = 5,
     page = MultiplayerFastForward,
     translation = MultiplayerFastForward_Speed1,
@@ -12,7 +12,7 @@ option MultiplayerFastForward.Speed1 {
 option MultiplayerFastForward.Speed2 {
     type = integer,
     min = 2,
-    max = 100,
+    max = 1000,
     default = 20,
     page = MultiplayerFastForward,
     translation = MultiplayerFastForward_Speed2,
@@ -21,7 +21,7 @@ option MultiplayerFastForward.Speed2 {
 option MultiplayerFastForward.Speed3 {
     type = integer,
     min = 2,
-    max = 100,
+    max = 1000,
     default = 40,
     page = MultiplayerFastForward,
     translation = MultiplayerFastForward_Speed3,

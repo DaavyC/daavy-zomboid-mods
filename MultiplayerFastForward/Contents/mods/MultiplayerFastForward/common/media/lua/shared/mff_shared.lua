@@ -60,7 +60,7 @@ function Shared.isValidSpeed(speed)
 end
 
 function Shared.isValidMultiplier(multiplier)
-    return type(multiplier) == "number" and multiplier >= 2 and multiplier <= 100 and multiplier % 1 == 0
+    return type(multiplier) == "number" and multiplier >= 2 and multiplier <= 1000 and multiplier % 1 == 0
 end
 
 function Shared.isValidMinimumPlayers(minimum)

@@ -1,0 +1,19 @@
+version=1
+id=3816322056
+title=Moonlight Phases
+description=[h1]Moonlight Phases [B42.21][/h1]
+description=Sets [b]darkness at night[/b] based on the current moon phase.
+description=
+description=[h2]Features[/h2]
+description=[list]
+description=[*]Choose Pitch Black, Dark, Normal, or Bright for each of the eight moon phases.
+description=[*]Choose a darkness setting for each weather group. Weather settings apply only when they make the night darker.
+description=[*]Show the moon phase next to the clock. When weather darkens the night, a cloud icon replaces the moon. Hover over the display for details.
+description=[*]Choose how many hours before sunset to show tonight's moon phase.
+description=[/list]
+description=
+description=[h2]Support[/h2]
+description=Get help or share feedback on the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url].
+description=[url=https://ko-fi.com/C1I7209LY1][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
+tags=Build 42;Balance;Interface;Multiplayer;Realistic
+visibility=public

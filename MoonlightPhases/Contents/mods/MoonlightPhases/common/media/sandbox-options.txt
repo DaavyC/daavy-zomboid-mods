@@ -1,0 +1,148 @@
+VERSION = 1,
+
+option MoonlightPhases.NewMoon {
+    type = enum,
+    numValues = 4,
+    default = 1,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_NewMoon,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.WaxingCrescent {
+    type = enum,
+    numValues = 4,
+    default = 2,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_WaxingCrescent,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.FirstQuarter {
+    type = enum,
+    numValues = 4,
+    default = 3,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_FirstQuarter,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.WaxingGibbous {
+    type = enum,
+    numValues = 4,
+    default = 3,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_WaxingGibbous,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.FullMoon {
+    type = enum,
+    numValues = 4,
+    default = 4,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_FullMoon,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.WaningGibbous {
+    type = enum,
+    numValues = 4,
+    default = 3,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_WaningGibbous,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.ThirdQuarter {
+    type = enum,
+    numValues = 4,
+    default = 3,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_ThirdQuarter,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.WaningCrescent {
+    type = enum,
+    numValues = 4,
+    default = 2,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_WaningCrescent,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.WeatherEnabled {
+    type = boolean,
+    default = true,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_WeatherEnabled,
+}
+
+option MoonlightPhases.WeatherSnow {
+    type = enum,
+    numValues = 4,
+    default = 3,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_WeatherSnow,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.WeatherCloudsFog {
+    type = enum,
+    numValues = 4,
+    default = 2,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_WeatherCloudsFog,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.WeatherLightRain {
+    type = enum,
+    numValues = 4,
+    default = 2,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_WeatherLightRain,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.WeatherBlizzard {
+    type = enum,
+    numValues = 4,
+    default = 2,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_WeatherBlizzard,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.WeatherHeavyRain {
+    type = enum,
+    numValues = 4,
+    default = 1,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_WeatherHeavyRain,
+    valueTranslation = MoonlightPhases_Darkness,
+}
+
+option MoonlightPhases.InterfaceEnabled {
+    type = boolean,
+    default = true,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_InterfaceEnabled,
+}
+
+option MoonlightPhases.RevealHours {
+    type = integer,
+    min = -1,
+    max = 24,
+    default = -1,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_RevealHours,
+}
+
+option MoonlightPhases.Debug {
+    type = boolean,
+    default = false,
+    page = MoonlightPhases,
+    translation = MoonlightPhases_Debug,
+}

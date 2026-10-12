@@ -663,6 +663,15 @@ local function installAdjustMaxTimeHook()
         return self:FasterActionsOriginalBegin()
     end
 
+    ISBaseTimedAction.FasterActionsOriginalCreate = ISBaseTimedAction.create
+    function ISBaseTimedAction:create()
+        local maxTime = self.maxTime
+        self:FasterActionsOriginalCreate()
+        if isClient() and self.maxTime == -1 then
+            self.maxTime = maxTime
+        end
+    end
+
     ISBaseTimedAction.FasterActionsOriginalAdjustMaxTime = ISBaseTimedAction.adjustMaxTime
     function ISBaseTimedAction:adjustMaxTime(maxTime)
         local cachedDuration = getCachedAdjustedDuration(self, maxTime)

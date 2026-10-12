@@ -540,6 +540,9 @@ local function captureSafehouseState(action)
 end
 
 local function getCategoryMultiplier(category, action)
+    if category == "Other" and matchesPattern(getActionType(action), "Read") then
+        return 1.0
+    end
     local useSafehouseSettings = isActionInSafehouse(action) and isFeatureEnabled(SAFEHOUSE_ENABLED_OPTION)
     local optionPrefix = useSafehouseSettings and SAFEHOUSE_OPTION_PREFIX or OPTION_PREFIX
     local option = SANDBOX_OPTIONS:getOptionByName(optionPrefix .. category .. "Multiplier")

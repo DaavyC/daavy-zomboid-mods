@@ -587,6 +587,9 @@ local function getAppliedDuration(action, actionTime, category, visualDuration)
     if category == "Equip" and isInventoryAnimationAction(action) then
         return visualDuration
     end
+    if getActionType(action) == "ISReadABook" then
+        return visualDuration
+    end
     if isClient() and isNativeRemoteAction(action) then
         return -1
     end
@@ -672,6 +675,10 @@ local function installAdjustMaxTimeHook()
         self:FasterActionsOriginalCreate()
         if isClient() and self.maxTime == -1 then
             self.maxTime = maxTime
+            local visualDuration = self[VISUAL_DURATION_MARKER]
+            if self.relaunchWithDelta and visualDuration and visualDuration > 0 then
+                self.action:setTime(visualDuration)
+            end
         end
     end
 

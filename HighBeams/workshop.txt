@@ -16,7 +16,7 @@ description=[/list]
 description=
 description=[h2]Support[/h2]
 description=Join the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url] for help and feedback.
-description=[url=https://ko-fi.com/C1I7209LY1][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
+description=[url=https://ko-fi.com/daavy][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
 description=
 description=[h2]Credits[/h2]
 description=This mod is heavily [b]inspired[/b] by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3438126404]Nepenthe's High Beams[/url].

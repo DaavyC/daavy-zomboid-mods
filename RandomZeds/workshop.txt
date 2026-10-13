@@ -20,7 +20,7 @@ description=Set [b]zombie:getModData().RandomZedsExcluded = true[/b] to keep a z
 description=
 description=[h2]Support[/h2]
 description=Join the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url] for help and feedback.
-description=[url=https://ko-fi.com/C1I7209LY1][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
+description=[url=https://ko-fi.com/daavy][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
 description=
 description=[h2]Credits[/h2]
 description=This mod was inspired by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2818577583]Random Zombies[/url] by [b]belette[/b] and [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2888099799]Random Zombies - Day and Night[/url] by [b]Crius[/b].

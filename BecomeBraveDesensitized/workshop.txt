@@ -14,6 +14,10 @@ description=[*]Doctor, Lumberjack, Nurse, Park Ranger, Police Officer, and Secur
 description=[*]Enable Early Rewards for a chance to earn either trait before you reach the required kill count.
 description=[/list]
 description=
+description=[h2]Support[/h2]
+description=Join the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url] for help and feedback.
+description=[url=https://ko-fi.com/daavy][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
+description=
 description=[h2]Credits[/h2]
 description=This mod was inspired by [b]Become Brave and Become Desensitized[/b] by [url=https://steamcommunity.com/id/tri2580]Monkey[/url].
 tags=Build 42;Balance;Multiplayer;Traits

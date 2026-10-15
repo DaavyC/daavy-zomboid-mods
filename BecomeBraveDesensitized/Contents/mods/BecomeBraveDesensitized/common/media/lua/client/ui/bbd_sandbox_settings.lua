@@ -14,7 +14,27 @@ local titles = {
     [Rules.ID .. ".EarlyTraits"] = Rules.ID .. "_Chance",
     [Rules.ID .. ".Debug"] = Rules.ID .. "_Advanced",
 }
-local minimumOptions = newarray(Rules.ID .. ".BraveMinKills", Rules.ID .. ".DesensitizedMinKills")
+local function lockEntry(control, enabled)
+    control:setEditable(enabled)
+end
+
+local function lockTickBox(control, enabled)
+    control:disableOption(control.optionsIndex[1], not enabled)
+    if not enabled then control:setSelected(1, false) end
+end
+
+local dependencies = newarray(
+    {
+        toggle = Rules.ID .. ".EarlyTraits",
+        targets = newarray(Rules.ID .. ".BraveMinKills", Rules.ID .. ".DesensitizedMinKills"),
+        lock = lockEntry,
+    },
+    {
+        toggle = Rules.ID .. ".BraveBlock",
+        targets = newarray(Rules.ID .. ".ReluctantFighterBlock"),
+        lock = lockTickBox,
+    }
+)
 local menuHooked = false
 local hostHooked = false
 local adminHooked = false
@@ -128,28 +148,34 @@ local function centerPanel(panel, page)
     centerHeaders(panel)
 end
 
-local function updateMinimumControls(panel)
-    local toggle = panel.controls[Rules.ID .. ".EarlyTraits"]
-    local enabled = toggle:isSelected(1)
-    if panel.bbdEarlyTraitsEnabled == enabled then return end
-    panel.bbdEarlyTraitsEnabled = enabled
-    local color = enabled and 1 or 0.6
-    for index = 1, #minimumOptions do
-        local name = minimumOptions[index]
-        panel.controls[name]:setEditable(enabled)
-        panel.labels[name]:setColor(color, color, color)
+local function updateDependentControls(panel)
+    local states = panel.bbdDependencyStates
+    for index = 1, #dependencies do
+        local dependency = dependencies[index]
+        local enabled = panel.controls[dependency.toggle]:isSelected(1)
+        if states[index] ~= enabled then
+            states[index] = enabled
+            local color = enabled and 1 or 0.6
+            local targets = dependency.targets
+            for targetIndex = 1, #targets do
+                local name = targets[targetIndex]
+                dependency.lock(panel.controls[name], enabled)
+                panel.labels[name]:setColor(color, color, color)
+            end
+        end
     end
 end
 
-local function attachEarlyTraitControls(panel, page)
-    if not isModPage(page) or panel.bbdEarlyTraitsHooked then return end
+local function attachDependentControls(panel, page)
+    if not isModPage(page) or panel.bbdDependenciesHooked then return end
     local original = panel.prerender
     panel.prerender = function(self)
-        updateMinimumControls(self)
+        updateDependentControls(self)
         original(self)
     end
-    panel.bbdEarlyTraitsHooked = true
-    updateMinimumControls(panel)
+    panel.bbdDependenciesHooked = true
+    panel.bbdDependencyStates = {}
+    updateDependentControls(panel)
 end
 
 local function installMenuHook()
@@ -158,7 +184,7 @@ local function installMenuHook()
     SandboxOptionsScreen.createPanel = function(self, page)
         local styled = preparePage(page)
         local panel = original(self, styled)
-        attachEarlyTraitControls(panel, styled)
+        attachDependentControls(panel, styled)
         return panel
     end
     menuHooked = true
@@ -169,7 +195,7 @@ local function replaceHostPanel(editor, entry, page)
     if wasCurrent then editor:removeChild(entry.panel) end
     entry.page = page
     entry.panel = editor:createPanel({ name = "Sandbox" }, page)
-    attachEarlyTraitControls(entry.panel, page)
+    attachDependentControls(entry.panel, page)
     if wasCurrent then
         editor:addChild(entry.panel)
         editor.currentPanel = entry.panel
@@ -208,7 +234,7 @@ local function installAdminHook()
         local styled = prepareAdminPage(page)
         local panel = original(self, styled)
         addTitles(panel, styled)
-        attachEarlyTraitControls(panel, styled)
+        attachDependentControls(panel, styled)
         centerPanel(panel, styled)
         return panel
     end

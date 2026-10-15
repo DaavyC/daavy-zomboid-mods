@@ -25,7 +25,9 @@ Rules.fears = newarray(
     { trait = CharacterTrait.HEMOPHOBIC, option = "FearOfBloodExtraKills", blocksBrave = true }
 )
 Rules.penalties = newarray(Rules.fears)
-Rules.penalties[#Rules.penalties + 1] = { trait = CharacterTrait.PACIFIST, option = "ReluctantFighterExtraKills" }
+Rules.penalties[#Rules.penalties + 1] = {
+    trait = CharacterTrait.PACIFIST, option = "ReluctantFighterExtraKills", blockOption = "ReluctantFighterBlock"
+}
 local benefits = newarray(
     { trait = CharacterTrait.HUNTER, option = "HunterKillReduction" },
     { trait = CharacterTrait.TARGET_SHOOTER, option = "TargetShooterKillReduction" },
@@ -40,7 +42,7 @@ local professionOptions = {
     [CharacterProfession.SECURITY_GUARD] = "SecurityGuardKillReduction",
 }
 Rules.synchronizedTraits = newarray(
-    CharacterTrait.BRAVE, CharacterTrait.DESENSITIZED, CharacterTrait.ADRENALINE_JUNKIE
+    CharacterTrait.BRAVE, CharacterTrait.DESENSITIZED, CharacterTrait.ADRENALINE_JUNKIE, CharacterTrait.PACIFIST
 )
 for index = 1, #Rules.fears do
     local synchronizedTraits = Rules.synchronizedTraits
@@ -49,17 +51,19 @@ end
 
 local function extraRequirement(traits, options)
     local extraKills = 0
-    local hasFear = false
+    local blocksBrave = false
     local penalties = Rules.penalties
     for index = 1, #penalties do
         local penalty = penalties[index]
         if traits:get(penalty.trait) then
-            hasFear = hasFear or penalty.blocksBrave == true
+            local blockOption = penalty.blockOption
+            local blocks = penalty.blocksBrave == true or (blockOption ~= nil and options[blockOption] == true)
+            blocksBrave = blocksBrave or blocks
             local extra = options[penalty.option]
             if extra > 0 then extraKills = extraKills + extra end
         end
     end
-    return extraKills, hasFear and options.BraveBlock ~= false
+    return extraKills, blocksBrave and options.BraveBlock ~= false
 end
 
 local function traitReductions(traits, options)
@@ -189,6 +193,7 @@ function Rules.grant(player, reward)
     local traits = player:getCharacterTraits()
     local fears = Rules.fears
     for index = 1, #fears do traits:remove(fears[index].trait) end
+    if SandboxVars[Rules.ID].RemoveReluctantFighter then traits:remove(CharacterTrait.PACIFIST) end
     if reward == CharacterTrait.DESENSITIZED then
         traits:remove(CharacterTrait.BRAVE)
         traits:remove(CharacterTrait.ADRENALINE_JUNKIE)

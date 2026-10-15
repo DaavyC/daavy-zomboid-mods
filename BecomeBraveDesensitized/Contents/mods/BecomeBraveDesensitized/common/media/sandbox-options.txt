@@ -25,6 +25,20 @@ option BecomeBraveDesensitized.BraveBlock {
     translation = BecomeBraveDesensitized_BraveBlock,
 }
 
+option BecomeBraveDesensitized.RemoveReluctantFighter {
+    type = boolean,
+    default = false,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_RemoveReluctantFighter,
+}
+
+option BecomeBraveDesensitized.ReluctantFighterBlock {
+    type = boolean,
+    default = false,
+    page = BecomeBraveDesensitized,
+    translation = BecomeBraveDesensitized_ReluctantFighterBlock,
+}
+
 option BecomeBraveDesensitized.CowardlyExtraKills {
     type = integer,
     min = 0,

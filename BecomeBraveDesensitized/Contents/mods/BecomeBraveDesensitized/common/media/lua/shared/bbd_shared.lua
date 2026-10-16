@@ -8,6 +8,7 @@ local floor = math.floor
 local max = math.max
 
 Rules.ID = "BecomeBraveDesensitized"
+local grantedBraveKey = Rules.ID .. "GrantedBrave"
 
 function Rules.isDebugEnabled()
     local options = SandboxVars and SandboxVars[Rules.ID]
@@ -31,7 +32,7 @@ Rules.penalties[#Rules.penalties + 1] = {
 local benefits = newarray(
     { trait = CharacterTrait.HUNTER, option = "HunterKillReduction" },
     { trait = CharacterTrait.TARGET_SHOOTER, option = "TargetShooterKillReduction" },
-    { trait = CharacterTrait.BRAVE, option = "BraveKillReduction", desensitizedOnly = true }
+    { trait = CharacterTrait.BRAVE, option = "BraveKillReduction", desensitizedOnly = true, startingOnly = true }
 )
 local professionOptions = {
     [CharacterProfession.DOCTOR] = "DoctorKillReduction",
@@ -66,11 +67,11 @@ local function extraRequirement(traits, options)
     return extraKills, blocksBrave and options.BraveBlock ~= false
 end
 
-local function traitReductions(traits, options)
+local function traitReductions(traits, options, braveGranted)
     local braveReduction, desensitizedReduction = 0, 0
     for index = 1, #benefits do
         local benefit = benefits[index]
-        if traits:get(benefit.trait) then
+        if traits:get(benefit.trait) and not (braveGranted and benefit.startingOnly) then
             local reduction = options[benefit.option]
             desensitizedReduction = desensitizedReduction + reduction
             if not benefit.desensitizedOnly then braveReduction = braveReduction + reduction end
@@ -86,7 +87,7 @@ end
 
 local function requirements(player, traits, options)
     local extraKills, blocksBrave = extraRequirement(traits, options)
-    local braveReduction, desensitizedReduction = traitReductions(traits, options)
+    local braveReduction, desensitizedReduction = traitReductions(traits, options, player:getModData()[grantedBraveKey])
     local professionOption = professionOptions[player:getDescriptor():getCharacterProfession()]
     local professionReduction = professionOption and options[professionOption] or 0
     local braveAdjustment = extraKills - braveReduction - professionReduction
@@ -199,6 +200,7 @@ function Rules.grant(player, reward)
         traits:remove(CharacterTrait.ADRENALINE_JUNKIE)
     end
     traits:add(reward)
+    if reward == CharacterTrait.BRAVE then player:getModData()[grantedBraveKey] = true end
     Rules.debugLog("Granted", reward, "to", player:getUsername())
 end
 

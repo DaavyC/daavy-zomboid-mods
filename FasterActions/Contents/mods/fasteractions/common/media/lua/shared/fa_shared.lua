@@ -41,6 +41,8 @@ local SAWING_ACTION_SCRIPTS = {
     SawOffShotgun = true,
     UseBandsaw = true
 }
+local WELDING_ACTION_SCRIPTS = { Welding = true, Welding_Surface = true }
+local BLACKSMITHING_ACTION_SCRIPTS = { HammerMetalStanding = true }
 local MECHANIC_ACTION_TYPES = {
     ISConfigHeadlight = true,
     ISDeflateTire = true,
@@ -292,7 +294,22 @@ local function isListedAction(action, actionTypes)
     return type(actionType) == "string" and actionTypes[actionType] == true
 end
 
+local function getActionScriptName(action)
+    if not action or action.Type ~= "ISHandcraftAction" then
+        return nil
+    end
+    local actionScript = action.actionScript
+    return actionScript and actionScript:getName()
+end
+
+local function usesActionScript(action, actionScripts)
+    return actionScripts[getActionScriptName(action)] == true
+end
+
 local function isWeldingAction(action)
+    if usesActionScript(action, WELDING_ACTION_SCRIPTS) then
+        return true
+    end
     local actionType = action and action.Type
     if actionType == "ISRemoveBurntVehicle" then
         return true
@@ -320,26 +337,16 @@ local function isWeldingAction(action)
     return false
 end
 
-local function getActionScriptName(action)
-    if not action or action.Type ~= "ISHandcraftAction" then
-        return nil
-    end
-    local actionScript = action.actionScript
-    return actionScript and actionScript:getName()
-end
-
 local function isRippingAction(action)
-    local actionScriptName = getActionScriptName(action)
     local actionType = getActionType(action)
-    return RIPPING_ACTION_SCRIPTS[actionScriptName] == true
+    return usesActionScript(action, RIPPING_ACTION_SCRIPTS)
         or actionType == "ISCraftAction" and action.recipe ~= nil
         and matchesPattern(action.recipe:getOriginalname(), "Rip")
 end
 
 local function isSawingAction(action)
-    local actionScriptName = getActionScriptName(action)
     local actionType = getActionType(action)
-    return SAWING_ACTION_SCRIPTS[actionScriptName] == true
+    return usesActionScript(action, SAWING_ACTION_SCRIPTS)
         or actionType == "ISCraftAction" and action.recipe ~= nil
         and matchesPattern(action.recipe:getOriginalname(), "Saw")
 end
@@ -355,6 +362,7 @@ end
 
 local function isBlacksmithingAction(action)
     return isRecipeCategoryAction(action, "Blacksmithing")
+        or usesActionScript(action, BLACKSMITHING_ACTION_SCRIPTS)
 end
 
 local function isWoodcuttingAction(action)
@@ -367,15 +375,14 @@ local function isTailoringAction(action)
         return true
     end
 
-    local recipeName
-    if actionType == "ISCraftAction" and action.recipe then
-        recipeName = action.recipe:getOriginalname()
-    elseif actionType == "ISHandcraftAction" and action.craftRecipe then
-        recipeName = action.craftRecipe:getName()
-    else
+    if actionType == "ISHandcraftAction" then
+        return isRecipeCategoryAction(action, "Tailoring")
+    end
+    if actionType ~= "ISCraftAction" or not action.recipe then
         return false
     end
 
+    local recipeName = action.recipe:getOriginalname()
     for index = 1, #TAILORING_RECIPE_PATTERNS do
         if matchesPattern(recipeName, TAILORING_RECIPE_PATTERNS[index]) then
             return true

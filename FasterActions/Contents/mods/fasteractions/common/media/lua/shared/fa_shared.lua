@@ -683,8 +683,9 @@ local function installAdjustMaxTimeHook()
         if isClient() and self.maxTime == -1 then
             self.maxTime = maxTime
             local visualDuration = self[VISUAL_DURATION_MARKER]
-            if self.relaunchWithDelta and visualDuration and visualDuration > 0 then
-                self.action:setTime(visualDuration)
+            local syncsVisualDuration = self.relaunchWithDelta or self[REMOTE_PROGRESS_MARKER]
+            if syncsVisualDuration and visualDuration and visualDuration > 0 then
+                self.action:setTime(math.max(1, visualDuration))
             end
         end
     end

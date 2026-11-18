@@ -12,18 +12,10 @@ local max = math.max
 local core = getCore()
 local VISUAL_DURATION_MARKER = "FasterActionsVisualDuration"
 local ANIMATION_PROGRESS_MARKER = "FasterActionsAnimationProgress"
-local REMOTE_PROGRESS_MARKER = "FasterActionsRemoteProgress"
 
 local function getProgressDuration(action, nativeAction)
-    local client = isClient()
-    if client and action[REMOTE_PROGRESS_MARKER] then
-        local duration = action[VISUAL_DURATION_MARKER]
-        if duration and duration > 0 then
-            return duration
-        end
-    end
     local duration = nativeAction:getTime()
-    if duration == -1 and not client and action[ANIMATION_PROGRESS_MARKER] then
+    if duration == -1 and not isClient() and action[ANIMATION_PROGRESS_MARKER] then
         return action[VISUAL_DURATION_MARKER]
     end
     return duration

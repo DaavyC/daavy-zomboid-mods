@@ -1,7 +1,7 @@
 version=1
 id=3803796255
 title=Faster Actions
-description=[h1]Faster Actions [B42.21][/h1]
+description=[h1]Faster Actions [B42.22][/h1]
 description=Change how long actions take with separate speed settings for each category.
 description=
 description=[h2]Features[/h2]
@@ -19,6 +19,5 @@ description=The optional [url=https://steamcommunity.com/sharedfiles/filedetails
 description=
 description=[h2]Support[/h2]
 description=Join the [url=https://discord.gg/JU3YEgu5hk]Discord server[/url] for help and feedback.
-description=[url=https://ko-fi.com/daavy][img]https://storage.ko-fi.com/cdn/brandasset/v2/support_me_on_kofi_dark.png[/img][/url]
 tags=Build 42;Balance;Multiplayer;QoL
 visibility=public
